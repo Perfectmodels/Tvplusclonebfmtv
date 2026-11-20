@@ -25,7 +25,7 @@ export default function AdminLivePage() {
   }
   useEffect(load, []);
 
-  async function save(provider: Provider) {
+  async function save(provider: Provider, enabled = provider.enabled) {
     setSaving(provider.provider);
     try {
       const response = await fetch('/api/admin/stream-settings', {
@@ -35,12 +35,12 @@ export default function AdminLivePage() {
           provider: provider.provider,
           rtmpUrl: urls[provider.provider] ?? provider.rtmpUrl,
           streamKey: keys[provider.provider] || undefined,
-          enabled: !provider.enabled,
+          enabled,
         }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body?.error?.message ?? 'Enregistrement impossible.');
-      success(provider.enabled ? 'Diffuseur désactivé.' : 'Diffuseur activé.');
+      success('Paramètres de diffusion enregistrés.');
       setKeys((k) => ({ ...k, [provider.provider]: '' }));
       load();
     } catch (err) {
@@ -62,9 +62,10 @@ export default function AdminLivePage() {
       <div className="admin-notice">
         <Radio size={18} />
         <p>
-          Le lecteur public utilise la variable <code>LIVE_STREAM_URL</code> (flux HLS). Renseignez-la
-          dans <code>.env</code> avec l’URL de votre flux pour que le direct soit visible sur le site.
-          La clé de flux ci-dessous ne doit jamais être partagée.
+          Le lecteur public utilise <code>NEXT_PUBLIC_LIVE_STREAM_URL</code> (flux HLS).
+          Configurez cette variable dans l’hébergement et redéployez l’application.
+          Les destinations RTMP ci-dessous sont indépendantes du lecteur HLS : les activer
+          ne crée pas automatiquement de flux public. Ne partagez jamais les clés de diffusion.
         </p>
       </div>
 
@@ -87,9 +88,14 @@ export default function AdminLivePage() {
             <label><span>Clé de flux {provider.hasKey ? `(${provider.keyMasked})` : ''}</span>
               <input type="password" value={keys[provider.provider] ?? ''} onChange={(e) => setKeys((k) => ({ ...k, [provider.provider]: e.target.value }))} placeholder={provider.hasKey ? 'Remplacer la clé' : 'Nouvelle clé de flux'} autoComplete="new-password" />
             </label>
-            <button type="button" className="admin-btn admin-btn-primary" onClick={() => save(provider)} disabled={saving === provider.provider}>
-              {saving === provider.provider ? 'Enregistrement…' : provider.enabled ? 'Désactiver' : 'Activer ce diffuseur'}
-            </button>
+            <div className="stream-row">
+              <button type="button" className="admin-btn admin-btn-primary" onClick={() => save(provider)} disabled={saving === provider.provider}>
+                {saving === provider.provider ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+              <button type="button" className="admin-btn admin-btn-ghost" onClick={() => save(provider, !provider.enabled)} disabled={saving === provider.provider}>
+                {provider.enabled ? 'Désactiver' : 'Activer'}
+              </button>
+            </div>
           </section>
         ))}
       </div>

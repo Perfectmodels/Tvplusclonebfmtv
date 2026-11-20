@@ -33,7 +33,7 @@ export function useLiveOverlay() {
   return value;
 }
 
-type Status = 'idle' | 'loading' | 'playing' | 'error' | 'no-stream';
+type Status = 'idle' | 'loading' | 'ready' | 'playing' | 'error' | 'no-stream';
 
 export default function LiveOverlayProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,7 +68,10 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
-      if (target?.closest('[data-open-live]')) open();
+      if (target?.closest('[data-open-live]')) {
+        event.preventDefault();
+        open();
+      }
     };
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
@@ -99,6 +102,8 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
       try {
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
           video.src = streamUrl;
+          setStatus('ready');
+          video.play().catch(() => setStatus('ready'));
         } else {
           const { default: Hls } = await import('hls.js');
           if (cancelled) return;
@@ -108,13 +113,18 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
             hls.loadSource(streamUrl);
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
-              if (!cancelled) video.play().catch(() => {});
+              if (!cancelled) {
+                setStatus('ready');
+                video.play().catch(() => setStatus('ready'));
+              }
             });
             hls.on(Hls.Events.ERROR, (_event: unknown, data: { fatal?: boolean }) => {
               if (data.fatal && !cancelled) setStatus('error');
             });
           } else {
             video.src = streamUrl;
+            setStatus('ready');
+            video.play().catch(() => setStatus('ready'));
           }
         }
       } catch {
@@ -132,7 +142,7 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
 
   const togglePlay = () => {
     const video = videoRef.current;
-    if (!video || status !== 'playing') return;
+    if (!video || !['playing', 'ready'].includes(status)) return;
     if (video.paused) {
       video.play().catch(() => setStatus('error'));
     } else {
@@ -186,7 +196,7 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
                 playsInline
                 muted={muted}
                 onPlaying={() => { setStatus('playing'); setPlaying(true); }}
-                onPause={() => setPlaying(false)}
+                onPause={() => { setPlaying(false); setStatus('ready'); }}
                 onWaiting={() => setStatus('loading')}
                 onError={() => setStatus('error')}
               />
@@ -199,6 +209,8 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
                     <strong>Flux direct non configuré</strong>
                     <span>Le lecteur est prêt. Renseignez l’URL du flux pour diffuser l’antenne.</span>
                   </>
+                ) : status === 'ready' ? (
+                  <strong>Appuyez sur Lecture pour regarder le direct.</strong>
                 ) : status === 'error' ? (
                   <>
                     <strong>Impossible de charger le flux</strong>
@@ -214,16 +226,16 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
           </div>
 
           <footer className="live-overlay-controls">
-            <button type="button" className="live-control-btn" onClick={togglePlay} aria-label={playing ? 'Mettre en pause' : 'Lecture'} disabled={status !== 'playing'}>
+            <button type="button" className="live-control-btn" onClick={togglePlay} aria-label={playing ? 'Mettre en pause' : 'Lecture'} disabled={status !== 'playing' && status !== 'ready'}>
               {playing ? <Pause size={15} /> : <Play size={15} />}
             </button>
-            <button type="button" className="live-control-btn" onClick={toggleMute} aria-label={muted ? 'Activer le son' : 'Couper le son'} disabled={status !== 'playing'}>
+            <button type="button" className="live-control-btn" onClick={toggleMute} aria-label={muted ? 'Activer le son' : 'Couper le son'} disabled={status !== 'playing' && status !== 'ready'}>
               {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
             </button>
-            <button type="button" className="live-control-btn" onClick={togglePip} aria-label="Picture in picture" disabled={status !== 'playing'}>
+            <button type="button" className="live-control-btn" onClick={togglePip} aria-label="Picture in picture" disabled={status !== 'playing' && status !== 'ready'}>
               <PictureInPicture2 size={15} />
             </button>
-            <button type="button" className="live-control-btn" onClick={toggleFullscreen} aria-label="Plein écran" disabled={status !== 'playing'}>
+            <button type="button" className="live-control-btn" onClick={toggleFullscreen} aria-label="Plein écran" disabled={status !== 'playing' && status !== 'ready'}>
               <Maximize2 size={15} />
             </button>
             <span className="live-overlay-watermark">TV+</span>
