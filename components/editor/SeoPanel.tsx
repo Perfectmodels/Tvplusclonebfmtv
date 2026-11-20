@@ -13,6 +13,7 @@ export default function SeoPanel({
   chapter,
   siteUrl,
   shortId,
+  coverUrl,
 }: {
   seoTitle: string;
   onSeoTitleChange: (value: string) => void;
@@ -22,6 +23,7 @@ export default function SeoPanel({
   chapter: string;
   siteUrl: string;
   shortId?: string;
+  coverUrl?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const { success } = useToast();
@@ -76,7 +78,7 @@ export default function SeoPanel({
         </div>
         <h4>Aperçu de partage</h4>
         <div className="seo-social-card">
-          <div className="seo-social-image">1200 × 630</div>
+          {coverUrl ? <img className="seo-social-image" src={coverUrl} alt="Aperçu de la couverture" /> : <div className="seo-social-image">1200 × 630</div>}
           <div>
             <span>TV PLUS</span>
             <strong>{seoTitle || title || 'Titre de l’article'}</strong>

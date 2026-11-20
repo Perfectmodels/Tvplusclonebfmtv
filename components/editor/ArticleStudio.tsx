@@ -373,6 +373,7 @@ export default function ArticleStudio({ id }: { id?: string }) {
                 chapter={form.chapter}
                 siteUrl={siteUrl}
                 shortId={shortId}
+                coverUrl={cover.url}
               />
             </div>
           </details>
