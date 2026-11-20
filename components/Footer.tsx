@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import TvPlusLogo from './TvPlusLogo';
 import { categories as staticCategories } from '../lib/data';
+import { categoryHref } from '../lib/categories';
 
 export default function Footer({ categories = staticCategories }: { categories?: string[] }) {
   return (
@@ -16,7 +17,7 @@ export default function Footer({ categories = staticCategories }: { categories?:
           <h3 className="footer-title">Toutes les rubriques</h3>
           <div className="footer-links">
             {categories.slice(0, 5).map((category) => (
-              <Link key={category} href={'/rubrique/' + encodeURIComponent(category.toLowerCase())}>
+              <Link key={category} href={categoryHref(category)}>
                 {category}
               </Link>
             ))}
@@ -26,7 +27,7 @@ export default function Footer({ categories = staticCategories }: { categories?:
           <h3 className="footer-title">&nbsp;</h3>
           <div className="footer-links">
             {categories.slice(5).map((category) => (
-              <Link key={category} href={'/rubrique/' + encodeURIComponent(category.toLowerCase())}>
+              <Link key={category} href={categoryHref(category)}>
                 {category}
               </Link>
             ))}

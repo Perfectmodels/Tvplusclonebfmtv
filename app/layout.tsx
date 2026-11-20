@@ -27,6 +27,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
         <LiveOverlayProvider>
           <a href="#contenu" className="skip-link">Aller au contenu</a>
           <Header
+            categories={categories}
             topics={topics}
             userEmail={user?.email ?? null}
             isAdmin={profile?.role === 'admin'}

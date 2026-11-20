@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Menu, X, Search, ChevronRight } from 'lucide-react';
 import TvPlusLogo from './TvPlusLogo';
-import { categories, topicLinks, topics as staticTopics } from '../lib/data';
+import { topicLinks, topics as staticTopics } from '../lib/data';
+import { categoryHref } from '../lib/categories';
 
 type TopicItem = { label: string; link: string };
 
@@ -23,7 +24,8 @@ export default function Header({
   topics = staticTopics.map((label) => ({ label, link: topicLinks[label] ?? '/news-24-7' })),
   userEmail = null,
   isAdmin = false,
-}: { topics?: TopicItem[]; userEmail?: string | null; isAdmin?: boolean }) {
+  categories = [],
+}: { topics?: TopicItem[]; userEmail?: string | null; isAdmin?: boolean; categories?: string[] }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
@@ -74,7 +76,7 @@ export default function Header({
             <Link href="/replay-emissions" className="header-text-link">
               Replay
             </Link>
-            <Link href="/direct" className="direct-btn" data-open-live>
+            <Link href="/direct" className="direct-btn">
               <span className="direct-dot" />
               Direct
             </Link>
@@ -110,7 +112,7 @@ export default function Header({
               Présidence
             </Link>
             {categories.map((category) => (
-              <Link key={category} href={'/rubrique/' + encodeURIComponent(category.toLowerCase())}>
+              <Link key={category} href={categoryHref(category)}>
                 {category}
               </Link>
             ))}
@@ -127,7 +129,7 @@ export default function Header({
       )}
 
       {menuOpen && (
-        <div className="mega-menu" id="site-mega-menu">
+        <div className="mega-menu" id="site-mega-menu" aria-label="Menu de navigation">
           <div className="shell mega-inner">
             <div className="mega-col mega-lead">
               <span className="mega-label">À la une</span>
@@ -142,7 +144,7 @@ export default function Header({
               {categories.slice(0, 5).map((category) => (
                 <Link
                   key={category}
-                  href={'/rubrique/' + encodeURIComponent(category.toLowerCase())}
+                  href={categoryHref(category)}
                   onClick={() => setMenuOpen(false)}
                 >
                   {category} <ChevronRight size={15} />
@@ -154,7 +156,7 @@ export default function Header({
               {categories.slice(5).map((category) => (
                 <Link
                   key={category}
-                  href={'/rubrique/' + encodeURIComponent(category.toLowerCase())}
+                  href={categoryHref(category)}
                   onClick={() => setMenuOpen(false)}
                 >
                   {category} <ChevronRight size={15} />
@@ -164,6 +166,8 @@ export default function Header({
             <div className="mega-col mega-services">
               <span className="mega-label">Services</span>
               {[
+                [userEmail ? 'Mon compte' : 'Connexion', userEmail ? '/compte' : '/connexion'],
+                ...(isAdmin ? [['Administration', '/admin']] : []),
                 ['Le direct', '/direct'],
                 ['Le fil info', '/news-24-7'],
                 ['Les vidéos', '/videos'],
