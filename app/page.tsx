@@ -6,6 +6,7 @@ import Newsletter from '../components/Newsletter';
 import QuestionSection from '../components/QuestionSection';
 import FilActuFeed from '../components/FilActuFeed';
 import NewsTicker from '../components/NewsTicker';
+import AdvertisingCarousel from '../components/AdvertisingCarousel';
 import SectionHeading from '../components/SectionHeading';
 import StoryCard from '../components/StoryCard';
 import { listArticles, getFilActu, getCategories } from '../lib/db/repository';
@@ -24,7 +25,7 @@ export default async function Home({
   const [{ items: filtered }, { data: feed }, { items: wire }, { data: categories }] = await Promise.all([
     listArticles({ search: q, pageSize: 30 }),
     getFilActu(8),
-    getNewsFeed(8),
+    getNewsFeed(20),
     getCategories(),
   ]);
 
@@ -62,63 +63,79 @@ export default async function Home({
         ) : (
           <>
             <section className="hero-layout" aria-label="À la une">
-              <div className="hero-main">{hero && <StoryCard story={hero} variant="hero" />}</div>
+              <div className="hero-main">
+                {hero ? <StoryCard story={hero} variant="hero" /> : (
+                  <p className="empty-state">Les actualités à la une seront bientôt disponibles.</p>
+                )}
+              </div>
               <div className="hero-rail">
-                <NewsTicker items={wire} variant="rail" limit={6} />
+                <NewsTicker items={wire} variant="rail" limit={20} />
                 {rail.map((story) => <StoryCard key={story.slug} story={story} variant="rail" />)}
               </div>
             </section>
+
+            <AdvertisingCarousel placement="after-hero" />
+
+            <section id="fil-info" className="home-news-feed" aria-labelledby="fil-title">
+              <SectionHeading
+                id="fil-title"
+                title="Fil actu"
+                moreHref="/news-24-7"
+                moreLabel="Toute l'actualité"
+              />
+              <FilActuFeed items={feed} categories={categories} />
+            </section>
+
+            <AdvertisingCarousel placement="after-feed" />
 
             <section className="home-duo" aria-label="Direct et questions du public">
               <LivePlayer />
               <QuestionSection />
             </section>
 
+            <AdvertisingCarousel placement="after-live" />
+
             {selection.length > 0 && (
               <section aria-labelledby="selection-title">
-                <SectionHeading id="selection-title" title="Sélection de la rédaction" arrows />
+                <SectionHeading id="selection-title" title="Sélection de la rédaction" />
                 <div className="selection-grid">
                   {selection.map((story) => <StoryCard key={story.slug} story={story} />)}
                 </div>
               </section>
             )}
 
-            <section id="fil-info" aria-labelledby="fil-title">
-              <SectionHeading
-                id="fil-title"
-                title="Fil actu"
-                moreHref="/news-24-7"
-                moreLabel="Toute l’actualité"
-              />
-              <FilActuFeed items={feed} categories={categories} />
-            </section>
+            <AdvertisingCarousel placement="after-selection" />
 
-            <Newsletter />
+            <div className="home-category-stack">
+              {blocks.map((block) => (
+                <section className="category-block" key={block.name} aria-labelledby={'cat-' + block.name}>
+                  <SectionHeading
+                    id={'cat-' + block.name}
+                    title={block.name}
+                    moreHref={categoryHref(block.name)}
+                    moreLabel={'Toute l’actu ' + block.name}
+                  />
+                  <div className="selection-grid">
+                    {block.items.map((story) => <StoryCard key={story.slug} story={story} />)}
+                  </div>
+                </section>
+              ))}
 
-            {blocks.map((block) => (
-              <section className="category-block" key={block.name} aria-labelledby={'cat-' + block.name}>
-                <SectionHeading
-                  id={'cat-' + block.name}
-                  title={block.name}
-                  moreHref={categoryHref(block.name)}
-                  moreLabel={'Toute l’actu ' + block.name}
-                />
-                <div className="selection-grid">
-                  {block.items.map((story) => <StoryCard key={story.slug} story={story} />)}
+              <section className="category-block">
+                <SectionHeading title="Toutes les rubriques" />
+                <div className="rubrique-chips">
+                  {categories.map((category) => (
+                    <Link key={category} href={categoryHref(category)}>
+                      {category}
+                    </Link>
+                  ))}
                 </div>
               </section>
-            ))}
+            </div>
 
-            <section className="category-block">
-              <SectionHeading title="Toutes les rubriques" />
-              <div className="rubrique-chips">
-                {categories.map((category) => (
-                  <Link key={category} href={categoryHref(category)}>
-                    {category}
-                  </Link>
-                ))}
-              </div>
-            </section>
+            <AdvertisingCarousel placement="before-newsletter" />
+
+            <Newsletter />
           </>
         )}
       </main>

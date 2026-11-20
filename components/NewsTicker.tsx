@@ -31,7 +31,7 @@ export default function NewsTicker({
             Tout le fil <ChevronRight size={14} />
           </Link>
         </header>
-        <div className="news-rail-list">
+        <div className="news-rail-list" tabIndex={0} role="region" aria-label="Faire défiler les actualités News 24/7">
           {items.slice(0, limit).map((item) => (
             <a
               href={item.href}
