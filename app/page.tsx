@@ -74,12 +74,14 @@ export default async function Home({
               <QuestionSection />
             </section>
 
-            <section aria-labelledby="selection-title">
-              <SectionHeading id="selection-title" title="Sélection de la rédaction" arrows />
-              <div className="selection-grid">
-                {selection.map((story) => <StoryCard key={story.slug} story={story} />)}
-              </div>
-            </section>
+            {selection.length > 0 && (
+              <section aria-labelledby="selection-title">
+                <SectionHeading id="selection-title" title="Sélection de la rédaction" arrows />
+                <div className="selection-grid">
+                  {selection.map((story) => <StoryCard key={story.slug} story={story} />)}
+                </div>
+              </section>
+            )}
 
             <section id="fil-info" aria-labelledby="fil-title">
               <SectionHeading

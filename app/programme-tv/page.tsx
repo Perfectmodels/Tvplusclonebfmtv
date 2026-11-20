@@ -15,8 +15,8 @@ export default async function ProgrammeTvPage() {
       <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Programme TV' }]} />
       <h1 className="page-title">Programme TV</h1>
       <p className="page-intro">
-        La grille des programmes TV Plus, mise à jour chaque jour. Retrouvez vos émissions et
-        leurs horaires de diffusion.
+        Consultez les horaires de diffusion des émissions TV+ Afrique.
+        La programmation est indicative et peut évoluer.
       </p>
       <ScheduleBoard items={schedule} />
       <div className="section-head has-rule"><h2>Les émissions de la semaine</h2></div>

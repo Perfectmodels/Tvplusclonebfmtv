@@ -31,7 +31,7 @@ export default async function DirectPage() {
         </button>
         <div className="direct-schedule">
           <h2>Programme TV+</h2>
-          <p className="direct-schedule-intro">Les prochains rendez-vous de l'antenne.</p>
+          <p className="direct-schedule-intro">Les horaires renseignés par la rédaction.</p>
           {schedule.length ? (
             <ul>
               {schedule.slice(0, 5).map((slot) => (
