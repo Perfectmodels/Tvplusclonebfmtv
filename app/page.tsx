@@ -28,6 +28,7 @@ export default async function Home({
     getCategories(),
   ]);
 
+  const alert = filtered.find((story) => story.kind === 'alert');
   const hero = filtered.find((story) => story.featured) ?? filtered[0];
   const remainder = filtered.filter((story) => story.slug !== hero?.slug);
   const rail = remainder.slice(0, 3);
@@ -42,12 +43,8 @@ export default async function Home({
 
   return (
     <>
-      {!q && (
-        <AlertBar
-          title={filtered[0]?.title ?? 'L’actualité gabonaise en continu'}
-          href={filtered[0] ? articlePath(filtered[0]) : '/'}
-          time={filtered[0]?.time}
-        />
+      {!q && alert && (
+        <AlertBar title={alert.title} href={articlePath(alert)} time={alert.time} />
       )}
 
       <main className="shell">

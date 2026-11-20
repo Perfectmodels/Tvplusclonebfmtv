@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Story } from '../lib/data';
 import { articlePath } from '../lib/articles/urls';
+import TvPlusLogo from './TvPlusLogo';
 
 type Variant = 'hero' | 'rail' | 'grid' | 'list';
 
@@ -24,7 +25,7 @@ export default function StoryCard({
   if (variant === 'hero') {
     return (
       <Link href={href} className="card-hero">
-        <img src={story.image} alt={story.title} className="card-hero-image" decoding="async" />
+        {story.image ? <img src={story.image} alt="" className="card-hero-image" decoding="async" /> : <span className="card-hero-image card-image-placeholder"><TvPlusLogo /></span>}
         <span className="card-hero-shade" />
         <span className="card-hero-content">
           <span className="card-hero-top">
@@ -42,7 +43,7 @@ export default function StoryCard({
     return (
       <Link href={href} className="card-rail">
         <span className="card-rail-thumb">
-          <img src={story.image} alt={story.title} loading="lazy" decoding="async" />
+          {story.image ? <img src={story.image} alt="" loading="lazy" decoding="async" /> : <span className="card-image-placeholder"><TvPlusLogo /></span>}
         </span>
         <span className="card-rail-body">
           <span className="card-rail-meta">
@@ -69,7 +70,7 @@ export default function StoryCard({
   return (
     <Link href={href} className="card-grid">
       <span className="card-grid-image">
-        <img src={story.image} alt={story.title} loading="lazy" decoding="async" />
+        {story.image ? <img src={story.image} alt="" loading="lazy" decoding="async" /> : <span className="card-image-placeholder"><TvPlusLogo /></span>}
         {story.kind && (
           <span className="card-grid-badge">
             <KindLabel kind={story.kind} />

@@ -10,6 +10,7 @@ export default async function FilInfoPage() {
   const [{ data: feed }, { items: wire }, { data: categories }, { items: allArticles }] = await Promise.all([
     getFilActu(20), getNewsFeed(20), getCategories(), listArticles({ pageSize: 30 }),
   ]);
+  const alert = allArticles.find((story) => story.kind === 'alert');
   const slugs = new Set(feed.map((f) => f.slug));
   const extra = allArticles
     .filter((s) => !slugs.has(s.slug))
@@ -27,11 +28,7 @@ export default async function FilInfoPage() {
   return (
     <main className="shell listing-page">
       <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Fil info' }]} />
-      <AlertBar
-        title={feed[0]?.title ?? 'L’actualité gabonaise en continu'}
-        href={feed[0] ? (feed[0].shortId ? `/a/${feed[0].shortId}` : `/article/${feed[0].slug}`) : '/news-24-7'}
-        time={feed[0]?.time}
-      />
+      {alert && <AlertBar title={alert.title} href={alert.shortId ? `/a/${alert.shortId}` : `/article/${alert.slug}`} time={alert.time} />}
       <h1 className="page-title">Fil info — News 24/7</h1>
       <p className="page-intro">
         Toute l’actualité du Gabon et du monde, minute par minute. Les informations sont publiées
