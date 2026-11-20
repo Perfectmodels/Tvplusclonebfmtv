@@ -27,13 +27,14 @@ type V2Category = { id: string; slug: string; name: string };
 type V2Media = { id: string; imgbb_url: string | null; bucket: string; path: string; alt: string; caption: string; credit: string };
 type V2Article = {
   id: string; slug: string; title: string; excerpt: string; category_id: string;
-  cover_media_id: string | null; content_html: string; content_json: unknown;
+  cover_media_id: string | null; content_html?: string; content_json?: unknown;
   status: string; featured: boolean; is_alert: boolean; is_video_article: boolean;
   tags: string[]; seo_title: string | null; seo_description: string | null;
   published_at: string | null; updated_at: string; created_at: string;
   country_code: string; province_slug: string | null; author_id: string;
 };
-const SELECT_ARTICLES = 'id,slug,title,excerpt,category_id,cover_media_id,content_html,content_json,status,featured,is_alert,is_video_article,tags,seo_title,seo_description,published_at,updated_at,created_at,country_code,province_slug,author_id';
+const SELECT_ARTICLE_LIST = 'id,slug,title,excerpt,category_id,cover_media_id,status,featured,is_alert,is_video_article,published_at,updated_at,created_at';
+const SELECT_ARTICLE_DETAIL = 'id,slug,title,excerpt,category_id,cover_media_id,content_html,content_json,status,featured,is_alert,is_video_article,tags,seo_title,seo_description,published_at,updated_at,created_at,country_code,province_slug,author_id';
 
 function imageUrl(media: V2Media | undefined) {
   if (!media) return '';
@@ -62,7 +63,7 @@ async function lookups(mediaIds: (string | null)[]) {
 function mapStory(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Story {
   const category = index.categories.get(a.category_id);
   const media = a.cover_media_id ? index.media.get(a.cover_media_id) : undefined;
-  const words = (a.content_html ?? '').replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
+  const words = a.content_html ? a.content_html.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length : 0;
   return {
     slug: a.slug,
     category: category?.name ?? 'Actualité',
@@ -75,7 +76,7 @@ function mapStory(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Sto
     featured: a.featured,
     kind: a.is_alert ? 'alert' : a.is_video_article ? 'video' : undefined,
     wordCount: words,
-    readingTime: Math.max(1, Math.ceil(words / 220)),
+    readingTime: words ? Math.max(1, Math.ceil(words / 220)) : undefined,
   };
 }
 
@@ -85,11 +86,11 @@ function mapFull(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Publ
   return {
     ...basic,
     chapter: a.excerpt,
-    contentHtml: a.content_html,
+    contentHtml: a.content_html ?? null,
     seoTitle: a.seo_title,
     seoDescription: a.seo_description,
     tags: a.tags ?? [],
-    countryCode: a.country_code,
+    countryCode: a.country_code ?? 'GA',
     province: a.province_slug,
     coverAlt: media?.alt,
     coverCredit: media?.credit,
@@ -102,7 +103,7 @@ export async function listV2Articles({
   category, search, page = 1, pageSize = 12,
 }: {category?: string; search?: string; page?: number; pageSize?: number} = {}) {
   const db = client();
-  let q = db.from('articles').select(SELECT_ARTICLES, { count: 'exact' }).eq('status', 'published');
+  let q = db.from('articles').select(SELECT_ARTICLE_LIST, { count: 'exact' }).eq('status', 'published');
   if (category) {
     const { data: cat, error } = await db.from('categories').select('id').eq('slug', categorySlug(category)).maybeSingle();
     if (error) throw new Error(error.message);
@@ -122,7 +123,7 @@ export async function listV2Articles({
 }
 
 export async function getV2ArticleBySlug(slug: string) {
-  const { data, error } = await client().from('articles').select(SELECT_ARTICLES)
+  const { data, error } = await client().from('articles').select(SELECT_ARTICLE_DETAIL)
     .eq('status', 'published').eq('slug', slug).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return { item: null as PublicArticle | null, source: 'supabase' as const };
