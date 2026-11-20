@@ -1,4 +1,5 @@
 import 'server-only';
+import { usesTvplusV2, getTvplusV2PublicClient } from '../db/v2-public';
 import { getServerSupabase } from '../supabase/server';
 import { stories } from '../data';
 import { refreshNewsFeed } from './ingest';
@@ -52,6 +53,17 @@ async function readRows(limit: number): Promise<FeedRow[]> {
 
 /** Lit le fil News 24/7. Ce flux reste distinct des articles publiés sur le site. */
 export async function getNewsFeed(limit = 30): Promise<{ items: FeedItem[]; source: 'rss' | 'local' }> {
+  if (usesTvplusV2()) {
+    const { data, error } = await getTvplusV2PublicClient().from('news24_items')
+      .select('id,title,original_url,summary,published_at')
+      .eq('status', 'published').order('published_at', { ascending: false }).limit(limit);
+    if (error) throw new Error(error.message);
+    return { items: (data ?? []).map((row) => ({
+      id: row.id, title: row.title, href: row.original_url,
+      summary: row.summary ?? '',
+      time: new Date(row.published_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Libreville' }),
+    })), source: 'rss' };
+  }
   try {
     let rows = await readRows(limit);
     if (rows.length === 0) {

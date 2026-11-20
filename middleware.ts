@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
 
   // Anciennes URL longues -> URL courte définitive (redirection permanente 308).
   const legacy = request.nextUrl.pathname.match(/^\/article\/([^/]+)\/?$/);
-  if (legacy) {
+  if (legacy && process.env.SUPABASE_SCHEMA_MODE !== 'tvplus-v2') {
     const slug = decodeURIComponent(legacy[1]);
     const secret = process.env.SUPABASE_SECRET_KEY;
     if (secret) {
