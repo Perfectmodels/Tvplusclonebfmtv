@@ -16,6 +16,7 @@ export type MediaItem = {
 
 export type Program = {
   id: string;
+  slug?: string;
   name: string;
   host: string;
   slot: string;

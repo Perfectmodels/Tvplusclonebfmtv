@@ -259,6 +259,7 @@ export async function getPrograms(): Promise<Wrapped<typeof staticPrograms>> {
     return {
       data: result.data.map((p) => ({
         id: p.id,
+        slug: p.slug,
         name: p.name,
         host: p.host ?? '',
         slot: p.slot,
@@ -534,7 +535,7 @@ export async function getDashboardStats() {
 }
 
 export type PublicEpisode = {
-  id: string; title: string; description: string; videoUrl: string;
+  id: string; programId: string | null; title: string; description: string; videoUrl: string;
   thumbnail: string; duration: string; publishedAt: string;
 };
 
@@ -547,6 +548,7 @@ export async function getEpisodes(limit = 24): Promise<Wrapped<PublicEpisode[]>>
     return {
       data: result.data.map((e) => ({
         id: e.id,
+        programId: e.program_id ?? null,
         title: e.title,
         description: e.description ?? '',
         videoUrl: e.video_url ?? '',
