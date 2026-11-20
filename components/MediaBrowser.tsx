@@ -70,7 +70,7 @@ export default function MediaBrowser({
             return <Link href={item.href} className="media-card" key={item.id}>{content}</Link>;
           })}
         </div>
-      )
+      )}
 
       {visible < filtered.length && (
         <div className="load-more-wrap">
