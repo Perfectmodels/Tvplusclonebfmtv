@@ -1,0 +1,124 @@
+import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
+import AlertBar from '../components/AlertBar';
+import LivePlayer from '../components/LivePlayer';
+import Newsletter from '../components/Newsletter';
+import QuestionSection from '../components/QuestionSection';
+import FilActuFeed from '../components/FilActuFeed';
+import NewsTicker from '../components/NewsTicker';
+import SectionHeading from '../components/SectionHeading';
+import StoryCard from '../components/StoryCard';
+import { listArticles, getFilActu, getCategories } from '../lib/db/repository';
+import { articlePath } from '../lib/articles/urls';
+import { getNewsFeed } from '../lib/rss/news';
+
+export const revalidate = 60;
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const [{ items: filtered }, { data: feed }, { items: wire }, { data: categories }] = await Promise.all([
+    listArticles({ search: q, pageSize: 30 }),
+    getFilActu(8),
+    getNewsFeed(8),
+    getCategories(),
+  ]);
+
+  const hero = filtered[0];
+  const rail = filtered.slice(1, 4);
+  const selection = filtered.slice(5, 9);
+  const blocks = ['Politique', 'Économie', 'Société']
+    .map((name) => ({ name, items: filtered.filter((s) => s.category === name).slice(0, 4) }))
+    .filter((block) => block.items.length > 0);
+
+  return (
+    <>
+      {!q && (
+        <AlertBar
+          title={filtered[0]?.title ?? 'L’actualité gabonaise en continu'}
+          href={filtered[0] ? articlePath(filtered[0]) : '/'}
+          time={filtered[0]?.time}
+        />
+      )}
+
+      <main className="shell">
+        {q ? (
+          <section className="search-results">
+            <SectionHeading title={`Résultats pour « ${q} »`} />
+            {filtered.length > 0 ? (
+              <div className="selection-grid">
+                {filtered.map((story) => <StoryCard key={story.slug} story={story} />)}
+              </div>
+            ) : (
+              <p className="empty-state">Aucune actualité ne correspond à votre recherche.</p>
+            )}
+          </section>
+        ) : (
+          <>
+            <section className="hero-layout" aria-label="À la une">
+              <div className="hero-main">{hero && <StoryCard story={hero} variant="hero" />}</div>
+              <div className="hero-rail">
+                <NewsTicker items={wire} variant="rail" limit={6} />
+                {rail.map((story) => <StoryCard key={story.slug} story={story} variant="rail" />)}
+              </div>
+            </section>
+
+            <LivePlayer
+              image="https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=1200&q=80&fit=crop"
+              now="TV Plus Non-stop"
+            />
+
+            <section aria-labelledby="selection-title">
+              <SectionHeading id="selection-title" title="Sélection de la rédaction" arrows />
+              <div className="selection-grid">
+                {selection.map((story) => <StoryCard key={story.slug} story={story} />)}
+              </div>
+            </section>
+
+            <section id="fil-info" aria-labelledby="fil-title">
+              <SectionHeading
+                id="fil-title"
+                title="Fil actu"
+                moreHref="/news-24-7"
+                moreLabel="Toute l’actualité"
+              />
+              <FilActuFeed items={feed} categories={categories} />
+            </section>
+
+            <Newsletter />
+
+            <QuestionSection />
+
+            {blocks.map((block) => (
+              <section className="category-block" key={block.name} aria-labelledby={'cat-' + block.name}>
+                <SectionHeading
+                  id={'cat-' + block.name}
+                  title={block.name}
+                  moreHref={'/rubrique/' + encodeURIComponent(block.name.toLowerCase())}
+                  moreLabel={'Toute l’actu ' + block.name}
+                />
+                <div className="selection-grid">
+                  {block.items.map((story) => <StoryCard key={story.slug} story={story} />)}
+                </div>
+              </section>
+            ))}
+
+            <section className="category-block">
+              <SectionHeading title="Toutes les rubriques" />
+              <div className="rubrique-chips">
+                {categories.map((category) => (
+                  <Link key={category} href={'/rubrique/' + encodeURIComponent(category.toLowerCase())}>
+                    {category}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+      </main>
+    </>
+  );
+}
