@@ -198,3 +198,158 @@ button.direct-player, button.direct-player-large {
   width: 42%; max-width: 150px; height: auto; max-height: 65%; object-fit: contain;
   filter: drop-shadow(0 6px 14px rgba(0,0,0,.18));
 }
+
+
+/* News 24/7 reste un panneau à hauteur maîtrisée : le scroll ne déplace pas la page. */
+.hero-rail .news-rail-panel {
+  overflow: hidden;
+  border-radius: 7px;
+  margin-bottom: 20px;
+  min-width: 0;
+}
+.hero-rail .news-rail-list {
+  display: block;
+  max-height: 235px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #aab7d2 #f1f4f9;
+}
+.hero-rail .news-rail-list:focus-visible {
+  outline: 2px solid #194eb5;
+  outline-offset: -2px;
+}
+.hero-rail .news-rail-list::-webkit-scrollbar { width: 7px; }
+.hero-rail .news-rail-list::-webkit-scrollbar-thumb { background: #aab7d2; border-radius: 20px; }
+.hero-rail .news-rail-list::-webkit-scrollbar-track { background: #f1f4f9; }
+
+/* Cinq bandeaux éditoriaux, chacun avec cinq emplacements rotatifs. */
+.advertising-carousel {
+  position: relative;
+  margin: 29px 0 32px;
+  min-width: 0;
+  width: 100%;
+  font-family: var(--editorial-font);
+}
+.advertising-carousel__heading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin-bottom: 7px;
+  color: #758096;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.advertising-carousel__counter {
+  position: absolute;
+  right: 0;
+  font-size: 11px;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.advertising-carousel__creative {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 970 / 160;
+  min-height: 114px;
+  max-height: 194px;
+  background: #f0f3f9;
+  border: 1px solid #dbe2ec;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.advertising-carousel__link { display: block; width: 100%; height: 100%; }
+.advertising-carousel__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
+.advertising-carousel__placeholder {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  background: repeating-linear-gradient(135deg, #f5f7fa 0, #f5f7fa 17px, #edf1f7 17px, #edf1f7 34px);
+  color: #506078;
+  padding: 16px;
+}
+.advertising-carousel__placeholder strong {
+  font-size: clamp(16px, 2vw, 24px);
+  line-height: 1.1;
+  font-weight: 750;
+}
+.advertising-carousel__placeholder span { font-size: 12px; }
+.advertising-carousel__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.advertising-carousel__control {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--editorial-blue);
+  background: transparent;
+  border: 1px solid #dbe2ec;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.advertising-carousel__control:hover,
+.advertising-carousel__control:focus-visible {
+  color: white;
+  background: var(--editorial-blue);
+  outline-offset: 2px;
+}
+.advertising-carousel__dots { display: flex; align-items: center; gap: 7px; }
+.advertising-carousel__dot {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border: 0;
+  border-radius: 100%;
+  background: #b5bfd2;
+  padding: 0;
+  cursor: pointer;
+}
+.advertising-carousel__dot.is-active {
+  width: 19px;
+  border-radius: 12px;
+  background: #e11d32;
+}
+.advertising-carousel__dot:focus-visible { outline: 2px solid #001b63; outline-offset: 3px; }
+.advertising-carousel__pause { margin-left: 7px; }
+.home-category-stack { display: flow-root; }
+.home-duo { margin-top: 0; }
+#fil-info { scroll-margin-top: 110px; }
+
+@media (max-width: 760px) {
+  .hero-rail .news-rail-list { max-height: 195px; }
+  .advertising-carousel { margin: 22px 0 26px; }
+  .advertising-carousel__creative { aspect-ratio: 4 / 1; min-height: 100px; max-height: 150px; }
+  .advertising-carousel__controls { gap: 7px; }
+  .advertising-carousel__control { width: 30px; height: 30px; }
+}
+@media (max-width: 480px) {
+  .advertising-carousel__creative { aspect-ratio: 3 / 1; min-height: 101px; max-height: 128px; }
+  .advertising-carousel__placeholder strong { font-size: 17px; }
+  .advertising-carousel__heading { font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-rail .news-rail-list { scroll-behavior: auto; }
+}
