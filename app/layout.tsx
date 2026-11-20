@@ -6,11 +6,12 @@ import LiveOverlayProvider from '../components/video/LiveOverlayProvider';
 import { getCategories, getHeaderTopics } from '../lib/db/repository';
 import { getProfile, getUser } from '../lib/auth/server';
 import './globals.css';
+import './editorial.css';
 
 export const metadata: Metadata = {
-  title: 'TV Plus — L’actualité du Gabon en continu',
+  title: 'TV+ Afrique — L’actualité du Gabon en continu',
   description:
-    'Actualités, décryptages, vidéos et direct au Gabon : politique, société, économie, sport et international sur TV Plus.',
+    'Actualités, décryptages, vidéos et direct au Gabon : politique, société, économie, sport et international sur TV+ Afrique.',
 };
 
 export default async function Layout({ children }: { children: React.ReactNode }) {

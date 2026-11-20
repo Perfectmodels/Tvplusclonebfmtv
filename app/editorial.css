@@ -1,0 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&display=swap');
+
+/* TV+ Afrique — couche éditoriale, isolée des styles existants. */
+:root {
+  --editorial-font: 'Barlow', 'Inter', Arial, sans-serif;
+  --editorial-radius: 10px;
+  --editorial-ink: #071632;
+  --editorial-blue: #082772;
+  --editorial-border: #dbe2ef;
+}
+body { color: var(--editorial-ink); }
+h1, h2, h3, .page-title, .section-head h2, .section-head h3,
+.card-hero-title, .card-grid-title, .card-rail-title, .media-title,
+.news-rail-head, .news-rail-title, .nav-links a, .menu-toggle {
+  font-family: var(--editorial-font);
+}
+.site-header {
+  box-shadow: 0 3px 20px rgba(0, 15, 50, .10);
+}
+.header-top { background: linear-gradient(110deg, #00144e 0%, #082778 100%); }
+.nav-primary { background: #061b57; }
+.header-top-inner { min-height: 72px; }
+.brand { padding-left: 18px; }
+.brand img { max-width: 104px; height: 56px; }
+.header-text-link, .nav-links a { transition: color .18s ease, background .18s ease; }
+.nav-links a:hover, .nav-links a:focus-visible {
+  background: rgba(255, 255, 255, .11); text-decoration: none;
+}
+.direct-btn { border-radius: 5px; font-family: var(--editorial-font); letter-spacing: .025em; }
+.header-search-btn { border-radius: 6px; }
+.mega-menu { box-shadow: 0 22px 38px rgba(0, 15, 50, .18); }
+.mega-col a { border-radius: 4px; }
+main.shell { padding-bottom: 48px; }
+.hero-layout { gap: 28px; padding-top: 28px; }
+.card-hero {
+  min-height: 490px; border-radius: var(--editorial-radius);
+  isolation: isolate; background: #061a4c;
+}
+.card-hero-image { object-position: center 35%; }
+.card-hero-shade {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 6, 27, 0) 0%,
+    rgba(0, 6, 27, .04) 25%,
+    rgba(0, 6, 27, .48) 59%,
+    rgba(0, 6, 27, .95) 100%
+  );
+}
+.card-hero-content { padding: 34px 38px; gap: 12px; }
+.card-hero-title {
+  font-size: clamp(26px, 2.5vw, 39px); font-weight: 800;
+  max-width: 26ch; line-height: 1.09; letter-spacing: -.03em;
+}
+.card-rail { grid-template-columns: minmax(110px, 132px) minmax(0, 1fr); gap: 18px; padding-block: 16px; }
+.card-rail-title { font-size: 18px; font-weight: 750; line-height: 1.2; }
+.card-rail-thumb { height: 92px; border-radius: 5px; }
+.selection-grid { gap: 28px 22px; }
+.card-grid-image, .card-grid { border-radius: 7px; overflow: hidden; }
+.card-grid-image { background: #eef1f8; }
+.card-grid-title { font-size: 19px; line-height: 1.23; font-weight: 750; }
+.card-grid-body { padding-top: 3px; }
+.card-time, .card-hero-time { font-size: 12px; }
+.section-head { margin-bottom: 20px; }
+.section-head h2 { font-size: clamp(22px, 2.3vw, 30px); font-weight: 800; letter-spacing: -.025em; }
+.category-block { padding-top: 26px; }
+.rubrique-chips a { border-radius: 5px; }
+.rubrique-chips a:hover { background: #082772; }
+.page-title { font-size: clamp(30px, 3.4vw, 48px); line-height: 1.06; letter-spacing: -.035em; }
+.page-intro { max-width: 76ch; }
+.article-main > h1 { font-family: var(--editorial-font); font-size: clamp(32px, 3.3vw, 52px); line-height: 1.08; }
+.article-figure img { border-radius: 6px; }
+.article-body { line-height: 1.75; }
+.editorial-section { margin-top: 52px; }
+.editorial-page-intro { padding: 20px 0 25px; }
+.editorial-page-intro .page-title { margin-top: 12px; }
+.editorial-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  color: #be1e2d; font-family: var(--editorial-font);
+  font-size: 13px; font-weight: 800; letter-spacing: .1em;
+}
+.direct-schedule-intro { margin-top: 0; opacity: .78; font-size: 14px; }
+.direct-schedule .direct-cta { margin-top: 24px; }
+.direct-schedule .photo-credit { margin-top: 18px; }
+.program-replay-cta { display: flex; justify-content: flex-end; margin: 22px 0 28px; }
+.program-detail-meta {
+  display: flex; flex-wrap: wrap; gap: 18px;
+  font-size: 14px; color: #52617a; margin-top: 16px;
+}
+.program-detail-meta span + span { border-left: 1px solid #d1d7e5; padding-left: 18px; }
+.media-card { border-radius: 7px; overflow: hidden; }
+.media-image { background: #ebeff7; }
+.media-image img, .card-grid-image img { transition: transform .3s ease; }
+a.media-card:hover .media-image img { transform: scale(1.035); }
+
+/* Le direct ne doit pas simuler l'antenne avec une photo de stock. */
+button.direct-player, button.direct-player-large {
+  cursor: pointer; color: #fff; border: 0; text-align: left;
+  width: 100%; font: inherit; padding: 0;
+}
+.direct-player { position: relative; overflow: hidden; }
+.direct-player-placeholder {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  width: 100%; height: 100%; pointer-events: none;
+}
+.tvplus-video-placeholder {
+  position: relative; isolation: isolate; overflow: hidden;
+  background: linear-gradient(140deg, #00103c 3%, #08338b 56%, #071947 100%);
+}
+.tvplus-video-placeholder::before {
+  position: absolute; content: ''; inset: -50%;
+  background: repeating-radial-gradient(circle at 50% 50%,
+    transparent 0, transparent 43px, rgba(255,255,255,.055) 44px, transparent 45px);
+  pointer-events: none; z-index: -1;
+}
+.tvplus-video-placeholder > img, .tvplus-video-placeholder > .direct-player-placeholder img {
+  position: relative; width: min(42%, 260px); max-height: 44%;
+  object-fit: contain; filter: drop-shadow(0 10px 24px rgba(0,0,0,.3));
+}
+.direct-player-placeholder img { width: min(45%, 220px); }
+.direct-player-badge { z-index: 2; }
+.direct-player .play-button, .direct-player-large .play-button {
+  z-index: 3; box-shadow: 0 10px 30px rgba(0,0,0,.30);
+}
+.video-placeholder-caption {
+  position: absolute; z-index: 2; left: 24px; bottom: 18px;
+  font-family: var(--editorial-font); font-size: 18px; font-weight: 800;
+}
+.direct-player-large.tvplus-video-placeholder {
+  display: flex; align-items: center; justify-content: center; min-height: 360px;
+}
+.direct-player-large.tvplus-video-placeholder > img { width: min(40%, 240px); }
+.direct-strip-info h3 { font-size: 24px; }
+.direct-cta { font-family: var(--editorial-font); font-weight: 750; }
+.seo-social-card img.seo-social-image { object-fit: cover; display: block; }
+
+/* Petits écrans : des actions réelles, sans éléments qui débordent. */
+@media (max-width: 1240px) {
+  .hero-layout { gap: 20px; }
+  .card-hero { min-height: 425px; }
+  .card-rail { grid-template-columns: 108px minmax(0, 1fr); gap: 13px; }
+  .card-rail-title { font-size: 16px; }
+}
+@media (max-width: 1000px) {
+  .hero-layout { grid-template-columns: 1fr; }
+  .hero-rail { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0 20px; }
+  .selection-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .card-hero { min-height: 420px; }
+}
+@media (max-width: 760px) {
+  .site-header { box-shadow: 0 3px 12px rgba(0, 15, 50, .12); }
+  .header-top-inner { min-height: 60px; padding-block: 7px; }
+  .brand { padding-left: 10px; }
+  .brand img { height: 42px; max-width: 76px; }
+  .header-actions { gap: 3px; }
+  .header-search-btn { width: 36px; }
+  .nav-primary-inner { height: 43px; }
+  .nav-links { width: 100%; gap: 3px; }
+  .nav-links a { font-size: 13px; padding: 0 11px; }
+  .hero-layout { padding-top: 14px; gap: 14px; }
+  .hero-rail { grid-template-columns: 1fr; }
+  .card-hero { min-height: 350px; border-radius: 7px; }
+  .card-hero-content { padding: 24px; }
+  .card-hero-title { font-size: clamp(24px, 6.2vw, 31px); max-width: 23ch; }
+  .card-rail { grid-template-columns: 110px minmax(0,1fr); }
+  .selection-grid { grid-template-columns: 1fr; gap: 24px; }
+  .category-block { padding-top: 14px; }
+  .editorial-section { margin-top: 34px; }
+  .direct-player-large.tvplus-video-placeholder { min-height: 225px; }
+  .direct-player-large.tvplus-video-placeholder > img { width: 38%; }
+  .video-placeholder-caption { left: 14px; bottom: 12px; font-size: 14px; }
+  .direct-schedule { padding: 20px; }
+  .program-detail-meta { display: grid; gap: 8px; }
+  .program-detail-meta span + span { border: 0; padding-left: 0; }
+  .program-replay-cta { justify-content: flex-start; }
+  .card-grid-title { font-size: 19px; }
+}
+@media (max-width: 480px) {
+  .hero-layout { padding-top: 10px; }
+  .header-top-inner { gap: 2px; }
+  .brand { padding-left: 8px; }
+  .direct-btn { height: 31px; padding-inline: 10px; font-size: 12px; }
+  .card-hero { min-height: 325px; }
+  .card-hero-content { padding: 18px 18px 22px; }
+  .card-hero-title { font-size: 25px; }
+  .direct-strip-info { padding: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-hero-image, .card-grid-image img, .media-image img { transition: none; }
+}

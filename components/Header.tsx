@@ -109,7 +109,7 @@ export default function Header({
           <div className="nav-links">
             <Link href="/rubrique/politique" className="nav-special">
               <GabonMark />
-              Présidence
+              Gabon
             </Link>
             {categories.map((category) => (
               <Link key={category} href={categoryHref(category)}>
