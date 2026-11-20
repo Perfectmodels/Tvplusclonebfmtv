@@ -5,23 +5,24 @@ import Breadcrumb from '../../../components/Breadcrumb';
 import SectionHeading from '../../../components/SectionHeading';
 import StoryCard from '../../../components/StoryCard';
 import { categories as staticCategories } from '../../../lib/data';
+import { categorySlug } from '../../../lib/categories';
 import { getCategories, listArticles } from '../../../lib/db/repository';
 
 export const revalidate = 60;
 
 export async function generateStaticParams() {
   const { data: categories } = await getCategories();
-  return (categories.length ? categories : staticCategories).map((c) => ({ slug: c.toLowerCase() }));
+  return (categories.length ? categories : staticCategories).map((c) => ({ slug: categorySlug(c) }));
 }
 
 export default async function Category({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const title = decodeURIComponent(slug);
+  const normalizedSlug = categorySlug(decodeURIComponent(slug));
   const { data: categories } = await getCategories();
-  if (!(categories.length ? categories : staticCategories).some((c) => c.toLowerCase() === title)) notFound();
+  const label = (categories.length ? categories : staticCategories).find((c) => categorySlug(c) === normalizedSlug);
+  if (!label) notFound();
 
-  const label = title.charAt(0).toUpperCase() + title.slice(1);
-  const { items } = await listArticles({ category: title, pageSize: 30 });
+  const { items } = await listArticles({ category: normalizedSlug, pageSize: 30 });
 
   return (
     <main className="shell category-page">
@@ -42,7 +43,7 @@ export default async function Category({ params }: { params: Promise<{ slug: str
           </div>
           <SectionHeading title={'Toutes les actualités ' + label.toLowerCase()} moreHref="/news-24-7" moreLabel="Le fil info" />
           <div className="selection-grid">
-            {items.map((story) => <StoryCard key={story.slug} story={story} />)}
+            {items.slice(5).map((story) => <StoryCard key={story.slug} story={story} />)}
           </div>
         </>
       ) : (

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { categorySlug } from '../lib/categories';
 
 export default function CategoryChips({
   items,
@@ -17,8 +18,8 @@ export default function CategoryChips({
       {items.map((item) => (
         <Link
           key={item}
-          href={basePath + '/' + encodeURIComponent(item.toLowerCase())}
-          className={active?.toLowerCase() === item.toLowerCase() ? 'is-active' : ''}
+          href={basePath + '/' + encodeURIComponent(categorySlug(item))}
+          className={(active ? categorySlug(active) === categorySlug(item) : false) ? 'is-active' : ''}
         >
           {item}
         </Link>

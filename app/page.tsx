@@ -10,6 +10,7 @@ import SectionHeading from '../components/SectionHeading';
 import StoryCard from '../components/StoryCard';
 import { listArticles, getFilActu, getCategories } from '../lib/db/repository';
 import { articlePath } from '../lib/articles/urls';
+import { categoryHref, categorySlug } from '../lib/categories';
 import { getNewsFeed } from '../lib/rss/news';
 
 export const revalidate = 60;
@@ -27,12 +28,17 @@ export default async function Home({
     getCategories(),
   ]);
 
-  const hero = filtered[0];
-  const rail = filtered.slice(1, 4);
-  const selection = filtered.slice(5, 9);
-  const blocks = ['Politique', 'Économie', 'Société']
-    .map((name) => ({ name, items: filtered.filter((s) => s.category === name).slice(0, 4) }))
-    .filter((block) => block.items.length > 0);
+  const hero = filtered.find((story) => story.featured) ?? filtered[0];
+  const remainder = filtered.filter((story) => story.slug !== hero?.slug);
+  const rail = remainder.slice(0, 3);
+  const selection = remainder.slice(3, 11);
+  const blocks = categories
+    .map((name) => ({
+      name,
+      items: filtered.filter((story) => categorySlug(story.category) === categorySlug(name)).slice(0, 4),
+    }))
+    .filter((block) => block.items.length > 0)
+    .slice(0, 6);
 
   return (
     <>
@@ -98,7 +104,7 @@ export default async function Home({
                 <SectionHeading
                   id={'cat-' + block.name}
                   title={block.name}
-                  moreHref={'/rubrique/' + encodeURIComponent(block.name.toLowerCase())}
+                  moreHref={categoryHref(block.name)}
                   moreLabel={'Toute l’actu ' + block.name}
                 />
                 <div className="selection-grid">
@@ -111,7 +117,7 @@ export default async function Home({
               <SectionHeading title="Toutes les rubriques" />
               <div className="rubrique-chips">
                 {categories.map((category) => (
-                  <Link key={category} href={'/rubrique/' + encodeURIComponent(category.toLowerCase())}>
+                  <Link key={category} href={categoryHref(category)}>
                     {category}
                   </Link>
                 ))}
