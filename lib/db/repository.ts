@@ -1,4 +1,5 @@
 import 'server-only';
+import * as v2 from './v2-public';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   categories as staticCategories,
@@ -77,6 +78,7 @@ export async function listArticles({
   page?: number;
   pageSize?: number;
 } = {}): Promise<Paginated<Story>> {
+  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, search, page, pageSize });
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -169,6 +171,7 @@ function toPublicArticle(a: ArticleRow): PublicArticle {
 export async function getArticleBySlug(
   slug: string,
 ): Promise<{ item: PublicArticle | null; source: DataSource; error?: string }> {
+  if (v2.usesTvplusV2()) return v2.getV2ArticleBySlug(slug);
   const result = await fromSupabase<ArticleRow | null>(
     (db) => db.from('articles').select('*').eq('slug', slug).eq('status', 'published').is('deleted_at', null).maybeSingle(),
     null,
@@ -184,6 +187,7 @@ export async function getArticleBySlug(
 export async function getArticleByShortId(
   shortId: string,
 ): Promise<{ item: PublicArticle | null; source: DataSource; error?: string }> {
+  if (v2.usesTvplusV2()) return { item: null, source: 'supabase' as const };
   const result = await fromSupabase<ArticleRow | null>(
     (db) => db.from('articles').select('*').eq('short_id', shortId).eq('status', 'published').is('deleted_at', null).maybeSingle(),
     null,
@@ -195,6 +199,7 @@ export async function getArticleByShortId(
 }
 
 export async function getCategories(): Promise<Wrapped<string[]>> {
+  if (v2.usesTvplusV2()) return v2.getV2Categories();
   const result = await fromSupabase<CategoryRow[]>(
     (db) => db.from('categories').select('name').order('name'),
     [],
@@ -206,6 +211,7 @@ export async function getCategories(): Promise<Wrapped<string[]>> {
 }
 
 export async function getFilActu(limit = 20): Promise<Wrapped<typeof staticFilActu>> {
+  if (v2.usesTvplusV2()) return v2.getV2FilActu(limit);
   const result = await fromSupabase<FilActuRow[]>(
     (db) => db.from('fil_actu').select('*').order('position').limit(limit),
     [],
@@ -228,6 +234,7 @@ export async function getFilActu(limit = 20): Promise<Wrapped<typeof staticFilAc
 }
 
 export async function getVideos(): Promise<Wrapped<typeof staticVideos>> {
+  if (v2.usesTvplusV2()) return { data: [], source: 'supabase' as const };
   const result = await fromSupabase<VideoRow[]>(
     (db) => db.from('videos').select('*').order('published_at', { ascending: false }),
     [],
@@ -251,6 +258,7 @@ export async function getVideos(): Promise<Wrapped<typeof staticVideos>> {
 }
 
 export async function getPrograms(): Promise<Wrapped<typeof staticPrograms>> {
+  if (v2.usesTvplusV2()) return v2.getV2Programs();
   const result = await fromSupabase<ProgramRow[]>(
     (db) => db.from('programs').select('*').order('slot'),
     [],
@@ -274,6 +282,7 @@ export async function getPrograms(): Promise<Wrapped<typeof staticPrograms>> {
 }
 
 export async function getPodcasts(): Promise<Wrapped<typeof staticPodcasts>> {
+  if (v2.usesTvplusV2()) return { data: [], source: 'supabase' as const };
   const result = await fromSupabase<PodcastRow[]>(
     (db) => db.from('podcasts').select('*').order('published_at', { ascending: false }),
     [],
@@ -297,6 +306,7 @@ export async function getPodcasts(): Promise<Wrapped<typeof staticPodcasts>> {
 }
 
 export async function getChannels(): Promise<Wrapped<typeof staticChannels>> {
+  if (v2.usesTvplusV2()) return { data: [], source: 'supabase' as const };
   const result = await fromSupabase<ChannelRow[]>(
     (db) => db.from('channels').select('*').order('name'),
     [],
@@ -316,6 +326,7 @@ export async function getChannels(): Promise<Wrapped<typeof staticChannels>> {
 }
 
 export async function getTestimonials(): Promise<Wrapped<typeof staticWitnesses>> {
+  if (v2.usesTvplusV2()) return { data: [], source: 'supabase' as const };
   const result = await fromSupabase<TestimonialRow[]>(
     (db) => db.from('testimonials').select('*').eq('published', true).order('created_at', { ascending: false }),
     [],
@@ -340,6 +351,7 @@ export async function getTestimonials(): Promise<Wrapped<typeof staticWitnesses>
  * « alerte info » ou « à la une ». Aucun sujet saisi manuellement.
  */
 export async function getHeaderTopics(): Promise<Wrapped<TopicItem[]>> {
+  if (v2.usesTvplusV2()) return v2.getV2Topics();
   const result = await fromSupabase<{ title: string; short_id: string | null; slug: string }[]>(
     (db) => db
       .from('articles')
@@ -364,6 +376,7 @@ export async function getHeaderTopics(): Promise<Wrapped<TopicItem[]>> {
 }
 
 export async function getNewsletterFormats(): Promise<Wrapped<typeof staticNewsletters>> {
+  if (v2.usesTvplusV2()) return { data: [], source: 'supabase' as const };
   const result = await fromSupabase<NewsletterFormatRow[]>(
     (db) => db.from('newsletter_formats').select('id, name, frequency, description').order('id'),
     [],
@@ -378,6 +391,7 @@ export async function getNewsletterFormats(): Promise<Wrapped<typeof staticNewsl
 }
 
 export async function getPracticalServices(): Promise<Wrapped<typeof staticPracticalServices>> {
+  if (v2.usesTvplusV2()) return { data: [], source: 'supabase' as const };
   const result = await fromSupabase<PracticalServiceRow[]>(
     (db) => db.from('practical_services').select('id, name, description, href, icon').order('id'),
     [],
@@ -392,6 +406,7 @@ export async function getPracticalServices(): Promise<Wrapped<typeof staticPract
 }
 
 export async function getTvSchedule(): Promise<Wrapped<typeof staticTvSchedule>> {
+  if (v2.usesTvplusV2()) return v2.getV2Schedule();
   const result = await fromSupabase<TvScheduleRow[]>(
     (db) => db.from('tv_schedule').select('id, time_label, title, category, is_live').order('time_label'),
     [],
@@ -406,6 +421,7 @@ export async function getTvSchedule(): Promise<Wrapped<typeof staticTvSchedule>>
 }
 
 export async function getSiteTopics(): Promise<Wrapped<TopicItem[]>> {
+  if (v2.usesTvplusV2()) return v2.getV2Topics();
   const result = await fromSupabase<TopicRow[]>(
     (db) => db.from('site_topics').select('id, label, link').order('id'),
     [],
@@ -421,6 +437,7 @@ export async function getSiteTopics(): Promise<Wrapped<TopicItem[]>> {
 }
 
 export async function searchAll(query: string) {
+  if (v2.usesTvplusV2()) return v2.searchV2(query);
   const q = query.toLowerCase();
   const term = `%${q}%`;
   let items: { title: string; category: string; description: string; href: string; type: string }[] = [];
@@ -471,6 +488,7 @@ export async function searchAll(query: string) {
 }
 
 export async function subscribeNewsletter(email: string, newsletter: string) {
+  if (v2.usesTvplusV2()) throw new Error('La newsletter du clone n’est pas encore adaptée à la base TV+ V2.');
   const db = getServerSupabase();
   const { data, error } = await db
     .from('newsletter_subscriptions')
@@ -487,6 +505,7 @@ export async function createContact(payload: {
   subject: string;
   message: string;
 }) {
+  if (v2.usesTvplusV2()) throw new Error('Le formulaire de contact nécessite une migration dédiée, sans toucher aux tables TV+ V2.');
   const db = getServerSupabase();
   const { data, error } = await db.from('contacts').insert(payload).select('id, created_at').single();
   if (error) throw new Error(error.message);

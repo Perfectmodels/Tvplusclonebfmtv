@@ -23,6 +23,9 @@ export function getServerEnv() {
 }
 
 export function isSupabaseConfigured() {
+  if (process.env.SUPABASE_SCHEMA_MODE === 'tvplus-v2') {
+    return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY);
+  }
   return Boolean(
     process.env[SERVER_KEYS.url] &&
       process.env[SERVER_KEYS.publishableKey] &&

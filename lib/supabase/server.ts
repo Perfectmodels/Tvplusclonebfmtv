@@ -23,7 +23,9 @@ export const getAdminSupabase = getServerSupabase;
 
 /** Client avec la clé publique : respecte les politiques RLS. */
 export function getPublicServerSupabase(): SupabaseClient {
-  const { url, publishableKey } = getServerEnv();
+  const url = process.env.SUPABASE_URL;
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !publishableKey) throw new Error('Connexion publique Supabase non configurée.');
   return createClient(url, publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
