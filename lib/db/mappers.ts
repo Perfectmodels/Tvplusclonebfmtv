@@ -29,6 +29,7 @@ export function mapArticle(row: ArticleRow): Story {
     time: relativeTime(row.published_at ?? row.created_at),
     sourceUrl: row.source_url ?? undefined,
     publishedAt: row.published_at ?? undefined,
+    updatedAt: row.updated_at ?? undefined,
     wordCount: row.word_count,
     readingTime: row.reading_time,
     kind: row.is_alert ? 'alert' : (row.kind ?? undefined),

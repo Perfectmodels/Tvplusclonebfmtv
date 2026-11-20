@@ -2,10 +2,7 @@ import AlertBar from '../../components/AlertBar';
 import Breadcrumb from '../../components/Breadcrumb';
 import FilActuFeed from '../../components/FilActuFeed';
 import { getFilActu, getCategories, listArticles } from '../../lib/db/repository';
-import { articlePath } from '../../lib/articles/urls';
 import { getNewsFeed } from '../../lib/rss/news';
-
-const extraTimes = ['13h48', '13h20', '12h55', '12h12', '11h40', '11h05', '10h32', '09h58', '09h20', '08h47'];
 
 export const revalidate = 60;
 
@@ -17,8 +14,8 @@ export default async function FilInfoPage() {
   const extra = allArticles
     .filter((s) => !slugs.has(s.slug))
     .slice(0, 10)
-    .map((s, i) => ({
-      time: extraTimes[i],
+    .map((s) => ({
+      time: s.time,
       category: s.category,
       title: s.title,
       summary: s.summary,
@@ -32,7 +29,7 @@ export default async function FilInfoPage() {
       <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Fil info' }]} />
       <AlertBar
         title={feed[0]?.title ?? 'L’actualité gabonaise en continu'}
-        href={'/article/' + (feed[0]?.slug ?? '')}
+        href={feed[0] ? (feed[0].shortId ? `/a/${feed[0].shortId}` : `/article/${feed[0].slug}`) : '/news-24-7'}
         time={feed[0]?.time}
       />
       <h1 className="page-title">Fil info — News 24/7</h1>

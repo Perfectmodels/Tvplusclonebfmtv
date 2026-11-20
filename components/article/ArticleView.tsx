@@ -4,6 +4,7 @@ import ShareButtons from '../ShareButtons';
 import StoryCard from '../StoryCard';
 import type { PublicArticle } from '../../lib/db/repository';
 import type { Story } from '../../lib/data';
+import { categoryHref } from '../../lib/categories';
 
 export default function ArticleView({
   story,
@@ -14,7 +15,7 @@ export default function ArticleView({
   related: Story[];
   shortUrl: string;
 }) {
-  const categoryPath = '/rubrique/' + encodeURIComponent(story.category.toLowerCase());
+  const categoryPath = categoryHref(story.category);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -22,8 +23,8 @@ export default function ArticleView({
     headline: story.title,
     description: story.chapter || story.summary,
     image: story.image ? [story.image] : [],
-    datePublished: story.publishedAt ?? new Date().toISOString(),
-    dateModified: new Date().toISOString(),
+    datePublished: story.publishedAt ?? undefined,
+    dateModified: story.updatedAt ?? story.publishedAt ?? undefined,
     author: { '@type': 'Person', name: story.author || 'La rédaction' },
     publisher: { '@type': 'Organization', name: 'TV Plus' },
     mainEntityOfPage: shortUrl,
@@ -46,7 +47,7 @@ export default function ArticleView({
             {story.chapter && <p className="article-standfirst">{story.chapter}</p>}
             {!story.chapter && <p className="article-standfirst">{story.summary}</p>}
 
-            <figure className="article-figure">
+            {story.image && <figure className="article-figure">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={story.image} alt={story.coverAlt || story.title} />
               {(story.coverCaption || story.coverCredit) && (
@@ -54,7 +55,7 @@ export default function ArticleView({
                   {story.coverCaption} {story.coverCredit && `· ${story.coverCredit}`}
                 </figcaption>
               )}
-            </figure>
+            </figure>}
 
             <div className="article-tools">
               <span>{story.author || 'La rédaction'} · {story.time} · Lecture {story.readingTime ?? 3} min</span>

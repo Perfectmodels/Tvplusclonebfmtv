@@ -20,6 +20,7 @@ export type Story = {
   featured?: boolean;
   sourceUrl?: string;
   publishedAt?: string;
+  updatedAt?: string;
   wordCount?: number;
   readingTime?: number;
 };
