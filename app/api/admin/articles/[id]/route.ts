@@ -42,8 +42,9 @@ export const PATCH = handleRoute(async (request: NextRequest, { params }: Contex
   }
   if (payload.status === 'published') update.published_at = new Date().toISOString();
 
-  const { data, error } = await db.from('articles').update(update).eq('id', id).select('*').maybeSingle();
+  const { data, error } = await db.from('articles').update(update).eq('id', id).eq('version', current.version).select('*').maybeSingle();
   if (error) throw new Error(error.message);
+  if (!data) throw new ApiError('Conflit : article modifié entre-temps.', 409, 'CONFLICT');
 
   await db.from('article_revisions').insert({
     article_id: id,

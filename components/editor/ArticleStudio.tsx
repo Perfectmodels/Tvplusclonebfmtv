@@ -57,6 +57,7 @@ export default function ArticleStudio({ id }: { id?: string }) {
   const [keywords, setKeywords] = useState<string[]>([]);
   const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
   const [version, setVersion] = useState(1);
+  const versionRef = useRef(1);
   const [shortId, setShortId] = useState<string>('');
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -95,7 +96,8 @@ export default function ArticleStudio({ id }: { id?: string }) {
       setTags(a.tags ?? []);
       setKeywords(a.keywords ?? []);
       setVersion(a.version ?? 1);
-      setShortId(a.shortId ?? '');
+      versionRef.current = a.version ?? 1;
+      setShortId(a.short_id ?? a.shortId ?? '');
     } catch (err) {
       error(err instanceof Error ? err.message : 'Erreur de chargement.');
     } finally {
@@ -152,7 +154,6 @@ export default function ArticleStudio({ id }: { id?: string }) {
       const body = await response.json();
       if (response.status === 409) {
         error('Conflit : une autre personne a modifié cet article. Rechargez la page.');
-        setDirty(false);
         return false;
       }
       if (!response.ok) throw new Error(body?.error?.message ?? 'Enregistrement impossible.');
@@ -162,7 +163,9 @@ export default function ArticleStudio({ id }: { id?: string }) {
       if (!id && body.data?.id) {
         router.replace(`/admin/articles/${body.data.id}/edit`);
       } else {
-        setVersion(body.data?.version ?? version);
+        const savedVersion = body.data?.version ?? version;
+        setVersion(savedVersion);
+        versionRef.current = savedVersion;
       }
       setSavedAt(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
       setDirty(false);
@@ -201,13 +204,14 @@ export default function ArticleStudio({ id }: { id?: string }) {
         body: JSON.stringify({
           action,
           scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : undefined,
-          expected_version: version,
+          expected_version: versionRef.current,
         }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body?.error?.message ?? 'Action impossible.');
       success('Statut mis à jour : ' + (STATUS_LABELS[body.data.status] ?? body.data.status));
-      setVersion(body.data.version ?? version);
+      setVersion(body.data.version ?? versionRef.current);
+      versionRef.current = body.data.version ?? versionRef.current;
       setForm((f) => ({ ...f, status: body.data.status }));
     } catch (err) {
       error(err instanceof Error ? err.message : 'Erreur.');

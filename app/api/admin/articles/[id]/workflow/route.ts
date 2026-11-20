@@ -53,8 +53,9 @@ export const POST = handleRoute(async (request: NextRequest, { params }: Context
 
   update.updated_by = actor.user.id;
 
-  const { data, error } = await db.from('articles').update(update).eq('id', id).select('id, status, version').maybeSingle();
+  const { data, error } = await db.from('articles').update(update).eq('id', id).eq('version', current.version).select('id, status, version').maybeSingle();
   if (error) throw new Error(error.message);
+  if (!data) throw new ApiError('Conflit : article modifié entre-temps.', 409, 'CONFLICT');
   await logAction(actor.user, 'article.workflow', 'articles', id, {
     action: payload.action, from: current.status, to: transition.status,
   });
