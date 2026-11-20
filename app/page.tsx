@@ -73,10 +73,7 @@ export default async function Home({
             </section>
 
             <section className="home-duo" aria-label="Direct et questions du public">
-              <LivePlayer
-                image="https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=1200&q=80&fit=crop"
-                now="TV Plus Non-stop"
-              />
+              <LivePlayer />
               <QuestionSection />
             </section>
 

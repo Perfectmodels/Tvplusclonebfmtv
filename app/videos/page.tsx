@@ -14,7 +14,7 @@ export default async function VideosPage() {
     image: v.image,
     meta: v.duration,
     description: v.description,
-    href: v.href ?? '/direct',
+    href: v.href,
   }));
 
   return (
@@ -26,10 +26,8 @@ export default async function VideosPage() {
       </p>
       <LivePlayer
         compact
-        image="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=80&fit=crop"
-        title="Les vidéos du direct"
-        description="Revivez les grands moments de l’antenne et les interventions de nos journalistes."
-        now="TV Plus Non-stop"
+        title="L'antenne TV+ Afrique"
+        description="Retrouvez les reportages, éditions et émissions depuis le direct de TV+ Afrique."
       />
       <div className="section-head has-rule"><h2>Toutes les vidéos</h2></div>
       <MediaBrowser items={items} variant="video" />

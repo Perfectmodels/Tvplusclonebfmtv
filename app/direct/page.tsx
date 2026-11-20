@@ -1,79 +1,59 @@
 import Link from 'next/link';
 import { ChevronRight, Play } from 'lucide-react';
 import Breadcrumb from '../../components/Breadcrumb';
-import { getChannels, listArticles } from '../../lib/db/repository';
-import { articlePath } from '../../lib/articles/urls';
+import StoryCard from '../../components/StoryCard';
+import TvPlusLogo from '../../components/TvPlusLogo';
+import { getTvSchedule, listArticles } from '../../lib/db/repository';
 
 export const revalidate = 60;
 
 export default async function DirectPage() {
-  const [{ data: channels }, { items: stories }] = await Promise.all([
-    getChannels(),
+  const [{ data: schedule }, { items: stories }] = await Promise.all([
+    getTvSchedule(),
     listArticles({ pageSize: 4 }),
   ]);
 
   return (
     <main className="shell direct-page">
       <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Le direct' }]} />
-      <h1 className="page-title">Le direct</h1>
-      <p className="page-intro">
-        Suivez l’antenne TV Plus en continu et retrouvez tous nos canaux de diffusion.
-      </p>
+      <div className="editorial-page-intro">
+        <span className="editorial-eyebrow"><span className="direct-dot" /> TV+ AFRIQUE · EN DIRECT</span>
+        <h1 className="page-title">Regardez TV+ Afrique</h1>
+        <p className="page-intro">L'information, les émissions et les grands rendez-vous de TV+ Afrique, sur tous vos écrans.</p>
+      </div>
 
       <div className="direct-main-player">
-        <div className="direct-player-large" data-open-live>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className="direct-player-image"
-            src="https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=1600&q=85&fit=crop"
-            alt=""
-          />
-          <span className="direct-player-badge"><span /> Direct</span>
+        <button type="button" className="direct-player-large tvplus-video-placeholder" data-open-live aria-label="Ouvrir le lecteur du direct TV Plus Afrique">
+          <TvPlusLogo />
+          <span className="direct-player-badge"><span /> Le direct</span>
           <span className="play-button"><Play size={32} fill="currentColor" /></span>
-        </div>
+          <span className="video-placeholder-caption">Regarder le direct TV+</span>
+        </button>
         <div className="direct-schedule">
-          <h2>En ce moment à l’antenne</h2>
-          <ul>
-            <li><strong>06h00 – 09h00</strong><span>Première édition</span></li>
-            <li><strong>09h00 – 12h00</strong><span>Le fil info</span></li>
-            <li><strong>12h00 – 14h00</strong><span>Édition de la mi-journée</span></li>
-            <li className="is-live"><strong>14h00 – 18h00</strong><span>TV Plus Non-stop</span></li>
-            <li><strong>18h00 – 20h00</strong><span>Le décryptage</span></li>
-          </ul>
-          <p className="photo-credit">Grille indicative · Programmation susceptible de changer.</p>
+          <h2>Programme TV+</h2>
+          <p className="direct-schedule-intro">Les prochains rendez-vous de l'antenne.</p>
+          {schedule.length ? (
+            <ul>
+              {schedule.slice(0, 5).map((slot) => (
+                <li key={slot.time + slot.title}><strong>{slot.time}</strong><span>{slot.title}</span></li>
+              ))}
+            </ul>
+          ) : <p className="empty-state">La grille des programmes n'est pas encore disponible.</p>}
+          <Link href="/programme-tv" className="direct-cta">
+            Consulter la grille complète <ChevronRight size={16} />
+          </Link>
+          <p className="photo-credit">Programmation susceptible d'être modifiée par la rédaction.</p>
         </div>
       </div>
 
-      <div className="section-head has-rule"><h2>Tous les directs TV Plus</h2></div>
-      <div className="direct-page-grid">
-        {channels.map((channel) => (
-          <Link href="/direct" className="channel-card" key={channel.name} data-open-live>
-            <span className="channel-card-image">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={channel.image} alt="" loading="lazy" />
-              <span className="channel-card-badge">Direct</span>
-            </span>
-            <span className="channel-card-body">
-              <strong>{channel.name}</strong>
-              <span>{channel.tagline}</span>
-            </span>
-          </Link>
-        ))}
-      </div>
-
-      <div className="section-head has-rule">
-        <h2>À suivre aussi</h2>
-        <Link href="/news-24-7" className="section-more">Le fil info <ChevronRight size={15} /></Link>
-      </div>
-      <div className="selection-grid">
-        {stories.map((story) => (
-          <Link href={articlePath(story)} className="card-list" key={story.slug}>
-            <span className="category-label">{story.category}</span>
-            <span className="card-list-title">{story.title}</span>
-            <span className="card-time">{story.time}</span>
-          </Link>
-        ))}
-      </div>
+      {stories.length > 0 && (
+        <section className="editorial-section" aria-label="L'actualité à suivre">
+          <div className="section-head has-rule"><h2>L'actualité à suivre</h2></div>
+          <div className="selection-grid">
+            {stories.map((story) => <StoryCard key={story.slug} story={story} />)}
+          </div>
+        </section>
+      )}
     </main>
   );
 }
