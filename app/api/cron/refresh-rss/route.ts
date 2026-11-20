@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
 import { refreshNewsFeed } from '../../../../lib/rss/ingest';
+import { usesTvplusV2 } from '../../../../lib/db/v2-public';
 import { handleRoute, ok } from '../../../../lib/api/response';
 import { ApiError } from '../../../../lib/api/response';
 
@@ -18,6 +19,7 @@ function authorized(request: NextRequest) {
 }
 
 async function run(request: NextRequest) {
+  if (usesTvplusV2()) throw new ApiError('Le flux RSS est géré par TV+ V2. La tâche du clone est désactivée.', 503, 'UNAVAILABLE');
   if (!authorized(request)) throw new ApiError('Accès non autorisé.', 401, 'UNAUTHORIZED');
   return ok(await refreshNewsFeed());
 }

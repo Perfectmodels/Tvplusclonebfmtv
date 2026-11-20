@@ -1,10 +1,14 @@
 import 'server-only';
+import { usesTvplusV2 } from '../db/v2-public';
 import { getUser, getProfile } from './server';
 import { ROLE_PERMISSIONS, type Permission } from './permissions';
 import { ApiError } from '../api/response';
 
 /** Garde de sécurité pour les Route Handlers : identité + permission. */
 export async function requireApiPermission(permission: Permission) {
+  // Le schéma TV+ V2 utilise d'autres permissions, rôles et colonnes.
+  // Interdire l'admin du clone jusqu'à l'adaptation des écritures.
+  if (usesTvplusV2()) throw new ApiError('Administration du clone indisponible en mode TV+ V2 lecture seule.', 503, 'UNAVAILABLE');
   const user = await getUser();
   if (!user) throw new ApiError('Authentification requise.', 401, 'UNAUTHORIZED');
   const profile = await getProfile();
