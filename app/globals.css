@@ -1844,6 +1844,33 @@ main {
 /* Questions du public, diffusion et replays                           */
 /* ------------------------------------------------------------------ */
 
+.home-duo {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-top: 34px;
+  align-items: stretch;
+}
+
+.home-duo .direct-strip {
+  margin-top: 0;
+  grid-template-columns: 1fr;
+}
+
+.home-duo .question-section {
+  margin-top: 0;
+  height: 100%;
+  padding: 18px;
+}
+
+.home-duo .question-head h2 { font-size: 18px; }
+.home-duo .question-head p { font-size: 13px; }
+.home-duo .question-icon { width: 36px; height: 36px; }
+
+@media (min-width: 1000px) {
+  .home-duo { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+}
+
 .question-section {
   margin-top: 24px;
   padding: 24px;

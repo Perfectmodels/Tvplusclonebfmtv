@@ -66,10 +66,13 @@ export default async function Home({
               </div>
             </section>
 
-            <LivePlayer
-              image="https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=1200&q=80&fit=crop"
-              now="TV Plus Non-stop"
-            />
+            <section className="home-duo" aria-label="Direct et questions du public">
+              <LivePlayer
+                image="https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=1200&q=80&fit=crop"
+                now="TV Plus Non-stop"
+              />
+              <QuestionSection />
+            </section>
 
             <section aria-labelledby="selection-title">
               <SectionHeading id="selection-title" title="Sélection de la rédaction" arrows />
@@ -89,8 +92,6 @@ export default async function Home({
             </section>
 
             <Newsletter />
-
-            <QuestionSection />
 
             {blocks.map((block) => (
               <section className="category-block" key={block.name} aria-labelledby={'cat-' + block.name}>
