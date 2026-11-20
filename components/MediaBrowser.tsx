@@ -44,25 +44,33 @@ export default function MediaBrowser({
         ))}
       </div>
 
-      <div className="media-grid">
-        {shown.map((item) => (
-          <Link href={item.href ?? '/direct'} className="media-card" key={item.id}>
-            <span className="media-image">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={item.image} alt={item.title} loading="lazy" decoding="async" />
-              <span className="media-duration">
-                {variant === 'audio' ? <Clock3 size={13} /> : null} {item.meta}
-              </span>
-              {variant === 'video' && <span className="media-play" aria-hidden="true">▶</span>}
-            </span>
-            <span className="media-body">
-              <span className="media-meta">{item.category}</span>
-              <span className="media-title">{item.title}</span>
-              <span className="media-description">{item.description}</span>
-            </span>
-          </Link>
-        ))}
-      </div>
+      {shown.length === 0 ? <p className="empty-state">Aucun contenu disponible pour ce filtre.</p> : (
+        <div className="media-grid">
+          {shown.map((item) => {
+            const content = (
+              <>
+                <span className="media-image">
+                  {item.image && <img src={item.image} alt="" loading="lazy" decoding="async" />}
+                  <span className="media-duration">
+                    {variant === 'audio' ? <Clock3 size={13} /> : null} {item.meta}
+                  </span>
+                  {variant === 'video' && item.href && <span className="media-play" aria-hidden="true">▶</span>}
+                </span>
+                <span className="media-body">
+                  <span className="media-meta">{item.category}</span>
+                  <span className="media-title">{item.title}</span>
+                  <span className="media-description">{item.description}</span>
+                </span>
+              </>
+            );
+            if (!item.href) return <article className="media-card" key={item.id}>{content}</article>;
+            if (/^https?:\/\//i.test(item.href)) {
+              return <a className="media-card" key={item.id} href={item.href} target="_blank" rel="noopener noreferrer">{content}</a>;
+            }
+            return <Link href={item.href} className="media-card" key={item.id}>{content}</Link>;
+          })}
+        </div>
+      )
 
       {visible < filtered.length && (
         <div className="load-more-wrap">

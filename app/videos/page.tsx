@@ -2,12 +2,13 @@ import Breadcrumb from '../../components/Breadcrumb';
 import LivePlayer from '../../components/LivePlayer';
 import MediaBrowser from '../../components/MediaBrowser';
 import { getVideos } from '../../lib/db/repository';
+import { isPlayableVideoUrl } from '../../lib/media/urls';
 
 export const revalidate = 60;
 
 export default async function VideosPage() {
   const { data: videos } = await getVideos();
-  const items = videos.map((v) => ({
+  const items = videos.filter((v) => isPlayableVideoUrl(v.href)).map((v) => ({
     id: v.id,
     title: v.title,
     category: v.category,

@@ -1,19 +1,20 @@
 import Breadcrumb from '../../components/Breadcrumb';
 import MediaBrowser from '../../components/MediaBrowser';
 import { getPodcasts } from '../../lib/db/repository';
+import { isPlayableAudioUrl } from '../../lib/media/urls';
 
 export const revalidate = 60;
 
 export default async function PodcastsPage() {
   const { data: podcasts } = await getPodcasts();
-  const items = podcasts.map((p) => ({
+  const items = podcasts.filter((p) => isPlayableAudioUrl(p.href)).map((p) => ({
     id: p.id,
     title: p.title,
     category: p.category,
     image: p.image,
     meta: p.duration,
     description: p.description,
-    href: p.href ?? '/direct',
+    href: p.href,
   }));
 
   return (
