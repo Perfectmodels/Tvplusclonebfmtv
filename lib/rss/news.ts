@@ -1,78 +1,125 @@
 import 'server-only';
-import { usesTvplusV2, getTvplusV2PublicClient } from '../db/v2-public';
-import { getServerSupabase } from '../supabase/server';
-import { stories } from '../data';
-import { refreshNewsFeed } from './ingest';
-import type { FeedItem } from './feeds';
+import { unstable_cache } from 'next/cache';
+import { parseFeed } from './parse';
+import sourceCatalog from '../../data/rss-sources.json';
+import type { FeedItem, NormalizedItem } from './feeds';
 
-type FeedRow = {
-  id: string;
-  title: string;
-  link: string;
-  description: string | null;
-  published_at: string | null;
-  created_at: string;
-};
+/**
+ * News 24/7 : agrégation RSS exclusivement externe.
+ * Aucune lecture ni écriture Supabase, même si le site utilise la base TV+ V2.
+ * La liste des sources est exportée du tableau de bord dans data/rss-sources.json.
+ */
+type Source = { name: string; url: string; active: boolean; priority: boolean };
 
-function toFeedItem(row: FeedRow): FeedItem {
-  const date = row.published_at ?? row.created_at;
-  const time = new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  return {
-    id: row.id,
-    title: row.title,
-    // Dépêche News 24/7 : lien vers la source, jamais une page article du site.
-    href: row.link,
-    time,
-    summary: row.description ?? '',
-  };
+const SOURCES = (sourceCatalog as Source[]).filter(
+  (source) => source.active && /^https:\/\//i.test(source.url),
+);
+const PRIMARY_SOURCES = SOURCES.filter((source) => source.priority);
+const ROTATING_SOURCES = SOURCES.filter((source) => !source.priority);
+const MAX_ROTATING = 6;
+const TIMEOUT_MS = 3500;
+const MAX_ITEMS_PER_SOURCE = 15;
+const MAX_OUTPUT = 120;
+const CACHE_SECONDS = 180;
+
+function selectSources(): Source[] {
+  // Les sources nationales prioritaires sont toujours interrogées.
+  // Les autres passent par lots, pour ne jamais interroger 41 flux simultanément.
+  if (!ROTATING_SOURCES.length) return PRIMARY_SOURCES;
+  const start = (Math.floor(Date.now() / (CACHE_SECONDS * 1000)) * MAX_ROTATING) % ROTATING_SOURCES.length;
+  const rotating = Array.from({ length: Math.min(MAX_ROTATING, ROTATING_SOURCES.length) },
+    (_, i) => ROTATING_SOURCES[(start + i) % ROTATING_SOURCES.length]);
+  return [...PRIMARY_SOURCES, ...rotating];
 }
 
-function fallbackItems(limit: number): FeedItem[] {
-  // Repli exceptionnel : uniquement si le fil RSS est indisponible.
-  return stories.slice(0, limit).map((story) => ({
-    id: 'local-' + story.slug,
-    title: story.title,
-    href: '/article/' + story.slug,
-    time: story.publishedAt
-      ? new Date(story.publishedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-      : 'À l’instant',
-    summary: story.summary,
-  }));
-}
-
-async function readRows(limit: number): Promise<FeedRow[]> {
-  const db = getServerSupabase();
-  const { data, error } = await db
-    .from('news_feed')
-    .select('id, title, link, description, published_at, created_at')
-    .order('published_at', { ascending: false })
-    .limit(limit);
-  if (error) throw new Error(error.message);
-  return (data ?? []) as FeedRow[];
-}
-
-/** Lit le fil News 24/7. Ce flux reste distinct des articles publiés sur le site. */
-export async function getNewsFeed(limit = 30): Promise<{ items: FeedItem[]; source: 'rss' | 'local' }> {
-  if (usesTvplusV2()) {
-    const { data, error } = await getTvplusV2PublicClient().from('news24_items')
-      .select('id,title,original_url,summary,published_at')
-      .eq('status', 'published').order('published_at', { ascending: false }).limit(limit);
-    if (error) throw new Error(error.message);
-    return { items: (data ?? []).map((row) => ({
-      id: row.id, title: row.title, href: row.original_url,
-      summary: row.summary ?? '',
-      time: new Date(row.published_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Libreville' }),
-    })), source: 'rss' };
-  }
+async function readSource(source: Source): Promise<NormalizedItem[]> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    let rows = await readRows(limit);
-    if (rows.length === 0) {
-      await refreshNewsFeed();
-      rows = await readRows(limit);
-    }
-    if (rows.length) return { items: rows.map(toFeedItem), source: 'rss' };
+    const response = await fetch(source.url, {
+      signal: controller.signal,
+      next: { revalidate: 600 },
+      headers: {
+        Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml',
+        'User-Agent': 'TVPlusAfrique/1.0 (RSS reader)',
+      },
+    });
+    if (!response.ok) return [];
+    const xml = await response.text();
+    // Refuser les documents hors normes plutôt que de charger un flux énorme.
+    if (xml.length > 1_500_000) return [];
+    return parseFeed(xml, source.url.includes('news.google.com')).slice(0, MAX_ITEMS_PER_SOURCE);
   } catch {
-    // repli sur les articles internes
+    // Une source en panne ne rend pas le site indisponible.
+    return [];
+  } finally {
+    clearTimeout(timeout);
   }
-  return { items: fallbackItems(limit), source: 'local' };
+}
+
+async function collectSources(): Promise<FeedItem[]> {
+  const sources = selectSources();
+  const fetched: NormalizedItem[][] = Array.from({ length: sources.length }, () => []);
+  let cursor = 0;
+
+  // Concurrence bornée : 9 téléchargements au maximum, indépendamment du trafic.
+  await Promise.all(Array.from({ length: Math.min(9, sources.length) }, async () => {
+    while (cursor < sources.length) {
+      const index = cursor++;
+      fetched[index] = await readSource(sources[index]);
+    }
+  }));
+
+  const unique = new Map<string, NormalizedItem>();
+  const now = Date.now();
+  for (const item of fetched.flat()) {
+    try {
+      const url = new URL(item.link);
+      if (!['https:', 'http:'].includes(url.protocol)) continue;
+      const date = item.publishedAt ? Date.parse(item.publishedAt) : NaN;
+      if (Number.isNaN(date) || date < now - 7 * 86_400_000 || date > now + 2 * 3_600_000) continue;
+      const key = item.title.toLowerCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+      if (key && !unique.has(key)) unique.set(key, item);
+    } catch {
+      // Lien malformé : ignorer l'entrée plutôt que de planter le rendu.
+    }
+  }
+
+  const items = Array.from(unique.values())
+    .sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
+    .slice(0, MAX_OUTPUT)
+    .map((item, index) => ({
+      id: `rss-${index}-${item.guid.slice(0, 70)}`,
+      title: item.title,
+      href: item.link,
+      time: new Date(item.publishedAt!).toLocaleTimeString('fr-FR', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Libreville',
+      }),
+      summary: item.description,
+    }));
+
+  // Si tous les flux échouent durant la revalidation, ne pas mettre en cache
+  // un résultat vide à la place d'un snapshot éventuellement encore valide.
+  if (!items.length) throw new Error('Flux RSS temporaires indisponibles.');
+  return items;
+}
+
+/** Cache partagé Next.js : les visites ne relancent pas les requêtes RSS. */
+const cachedSnapshot = unstable_cache(collectSources, ['news24-external-rss-v1'], {
+  revalidate: CACHE_SECONDS,
+  tags: ['news24-external-rss'],
+});
+
+export async function getNewsFeed(limit = 30): Promise<{
+  items: FeedItem[];
+  source: 'rss' | 'local';
+}> {
+  try {
+    const snapshot = await cachedSnapshot();
+    return { items: snapshot.slice(0, Math.max(1, Math.min(100, limit))), source: 'rss' };
+  } catch {
+    // Le fil devient vide provisoirement ; les autres blocs restent disponibles.
+    return { items: [], source: 'local' };
+  }
 }
