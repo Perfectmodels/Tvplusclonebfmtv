@@ -22,10 +22,8 @@ function GabonMark() {
 
 export default function Header({
   topics = staticTopics.map((label) => ({ label, link: topicLinks[label] ?? '/news-24-7' })),
-  userEmail = null,
-  isAdmin = false,
   categories = [],
-}: { topics?: TopicItem[]; userEmail?: string | null; isAdmin?: boolean; categories?: string[] }) {
+}: { topics?: TopicItem[]; categories?: string[] }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
@@ -65,14 +63,6 @@ export default function Header({
           </Link>
 
           <div className="header-actions">
-            {isAdmin && (
-              <Link href="/admin" className="header-text-link header-admin">
-                Admin
-              </Link>
-            )}
-            <Link href={userEmail ? '/compte' : '/connexion'} className="header-text-link header-account">
-              {userEmail ? 'Mon compte' : 'Connexion'}
-            </Link>
             <Link href="/replay-emissions" className="header-text-link">
               Replay
             </Link>
@@ -166,8 +156,6 @@ export default function Header({
             <div className="mega-col mega-services">
               <span className="mega-label">Services</span>
               {[
-                [userEmail ? 'Mon compte' : 'Connexion', userEmail ? '/compte' : '/connexion'],
-                ...(isAdmin ? [['Administration', '/admin']] : []),
                 ['Le direct', '/direct'],
                 ['Le fil info', '/news-24-7'],
                 ['Les vidéos', '/videos'],
