@@ -4,7 +4,8 @@ import { getArticleByShortId } from '../../../lib/db/repository';
 export const alt = 'TV+ Afrique — Actualités';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const revalidate = 3600;
+// La couverture change après republication : ne pas figer une image sociale pour un an.
+export const dynamic = 'force-dynamic';
 
 type Props = { params: Promise<{shortId: string}> };
 
