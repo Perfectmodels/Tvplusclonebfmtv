@@ -29,6 +29,13 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Aucune session à rafraîchir pour les visiteurs anonymes : éviter des
+  // opérations Auth inutiles à chaque requête publique.
+  const hasAuthCookie = request.cookies.getAll().some(({ name }) =>
+    /^sb-.*-auth-token(?:\\.\\d+)?$/.test(name),
+  );
+  if (!hasAuthCookie) return response;
+
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll() {

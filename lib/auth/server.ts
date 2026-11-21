@@ -1,4 +1,5 @@
 import 'server-only';
+import { usesTvplusV2 } from '../db/v2-public';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -32,10 +33,17 @@ export async function getUser() {
   return data.user ?? null;
 }
 
-export async function getProfile() {
-  const user = await getUser();
+export async function getProfile(existingUser?: Awaited<ReturnType<typeof getUser>>) {
+  const user = existingUser === undefined ? await getUser() : existingUser;
   if (!user) return null;
   const supabase = await createAuthClient();
+  if (usesTvplusV2()) {
+    const { data, error } = await supabase.from('profiles')
+      .select('id, full_name, role, is_active, created_at')
+      .eq('id', user.id).maybeSingle();
+    if (error || !data || !data.is_active) return null;
+    return { ...data, email: user.email ?? '' };
+  }
   const { data } = await supabase.from('profiles').select('id, email, full_name, role, created_at').eq('id', user.id).maybeSingle();
   return data ?? { id: user.id, email: user.email ?? '', full_name: null, role: 'reader' as const, created_at: user.created_at };
 }
@@ -49,7 +57,7 @@ export async function requireUser() {
 export async function requireAdmin() {
   const user = await requireUser();
   const profile = await getProfile();
-  if (profile?.role !== 'admin') redirect('/acces-refuse');
+  if (!profile || !['admin', 'super_admin'].includes(profile.role)) redirect('/acces-refuse');
   return { user, profile };
 }
 
