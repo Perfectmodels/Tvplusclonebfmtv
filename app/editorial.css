@@ -405,7 +405,7 @@ button.direct-player, button.direct-player-large {
 }
 
 /* Les pages d'articles utilisent aussi la couverture réelle et un dégradé à mi-photo. */
-.article-feature { position: relative; display: flex; align-items: end; isolation: isolate; min-height: 425px; overflow: hidden; background: #071c37; border-radius: 8px; margin: 4px 0 0; }
+.article-feature { position: relative; display: flex; align-items: flex-end; isolation: isolate; min-height: 425px; overflow: hidden; background: #071c37; border-radius: 8px; margin: 4px 0 0; }
 .article-feature-image { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
 .article-feature-gradient { position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #061b37 0%,rgba(6,27,55,.97) 16%, rgba(6,27,55,.85) 34%,rgba(6,27,55,.48) 52%, transparent 74%); }
 .article-feature-content { padding: 36px 32px 39px; color: #fff; width: min(77%, 690px); }
