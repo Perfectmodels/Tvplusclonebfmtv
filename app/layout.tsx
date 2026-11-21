@@ -8,6 +8,7 @@ import { getCategories, getHeaderTopics } from '../lib/db/repository';
 import { getProfile, getUser } from '../lib/auth/server';
 import './globals.css';
 import './editorial.css';
+import './replay-embeds.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tvplusv2.vercel.app'),
