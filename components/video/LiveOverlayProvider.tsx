@@ -11,6 +11,7 @@ import {
 } from 'react';
 import {
   Maximize2,
+  ExternalLink,
   Pause,
   PictureInPicture2,
   Play,
@@ -45,6 +46,9 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
   const hlsRef = useRef<{ destroy: () => void } | null>(null);
   const fallbackStreamUrl = process.env.NEXT_PUBLIC_LIVE_STREAM_URL ?? '';
   const [streamUrl, setStreamUrl] = useState(fallbackStreamUrl);
+  const [embedUrl, setEmbedUrl] = useState('');
+  const [externalUrl, setExternalUrl] = useState('');
+  const [standbyMessage, setStandbyMessage] = useState('Le direct reprendra prochainement.');
 
   // Le direct est configuré depuis l'admin, sans redéploiement ni stockage vidéo.
   // Le endpoint public est mis en cache côté CDN pendant 30 secondes.
@@ -55,10 +59,14 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
       .then((response) => response.json())
       .then((body) => {
         if (!active) return;
-        const configured = body?.data?.enabled ? body.data.hlsUrl : '';
-        setStreamUrl(configured || fallbackStreamUrl);
+        const config = body?.data;
+        const configured = config?.enabled ? config.hlsUrl : '';
+        setStreamUrl(configured || (config?.enabled ? '' : fallbackStreamUrl));
+        setEmbedUrl(config?.enabled ? config.embedUrl || '' : '');
+        setExternalUrl(config?.enabled ? config.playbackUrl || '' : '');
+        setStandbyMessage(config?.standbyMessage || 'Le direct reprendra prochainement.');
       })
-      .catch(() => { if (active) setStreamUrl(fallbackStreamUrl); });
+      .catch(() => { if (active) {setStreamUrl(fallbackStreamUrl);setEmbedUrl('');setExternalUrl('');} });
     return () => { active = false; };
   }, [isOpen, fallbackStreamUrl]);
 
@@ -77,6 +85,8 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
     hlsRef.current?.destroy();
     hlsRef.current = null;
     setIsOpen(false);
+    setEmbedUrl('');
+    setExternalUrl('');
     setPlaying(false);
     setStatus('idle');
   }, []);
@@ -104,6 +114,7 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
 
   useEffect(() => {
     if (!isOpen) return;
+    if (embedUrl) {setStatus('ready');return;}
     if (!streamUrl) {
       setStatus('no-stream');
       return;
@@ -155,7 +166,7 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
       hlsRef.current?.destroy();
       hlsRef.current = null;
     };
-  }, [isOpen, streamUrl, attempt]);
+  }, [isOpen, streamUrl, attempt, embedUrl]);
 
   const togglePlay = () => {
     const video = videoRef.current;
@@ -206,7 +217,9 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
           </header>
 
           <div className="live-overlay-body">
-            {streamUrl ? (
+            {embedUrl ? (
+              <iframe className="live-overlay-video" src={embedUrl} title="Direct TV+ Afrique" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
+            ) : streamUrl ? (
               <video
                 ref={videoRef}
                 className="live-overlay-video"
@@ -219,12 +232,12 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
               />
             ) : null}
 
-            {status !== 'playing' && (
+            {!embedUrl && status !== 'playing' && (
               <div className="live-overlay-state" role="status">
                 {status === 'no-stream' ? (
                   <>
                     <strong>Flux direct non configuré</strong>
-                    <span>Le lecteur est prêt. Renseignez l’URL du flux pour diffuser l’antenne.</span>
+                    <span>{standbyMessage}</span>
                   </>
                 ) : status === 'ready' ? (
                   <strong>Appuyez sur Lecture pour regarder le direct.</strong>
@@ -243,6 +256,9 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
           </div>
 
           <footer className="live-overlay-controls">
+            {embedUrl || (externalUrl && !streamUrl) ? (
+              <a href={externalUrl} target="_blank" rel="noopener noreferrer" className="live-control-btn" aria-label="Ouvrir sur le diffuseur">Ouvrir sur le diffuseur <ExternalLink size={15}/></a>
+            ) : <>
             <button type="button" className="live-control-btn" onClick={togglePlay} aria-label={playing ? 'Mettre en pause' : 'Lecture'} disabled={status !== 'playing' && status !== 'ready'}>
               {playing ? <Pause size={15} /> : <Play size={15} />}
             </button>
@@ -255,6 +271,7 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
             <button type="button" className="live-control-btn" onClick={toggleFullscreen} aria-label="Plein écran" disabled={status !== 'playing' && status !== 'ready'}>
               <Maximize2 size={15} />
             </button>
+            </>}
             <span className="live-overlay-watermark">TV+</span>
           </footer>
         </section>
