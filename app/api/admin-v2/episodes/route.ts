@@ -21,7 +21,7 @@ function clean(input:unknown){
   if(!p.success)throw new ApiError('Champs du replay invalides.',400,'BAD_REQUEST',p.error.flatten());
   const v=p.data,parsed=parseVideoUrl(v.source_url);
   if(v.source_url&&!parsed)throw new ApiError('Lien invalide. YouTube, Facebook, TikTok, Vimeo ou Dailymotion sont acceptés.',400);
-  if(v.status==='published'&&!parsed)throw new ApiError('Un lien vidéo valide est requis pour publier.',400);
+  if((v.status==='published'||v.publish_at)&&!parsed)throw new ApiError('Un lien vidéo valide est requis pour publier ou programmer.',400);
   if(v.publish_at&&Date.parse(v.publish_at)<Date.now()+60_000&&v.status==='draft')
     throw new ApiError('Programmez au moins une minute dans le futur.',400);
   return {...v,platform:parsed?.platform??null,external_id:parsed?.externalId??null,
