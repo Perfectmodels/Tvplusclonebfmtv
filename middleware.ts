@@ -2,6 +2,13 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // Le back-office historique n'est pas compatible avec la base TV+ V2.
+  // Rediriger AVANT de rendre les Server Components admin, qui requièrent
+  // sinon le secret d'un schéma différent.
+  if (process.env.SUPABASE_SCHEMA_MODE === 'tvplus-v2' &&
+      /^\/admin(?:\/|$)/.test(request.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL('/admin-indisponible', request.url), 307);
+  }
   let response = NextResponse.next({ request });
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY;
