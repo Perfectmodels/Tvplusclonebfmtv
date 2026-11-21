@@ -11,7 +11,7 @@ import {
 
 type Article = {
   id: string; slug: string; short_code: string; title: string; excerpt: string;
-  status: string; category_id: string; category_name: string; author_name: string;
+  status: string; category_id: string; category_name: string; author_id: string; author_name: string;
   publisher_name: string | null; cover_url: string | null; cover_alt: string;
   featured: boolean; is_alert: boolean; updated_at: string; created_at: string;
   published_at: string | null;
