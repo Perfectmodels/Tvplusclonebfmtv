@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { listArticles, getCategories, getPrograms } from '../lib/db/repository';
 import { getSiteUrl } from '../lib/articles/site-url';
 import { categoryHref } from '../lib/categories';
+import { articlePath } from '../lib/articles/urls';
 
 export const revalidate = 3600;
 const PAGE_SIZE = 200;
@@ -42,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     })),
     ...articles.map((article) => ({
-      url: `${base}${article.shortId ? '/a/' + article.shortId : '/article/' + article.slug}`,
+      url: `${base}${articlePath(article)}`,
       lastModified: article.updatedAt || article.publishedAt ? new Date(article.updatedAt ?? article.publishedAt!) : undefined,
       changeFrequency: 'weekly' as const,
       priority: 0.8,

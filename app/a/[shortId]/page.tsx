@@ -16,32 +16,39 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { shortId } = await params;
   const { item } = await getArticleByShortId(shortId);
-  if (!item) return { title: 'Article introuvable — TV Plus' };
+  if (!item) return { title: 'Article introuvable — TV+ Afrique', robots: { index: false, follow: false } };
 
   const siteUrl = await getSiteUrl();
   const url = `${siteUrl}/a/${shortId}`;
   const title = item.seoTitle || item.title;
-  const description = item.seoDescription || item.chapter || item.summary;
+  const description = (item.seoDescription || item.chapter || item.summary || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 165);
 
   return {
     title,
     description,
-    keywords: item.keywords ?? [],
-    alternates: { canonical: item.canonicalUrl || url },
-    robots: item.robots ?? 'index,follow',
+    keywords: item.keywords ?? item.tags ?? [],
+    category: item.category,
+    authors: [{ name: 'La rédaction TV+ Afrique' }],
+    alternates: { canonical: url },
+    robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
     openGraph: {
       type: 'article',
       title,
       description,
       url,
-      siteName: 'TV Plus',
-      images: item.image ? [{ url: item.image, width: 1200, height: 630, alt: item.coverAlt || item.title }] : [],
+      siteName: 'TV+ Afrique',
+      locale: 'fr_GA',
+      publishedTime: item.publishedAt,
+      modifiedTime: item.updatedAt ?? item.publishedAt,
+      section: item.category,
+      authors: ['La rédaction TV+ Afrique'],
+      images: [{ url: `${url}/opengraph-image`, width: 1200, height: 630, alt: `${item.category} — ${item.title}` }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: item.image ? [item.image] : [],
+      images: [`${url}/opengraph-image`],
     },
   };
 }

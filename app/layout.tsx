@@ -10,6 +10,9 @@ import './globals.css';
 import './editorial.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tvplusv2.vercel.app'),
+  applicationName: 'TV+ Afrique',
+  openGraph: { siteName: 'TV+ Afrique', locale: 'fr_GA', type: 'website' },
   title: 'TV+ Afrique — L’actualité du Gabon en continu',
   description:
     'Actualités, décryptages, vidéos et direct au Gabon : politique, société, économie, sport et international sur TV+ Afrique.',
