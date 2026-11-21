@@ -61,7 +61,7 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
         if (!active) return;
         const config = body?.data;
         const configured = config?.enabled ? config.hlsUrl : '';
-        setStreamUrl(configured || (config?.enabled ? '' : fallbackStreamUrl));
+        setStreamUrl(config?.enabled ? configured : '');
         setEmbedUrl(config?.enabled ? config.embedUrl || '' : '');
         setExternalUrl(config?.enabled ? config.playbackUrl || '' : '');
         setStandbyMessage(config?.standbyMessage || 'Le direct reprendra prochainement.');
