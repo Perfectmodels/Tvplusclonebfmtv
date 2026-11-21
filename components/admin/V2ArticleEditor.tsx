@@ -122,8 +122,8 @@ export default function V2ArticleEditor({
 
   const save = useCallback(async (): Promise<{ id: string; slug: string; updated_at: string } | null> => {
     if (!canEdit) { setError('Vous ne pouvez pas modifier cet article.'); return null; }
-    if (!form.title.trim() || !form.slug.trim() || !form.category_id || !form.country_code) {
-      setError('Le titre, la rubrique et le pays sont obligatoires.'); return null;
+    if (!form.title.trim() || !form.excerpt.trim() || !form.slug.trim() || !form.category_id || !form.country_code) {
+      setError('Le titre, le chapeau, la rubrique et le pays sont obligatoires.'); return null;
     }
     const tags = parseKeywords(keywords);
     if (tags.length > 20 || tags.some(tag => tag.length > 65)) {
@@ -255,7 +255,7 @@ export default function V2ArticleEditor({
               </label>
               <label className="v2-field is-wide">
                 <span>Chapeau de l’article *</span>
-                <textarea className="v2-editor-chapeau" value={form.excerpt} maxLength={2000}
+                <textarea className="v2-editor-chapeau" value={form.excerpt} maxLength={2000} required
                   disabled={!canEdit} placeholder="Résumez en deux ou trois phrases l’essentiel de l’article…"
                   onChange={event => setField('excerpt', event.target.value)} />
                 <small className="v2-editor-help">Ce résumé apparaît dans l’aperçu des articles et sert de description SEO par défaut.</small>
