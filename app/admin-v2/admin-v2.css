@@ -72,8 +72,8 @@
 .v2-cover-preview{aspect-ratio:1200/630;width:100%;background:#e8edf4;display:grid;place-items:center;border:1px solid #d4dce8;border-radius:8px;overflow:hidden}
 .v2-cover-preview img{width:100%;height:100%;object-fit:contain}
 .v2-cover-empty{color:#738199;text-align:center;font-size:13px;padding:20px}
-.v2-cover-upload{border:1px dashed #9aaece;border-radius:8px;padding:14px;margin-bottom:12px}
-.v2-cover-upload input{width:100%;margin-top:9px}
+.v2-cover-upload{display:block;border:1px dashed #9aaece;border-radius:8px;padding:14px;margin-bottom:12px}
+.v2-cover-upload input{display:block;width:100%;margin-top:9px}
 .v2-cover-options summary{cursor:pointer;font-size:13px;font-weight:750;color:#12427a}
 .v2-cover-options[open] summary{margin-bottom:15px}
 .v2-editor-footer-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:4px}

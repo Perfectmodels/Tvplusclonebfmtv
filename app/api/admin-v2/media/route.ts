@@ -17,6 +17,15 @@ export const GET=handleRoute(async(request:NextRequest)=>{
   const params=request.nextUrl.searchParams;
   const page=Math.min(500,Math.max(1,Number(params.get('page'))||1));
   const size=Math.min(60,Math.max(1,Number(params.get('pageSize'))||32));
+  const mediaId = params.get('id');
+  if (mediaId) {
+    if (!/^[0-9a-f-]{36}$/i.test(mediaId)) throw new ApiError('Identifiant de média invalide.',400);
+    const {data,error}=await db.from('media')
+      .select('id,bucket,path,imgbb_url,alt,caption,credit,mime_type,size_bytes,width,height,created_at')
+      .eq('id',mediaId).maybeSingle();
+    if(error)throw new ApiError('Lecture du média impossible.',503,'UNAVAILABLE');
+    return ok({items:data?[asPublic(db,data)]:[],total:data?1:0,page:1,pageSize:1});
+  }
   const {data,count,error}=await db.from('media').select('id,bucket,path,imgbb_url,alt,caption,credit,mime_type,size_bytes,width,height,created_at',{count:'exact'})
     .order('created_at',{ascending:false}).range((page-1)*size,page*size-1);
   if(error)throw new ApiError('Médiathèque indisponible.',503,'UNAVAILABLE');

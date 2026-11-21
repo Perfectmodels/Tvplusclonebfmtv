@@ -99,6 +99,14 @@ export default function V2ArticleEditor({
           featured: Boolean(article.featured), is_alert: Boolean(article.is_alert),
         });
         setKeywords((article.tags ?? []).join(', '));
+        // La couverture existante peut ne plus figurer parmi les 60 médias récents.
+        if (article.cover_media_id) {
+          fetch('/api/admin-v2/media?id=' + encodeURIComponent(article.cover_media_id), {cache:'no-store'})
+            .then(r=>r.json()).then(result=>{
+              const item=result.data?.items?.[0] as Media | undefined;
+              if(item && alive) setMedia(current => current.some(m=>m.id===item.id)?current:[item,...current]);
+            }).catch(()=>{});
+        }
         setInitialJson(article.content_json ?? emptyDoc);
         setContent({ json: article.content_json ?? emptyDoc, text: '', words: 0 });
         setStatus(article.status);
