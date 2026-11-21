@@ -112,6 +112,32 @@ export default async function DashboardV2() {
   });
   const maxDay=Math.max(1,...dayBars.map(day=>day.value));
   const audit=activityResult.data??[];
+  const auditActorIds=[...new Set(audit.map(a=>a.actor_id).filter((id): id is string => Boolean(id)))];
+  const auditActorResponse=auditActorIds.length
+    ? await db.from('profiles').select('id,full_name').in('id',auditActorIds)
+    : {data:[] as {id:string;full_name:string|null}[]};
+  const auditActorNames=new Map((auditActorResponse.data??[]).map(a=>[a.id,a.full_name||'Collaborateur']));
+  const auditRows=audit.map(entry=>{
+    const changes=(entry.details??{}) as Record<string,unknown>;
+    const statusUpdate=changes.status as {avant?:unknown;apres?:unknown}|string|undefined;
+    const nextStatus=typeof statusUpdate==='object' && statusUpdate!==null
+      ? statusUpdate.apres : statusUpdate;
+    const titleChange=changes.title as {avant?:unknown;apres?:unknown}|string|undefined;
+    const title=typeof titleChange==='string'?titleChange:
+      (typeof titleChange==='object' && titleChange!==null
+        ? String(titleChange.apres??titleChange.avant??'') : '') || 'Article';
+    const activityLabel=nextStatus==='published'?'Mise en ligne':
+      nextStatus==='scheduled'?'Programmation':
+      nextStatus==='archived'?'Archivage':
+      nextStatus==='inactive'?'Retrait du site':
+      entry.action==='insert'?'Création d’article':'Modification';
+    return {
+      ...entry,
+      activityLabel,
+      title:articleMap.get(entry.entity_id)?.title??title,
+      person:entry.actor_id?(auditActorNames.get(entry.actor_id)??'Collaborateur'):'Importation ou automatisation',
+    };
+  });
 
   const kpis=[
     {label:'Articles en ligne',value:counts.published,icon:CheckCircle2,help:'Consultables sur le site',href:'/admin-v2/articles?status=published',tone:'positive'},
@@ -246,8 +272,10 @@ export default async function DashboardV2() {
         <header><div><p className="v2-dashboard-eyebrow">TRAÇABILITÉ</p>
           <h2 id="v2-audit-title">Journal des actions</h2>
           <p>Dernières opérations enregistrées sur les articles.</p></div><BarChart3 size={21}/></header>
-        <div>{audit.map(entry=><p key={entry.id}>
-          <span>{entry.action==='insert'?'Création':entry.action==='update'?'Modification':'Autre opération'} d’un article</span>
+        <div>{auditRows.map(entry=><p key={entry.id}>
+          <span><strong>{entry.activityLabel}</strong> · {entry.title}
+            <small>Par {entry.person}</small>
+          </span>
           <time>{dateText(entry.created_at)}</time>
         </p>)}</div>
       </section>}
