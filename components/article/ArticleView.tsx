@@ -26,7 +26,13 @@ export default function ArticleView({
     datePublished: story.publishedAt ?? undefined,
     dateModified: story.updatedAt ?? story.publishedAt ?? undefined,
     author: { '@type': 'Person', name: story.author || 'La rédaction' },
-    publisher: { '@type': 'Organization', name: 'TV Plus' },
+    publisher: {
+      '@type': 'Organization', name: 'TV+ Afrique',
+      logo: { '@type': 'ImageObject', url: new URL('/logo.png', shortUrl).toString() },
+    },
+    inLanguage: 'fr-GA',
+    isAccessibleForFree: true,
+    keywords: (story.tags ?? []).join(', '),
     mainEntityOfPage: shortUrl,
     url: shortUrl,
     articleSection: story.category,
@@ -34,7 +40,7 @@ export default function ArticleView({
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <main className="shell">
         <div className="page-head">
           <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: story.category, href: categoryPath }]} />
@@ -42,20 +48,23 @@ export default function ArticleView({
 
         <div className="article-layout">
           <article className="article-main">
-            <Link href={categoryPath} className="article-category">{story.category}</Link>
-            <h1>{story.title}</h1>
-            {story.chapter && <p className="article-standfirst">{story.chapter}</p>}
-            {!story.chapter && <p className="article-standfirst">{story.summary}</p>}
-
-            {story.image && <figure className="article-figure">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={story.image} alt={story.coverAlt || story.title} />
-              {(story.coverCaption || story.coverCredit) && (
-                <figcaption className="article-caption">
-                  {story.coverCaption} {story.coverCredit && `· ${story.coverCredit}`}
-                </figcaption>
+            <header className={'article-feature' + (story.image ? ' has-image' : '')}>
+              {story.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={story.image} alt="" className="article-feature-image" decoding="async" fetchPriority="high"/>
               )}
-            </figure>}
+              <span className="article-feature-gradient" aria-hidden="true" />
+              <div className="article-feature-content">
+                <Link href={categoryPath} className="article-feature-category">{story.category}</Link>
+                <h1>{story.title}</h1>
+                <p className="article-feature-intro">{story.chapter || story.summary}</p>
+              </div>
+            </header>
+            {(story.coverCaption || story.coverCredit) && story.image && (
+              <p className="article-photo-credit">
+                {story.coverCaption} {story.coverCredit && `· ${story.coverCredit}`}
+              </p>
+            )}
 
             <div className="article-tools">
               <span>{story.author || 'La rédaction'} · {story.time} · Lecture {story.readingTime ?? 3} min</span>
