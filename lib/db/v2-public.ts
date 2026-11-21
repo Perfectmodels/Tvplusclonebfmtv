@@ -27,15 +27,15 @@ export function getTvplusV2PublicClient() { return client(); }
 type V2Category = { id: string; slug: string; name: string };
 type V2Media = { id: string; imgbb_url: string | null; bucket: string; path: string; alt: string; caption: string; credit: string };
 type V2Article = {
-  id: string; slug: string; title: string; excerpt: string; category_id: string;
+  id: string; slug: string; short_code: string; title: string; excerpt: string; category_id: string;
   cover_media_id: string | null; content_html?: string; content_json?: unknown;
   status: string; featured: boolean; is_alert: boolean; is_video_article: boolean;
   tags: string[]; seo_title: string | null; seo_description: string | null;
   published_at: string | null; updated_at: string; created_at: string;
   country_code: string; province_slug: string | null; author_id: string;
 };
-const SELECT_ARTICLE_LIST = 'id,slug,title,excerpt,category_id,cover_media_id,status,featured,is_alert,is_video_article,published_at,updated_at,created_at';
-const SELECT_ARTICLE_DETAIL = 'id,slug,title,excerpt,category_id,cover_media_id,content_html,content_json,status,featured,is_alert,is_video_article,tags,seo_title,seo_description,published_at,updated_at,created_at,country_code,province_slug,author_id';
+const SELECT_ARTICLE_LIST = 'id,slug,short_code,title,excerpt,category_id,cover_media_id,status,featured,is_alert,is_video_article,published_at,updated_at,created_at';
+const SELECT_ARTICLE_DETAIL = 'id,slug,short_code,title,excerpt,category_id,cover_media_id,content_html,content_json,status,featured,is_alert,is_video_article,tags,seo_title,seo_description,published_at,updated_at,created_at,country_code,province_slug,author_id';
 
 function imageUrl(media: V2Media | undefined) {
   if (!media) return '';
@@ -67,6 +67,7 @@ function mapStory(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Sto
   const words = a.content_html ? a.content_html.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length : 0;
   return {
     slug: a.slug,
+    shortId: a.short_code,
     category: category?.name ?? 'Actualité',
     title: a.title,
     summary: a.excerpt,
@@ -91,6 +92,7 @@ function mapFull(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Publ
     seoTitle: a.seo_title,
     seoDescription: a.seo_description,
     tags: a.tags ?? [],
+    keywords: a.tags ?? [],
     countryCode: a.country_code ?? 'GA',
     province: a.province_slug,
     coverAlt: media?.alt,
@@ -133,6 +135,17 @@ export const getV2ArticleBySlug = unstable_cache(async (slug: string) => {
   return { item: mapFull(article, index), source: 'supabase' as const };
 }, ['v2-public-article-detail'], { revalidate: 90, tags: ['public-articles'] });
 
+export const getV2ArticleByShortCode = unstable_cache(async (shortCode: string) => {
+  if (!/^[A-Za-z0-9_-]{8}$/.test(shortCode)) return { item: null as PublicArticle | null, source: 'supabase' as const };
+  const { data, error } = await client().from('articles').select(SELECT_ARTICLE_DETAIL)
+    .eq('status', 'published').eq('short_code', shortCode).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return { item: null as PublicArticle | null, source: 'supabase' as const };
+  const article = data as V2Article;
+  const index = await lookups([article.cover_media_id]);
+  return { item: mapFull(article, index), source: 'supabase' as const };
+}, ['v2-public-article-short-code'], { revalidate: 90, tags: ['public-articles'] });
+
 export const getV2Categories = unstable_cache(async () => {
   const { data, error } = await client().from('categories').select('name').order('position');
   if (error) throw new Error(error.message);
@@ -149,12 +162,12 @@ export async function getV2FilActu(limit = 20) {
 
 export const getV2Topics = unstable_cache(async (): Promise<{data: TopicItem[]; source: 'supabase'}> => {
   const { data, error } = await client().from('articles')
-    .select('slug,title,featured,is_alert').eq('status', 'published')
+    .select('slug,short_code,title,featured,is_alert').eq('status', 'published')
     .or('featured.eq.true,is_alert.eq.true').order('published_at', { ascending: false }).limit(5);
   if (error) throw new Error(error.message);
   return { data: (data ?? []).map((a) => ({
     label: a.title.length > 58 ? a.title.slice(0, 55).trimEnd() + '…' : a.title,
-    link: '/article/' + a.slug,
+    link: '/a/' + a.short_code,
   })), source: 'supabase' };
 }, ['v2-header-topics'], { revalidate: 120, tags: ['public-articles'] });
 
@@ -208,6 +221,6 @@ export async function searchV2(query: string) {
   const { items } = await listV2Articles({ search: query, pageSize: 40 });
   return { items: items.map((s) => ({
     title: s.title, category: s.category, description: s.summary,
-    href: '/article/' + s.slug, type: 'Article',
+    href: s.shortId ? '/a/' + s.shortId : '/article/' + s.slug, type: 'Article',
   })), source: 'supabase' as const };
 }

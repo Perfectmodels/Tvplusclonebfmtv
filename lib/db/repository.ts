@@ -187,7 +187,7 @@ export async function getArticleBySlug(
 export async function getArticleByShortId(
   shortId: string,
 ): Promise<{ item: PublicArticle | null; source: DataSource; error?: string }> {
-  if (v2.usesTvplusV2()) return { item: null, source: 'supabase' as const };
+  if (v2.usesTvplusV2()) return v2.getV2ArticleByShortCode(shortId);
   const result = await fromSupabase<ArticleRow | null>(
     (db) => db.from('articles').select('*').eq('short_id', shortId).eq('status', 'published').is('deleted_at', null).maybeSingle(),
     null,
