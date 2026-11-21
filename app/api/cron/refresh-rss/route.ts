@@ -1,28 +1,24 @@
-import { NextRequest } from 'next/server';
-import { timingSafeEqual } from 'node:crypto';
-import { refreshNewsFeed } from '../../../../lib/rss/ingest';
-import { usesTvplusV2 } from '../../../../lib/db/v2-public';
-import { handleRoute, ok } from '../../../../lib/api/response';
-import { ApiError } from '../../../../lib/api/response';
+import { NextResponse } from 'next/server';
 
+/**
+ * Ancien cron désactivé : le flux RSS est désormais agrégé et mis en cache
+ * côté serveur, sans aucun upsert/suppression dans Supabase.
+ * La réponse 410 permet d'identifier les anciennes tâches à retirer.
+ */
 export const dynamic = 'force-dynamic';
 
-function authorized(request: NextRequest) {
-  const secrets = [process.env.CRON_SECRET, process.env.SUPABASE_SECRET_KEY].filter(Boolean) as string[];
-  const header = request.headers.get('authorization') ?? '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-  return secrets.some((secret) => {
-    const a = Buffer.from(secret);
-    const b = Buffer.from(token);
-    return a.length === b.length && timingSafeEqual(a, b);
-  });
+function retired() {
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: 'RSS_STORAGE_DISABLED',
+        message: 'Import RSS désactivé. News 24/7 est désormais lu directement dans un cache serveur.',
+      },
+    },
+    { status: 410, headers: { 'Cache-Control': 'no-store' } },
+  );
 }
 
-async function run(request: NextRequest) {
-  if (usesTvplusV2()) throw new ApiError('Le flux RSS est géré par TV+ V2. La tâche du clone est désactivée.', 503, 'UNAVAILABLE');
-  if (!authorized(request)) throw new ApiError('Accès non autorisé.', 401, 'UNAUTHORIZED');
-  return ok(await refreshNewsFeed());
-}
-
-export const GET = handleRoute(run);
-export const POST = handleRoute(run);
+export const GET = retired;
+export const POST = retired;
