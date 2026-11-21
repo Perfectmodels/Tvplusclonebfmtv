@@ -4,7 +4,7 @@ import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { handleRoute,ok,created,ApiError } from '../../../../lib/api/response';
 import { revalidateTag } from 'next/cache';
 export const dynamic='force-dynamic';
-export const categorySchema=z.object({
+const categorySchema=z.object({
   slug:z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(75),
   name:z.string().trim().min(2).max(85),
   description:z.string().trim().max(300).default(''),
