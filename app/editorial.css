@@ -353,3 +353,53 @@ button.direct-player, button.direct-player-large {
 @media (prefers-reduced-motion: reduce) {
   .hero-rail .news-rail-list { scroll-behavior: auto; }
 }
+
+/* Une grande actualité à gauche, trois dépêches à droite en carrousel automatique. */
+.editorial-category-section { margin: 28px 0 32px; min-width: 0; }
+.editorial-category-section.is-selection { margin-top: 30px; }
+.editorial-category-layout { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 18px; align-items: stretch; }
+.editorial-category-feature { min-width: 0; }
+.editorial-category-feature .card-hero { display: flex; min-height: 410px; height: 100%; }
+.editorial-category-feature .card-hero-title { font-size: clamp(25px, 2.6vw, 37px); max-width: 24ch; }
+.editorial-category-side { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--editorial-border, #dbe2ef); background: #fff; border-radius: 8px; overflow: hidden; }
+.editorial-side-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 1px solid #e8edf5; color: #233a5c; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .035em; }
+.editorial-side-actions { display: flex; align-items: center; gap: 7px; }
+.editorial-side-count { color: #60718c; font-size: 11px; font-variant-numeric: tabular-nums; }
+.editorial-side-actions button { display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid #dbe2ef; border-radius: 6px; background: #fff; color: #082772; cursor: pointer; }
+.editorial-side-actions button:hover, .editorial-side-actions button:focus-visible { background: #e9f0fb; outline-offset: 2px; }
+.editorial-side-viewport { min-width: 0; flex: 1; overflow: hidden; }
+.editorial-side-track { display: flex; align-items: stretch; transition: transform .5s ease; width: 100%; height: 100%; }
+.editorial-side-slide { flex: 0 0 100%; min-width: 0; display: flex; flex-direction: column; padding: 7px 14px; }
+.editorial-mini-article { min-width: 0; flex: 1; display: grid; grid-template-columns: minmax(92px, 34%) minmax(0, 1fr); align-items: center; gap: 13px; padding: 7px 0; border-bottom: 1px solid #e8edf5; color: #142748; text-decoration: none; }
+.editorial-mini-article:last-child { border-bottom: 0; }
+.editorial-mini-thumb { display: block; height: 100px; overflow: hidden; border-radius: 5px; background: #e9edf5; }
+.editorial-mini-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.editorial-mini-placeholder { display: grid; height: 100%; place-items: center; font-size: 20px; font-weight: 900; color: #345684; }
+.editorial-mini-body { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.editorial-mini-category { color: #d21a33; text-transform: uppercase; letter-spacing: .045em; font-size: 10px; font-weight: 850; }
+.editorial-mini-body strong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; font-size: clamp(14px, 1.2vw, 17px); line-height: 1.22; font-weight: 750; }
+.editorial-mini-article:hover strong { color: #d21a33; }
+.editorial-mini-body time { font-size: 11px; color: #6c7890; }
+.editorial-side-dots { display: flex; justify-content: center; gap: 8px; padding: 9px; border-top: 1px solid #e8edf5; }
+.editorial-side-dots button { width: 8px; height: 8px; border: 0; border-radius: 50%; padding: 0; background: #c6cedb; cursor: pointer; }
+.editorial-side-dots button.is-active { background: #d21a33; width: 23px; border-radius: 5px; }
+.editorial-side-empty { margin: auto; padding: 28px; text-align: center; color: #64748b; }
+@media (max-width: 960px) {
+  .editorial-category-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  .editorial-category-feature .card-hero { min-height: 380px; }
+  .editorial-mini-thumb { height: 88px; }
+  .editorial-side-slide { padding: 5px 10px; }
+  .editorial-mini-article { gap: 10px; }
+}
+@media (max-width: 720px) {
+  .editorial-category-layout { grid-template-columns: minmax(0, 1fr); }
+  .editorial-category-feature .card-hero { min-height: 300px; height: auto; }
+  .editorial-category-side { min-height: 330px; }
+  .editorial-mini-article { grid-template-columns: 110px minmax(0,1fr); min-height: 92px; }
+  .editorial-mini-thumb { height: 80px; }
+  .editorial-mini-body strong { font-size: 15px; }
+  .editorial-category-section { margin: 24px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .editorial-side-track { transition: none; }
+}
