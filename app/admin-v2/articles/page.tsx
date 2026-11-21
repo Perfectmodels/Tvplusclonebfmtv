@@ -66,6 +66,7 @@ export default function AdminV2Articles() {
   const [scheduling,setScheduling]=useState<Article|null>(null);
   const [scheduleLocal,setScheduleLocal]=useState(nextGabonHour);
   const [canReview,setCanReview]=useState(false);
+  const [canCreate,setCanCreate]=useState(false);
   const [actorId,setActorId]=useState('');
 
   const refresh=useCallback(()=>setVersion(v=>v+1),[]);
@@ -84,7 +85,10 @@ export default function AdminV2Articles() {
       if(!live)return;
       if(summary.data)setStats(summary.data);
       if(cats.data?.items)setCategories(cats.data.items);
-      if(me?.data?.permissions)setCanReview(me.data.permissions.includes('articles.review'));
+      if(me?.data?.permissions){
+        setCanReview(me.data.permissions.includes('articles.review'));
+        setCanCreate(me.data.permissions.includes('articles.create'));
+      }
       if(me?.data?.id)setActorId(me.data.id);
       if(authorsResult?.data?.items)setAuthors(authorsResult.data.items);
     }).catch(()=>{});
@@ -171,7 +175,7 @@ export default function AdminV2Articles() {
           <h1>Gestion des articles</h1>
           <p>Suivez les publications, validez les contenus et organisez les prochaines mises en ligne.</p>
         </div>
-        <Link className="v2-newsroom-primary" href="/admin-v2/articles/new"><Plus size={18}/> Nouvel article</Link>
+        {canCreate&&<Link className="v2-newsroom-primary" href="/admin-v2/articles/new"><Plus size={18}/> Nouvel article</Link>}
       </header>
 
       <div className="v2-newsroom-stats" aria-label="Indicateurs des articles">
@@ -241,7 +245,7 @@ export default function AdminV2Articles() {
         {loading?<div className="v2-newsroom-loading" role="status">Chargement de la bibliothèque éditoriale…</div>:
           items.length===0?<div className="v2-newsroom-empty">
             <FileText size={36}/><h3>Aucun article trouvé</h3>
-            <p>Modifiez les filtres ou créez un nouvel article.</p>
+            <p>{canCreate?'Modifiez les filtres ou créez un nouvel article.':'Modifiez les filtres pour retrouver un contenu.'}</p>
             <button type="button" className="v2-newsroom-inline-link"
               onClick={()=>{setQ('');setFilter('');setCategory('');setAuthor('');setPage(1)}}>Réinitialiser les filtres</button>
           </div>:
@@ -254,7 +258,7 @@ export default function AdminV2Articles() {
               return (
                 <article key={a.id} className={'v2-newsroom-story'+(busy?' is-busy':'')}>
                   <Link href={'/admin-v2/articles/'+a.id+'/edit'} className="v2-newsroom-story-image"
-                    aria-label={'Modifier '+a.title}>
+                    aria-label={(canModify?'Modifier ':'Consulter ')+a.title}>
                     <V2ArticleThumb src={a.cover_url} alt={a.cover_alt||''}/>
                   </Link>
                   <div className="v2-newsroom-story-details">
