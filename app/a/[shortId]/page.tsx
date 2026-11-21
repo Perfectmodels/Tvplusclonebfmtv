@@ -42,13 +42,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       modifiedTime: item.updatedAt ?? item.publishedAt,
       section: item.category,
       authors: ['La rédaction TV+ Afrique'],
-      images: [{ url: `${url}/opengraph-image`, width: 1200, height: 630, alt: `${item.category} — ${item.title}` }],
+      images: [{ url: `${siteUrl}/og/${shortId}?v=${encodeURIComponent(item.updatedAt ?? item.publishedAt ?? '1')}`, width: 1200, height: 630, alt: `${item.category} — ${item.title}` }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [`${url}/opengraph-image`],
+      images: [`${siteUrl}/og/${shortId}?v=${encodeURIComponent(item.updatedAt ?? item.publishedAt ?? '1')}`],
     },
   };
 }

@@ -1,11 +1,9 @@
 import { ImageResponse } from 'next/og';
 import { getArticleByShortId } from '../../../lib/db/repository';
 
-export const alt = 'TV+ Afrique — Actualités';
-export const size = { width: 1200, height: 630 };
-export const contentType = 'image/png';
-// La couverture change après republication : ne pas figer une image sociale pour un an.
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+const size = { width: 1200, height: 630 };
 
 type Props = { params: Promise<{shortId: string}> };
 
@@ -32,7 +30,7 @@ async function getCoverImage(url: string): Promise<string | undefined> {
   }
 }
 
-export default async function Image({ params }: Props) {
+export async function GET(_request: Request, { params }: Props) {
   const { shortId } = await params;
   const { item } = await getArticleByShortId(shortId);
   const photo = item?.image ? await getCoverImage(item.image) : undefined;
@@ -87,6 +85,6 @@ export default async function Image({ params }: Props) {
         display:'flex',
       }} />
     </div>,
-    size,
+    { ...size, headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } },
   );
 }
