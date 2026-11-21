@@ -34,7 +34,6 @@ export function videoWatchUrl(platform:string|null,id:string|null,sourceUrl?:str
   if(sourceUrl&&parseVideoUrl(sourceUrl))return sourceUrl;
   if(!id)return '';
   if(platform==='youtube'&&/^[a-zA-Z0-9_-]{11}$/.test(id))return 'https://www.youtube.com/watch?v='+id;
-  if(platform==='tiktok'&&/^\d{10,25}$/.test(id))return 'https://www.tiktok.com/@tvplusafrique/video/'+id;
   if(platform==='vimeo'&&/^\d+$/.test(id))return 'https://vimeo.com/'+id;
   if(platform==='dailymotion'&&/^[a-zA-Z0-9]+$/.test(id))return 'https://www.dailymotion.com/video/'+id;
   return '';
