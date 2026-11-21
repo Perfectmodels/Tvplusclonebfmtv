@@ -32,7 +32,8 @@ export default function AuthForm({ mode }: { mode: Mode }) {
       if (!response.ok) throw new Error(body?.error?.message ?? 'Une erreur est survenue.');
       setStatus('done');
       if (isLogin) {
-        router.push('/compte');
+        const next = new URLSearchParams(window.location.search).get('next');
+        router.push(next && /^\/admin-v2(?:\/|$)/.test(next) ? next : '/compte');
         router.refresh();
       } else {
         setMessage(

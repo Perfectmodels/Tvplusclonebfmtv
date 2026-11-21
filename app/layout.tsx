@@ -19,7 +19,7 @@ async function getOptionalAccount() {
   // La majorité des visiteurs sont anonymes. Ne pas contacter Supabase Auth
   // et Profiles pour chaque consultation du site public.
   const cookieStore = await cookies();
-  const hasAuthCookie = cookieStore.getAll().some(({ name }) => /^sb-.*-auth-token(?:\\.\\d+)?$/.test(name));
+  const hasAuthCookie = cookieStore.getAll().some(({ name }) => name.startsWith('sb-') && name.includes('-auth-token'));
   if (!hasAuthCookie) return { user: null, profile: null };
   const user = await getUser();
   return { user, profile: user ? await getProfile(user) : null };
@@ -41,7 +41,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
             categories={categories}
             topics={topics}
             userEmail={account.user?.email ?? null}
-            isAdmin={account.profile?.role === 'admin' || account.profile?.role === 'super_admin'}
+            isAdmin={Boolean(account.profile && ['admin','super_admin','editor_in_chief','journalist'].includes(account.profile.role))}
           />
           <div id="contenu">{children}</div>
           <Footer categories={categories} />

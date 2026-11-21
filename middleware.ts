@@ -2,12 +2,13 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  // Le back-office historique n'est pas compatible avec la base TV+ V2.
-  // Rediriger AVANT de rendre les Server Components admin, qui requièrent
-  // sinon le secret d'un schéma différent.
+  // Garder les anciennes URL administratives tout en servant l'admin TV+ V2
+  // réellement compatible. Les anciennes pages du clone ne sont jamais exécutées.
   if (process.env.SUPABASE_SCHEMA_MODE === 'tvplus-v2' &&
       /^\/admin(?:\/|$)/.test(request.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL('/admin-indisponible', request.url), 307);
+    const destination = new URL('/admin-v2' + request.nextUrl.pathname.slice(6), request.url);
+    destination.search = request.nextUrl.search;
+    return NextResponse.redirect(destination, 307);
   }
   let response = NextResponse.next({ request });
   const url = process.env.SUPABASE_URL;
@@ -39,7 +40,7 @@ export async function middleware(request: NextRequest) {
   // Aucune session à rafraîchir pour les visiteurs anonymes : éviter des
   // opérations Auth inutiles à chaque requête publique.
   const hasAuthCookie = request.cookies.getAll().some(({ name }) =>
-    /^sb-.*-auth-token(?:\\.\\d+)?$/.test(name),
+    name.startsWith('sb-') && name.includes('-auth-token'),
   );
   if (!hasAuthCookie) return response;
 

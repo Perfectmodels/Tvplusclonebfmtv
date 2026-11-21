@@ -24,18 +24,18 @@ export class ApiError extends Error {
 export function ok<T>(data: T, status = 200, init?: ResponseInit) {
   return NextResponse.json(
     { success: true, data },
-    { status, headers: { 'Cache-Control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300', ...init?.headers } },
+    { status, headers: { 'Cache-Control': 'private, no-store', ...init?.headers } },
   );
 }
 
 export function created<T>(data: T) {
-  return NextResponse.json({ success: true, data }, { status: 201 });
+  return NextResponse.json({ success: true, data }, { status: 201, headers: { 'Cache-Control': 'private, no-store' } });
 }
 
 export function fail(message: string, status = 400, code: ErrorCode = 'BAD_REQUEST', details?: unknown) {
   return NextResponse.json(
     { success: false, error: { message, code, ...(details ? { details } : {}) } },
-    { status },
+    { status, headers: { 'Cache-Control': 'private, no-store' } },
   );
 }
 
