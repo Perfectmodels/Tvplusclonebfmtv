@@ -1,4 +1,5 @@
 import 'server-only';
+import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import type { Story } from '../data';
 import type { PublicArticle, PublicEpisode, TopicItem } from './repository';
@@ -99,7 +100,7 @@ function mapFull(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Publ
   };
 }
 
-export async function listV2Articles({
+export const listV2Articles = unstable_cache(async ({
   category, search, page = 1, pageSize = 12,
 }: {category?: string; search?: string; page?: number; pageSize?: number} = {}) {
   const db = client();
@@ -120,9 +121,9 @@ export async function listV2Articles({
   const articles = (data ?? []) as V2Article[];
   const index = await lookups(articles.map((a) => a.cover_media_id));
   return { items: articles.map((a) => mapStory(a, index)), total: count ?? articles.length, page, pageSize, source: 'supabase' as const };
-}
+}, ['v2-public-article-list'], { revalidate: 60, tags: ['public-articles'] });
 
-export async function getV2ArticleBySlug(slug: string) {
+export const getV2ArticleBySlug = unstable_cache(async (slug: string) => {
   const { data, error } = await client().from('articles').select(SELECT_ARTICLE_DETAIL)
     .eq('status', 'published').eq('slug', slug).maybeSingle();
   if (error) throw new Error(error.message);
@@ -130,13 +131,13 @@ export async function getV2ArticleBySlug(slug: string) {
   const article = data as V2Article;
   const index = await lookups([article.cover_media_id]);
   return { item: mapFull(article, index), source: 'supabase' as const };
-}
+}, ['v2-public-article-detail'], { revalidate: 90, tags: ['public-articles'] });
 
-export async function getV2Categories() {
+export const getV2Categories = unstable_cache(async () => {
   const { data, error } = await client().from('categories').select('name').order('position');
   if (error) throw new Error(error.message);
   return { data: (data ?? []).map((c) => c.name), source: 'supabase' as const };
-}
+}, ['v2-public-categories'], { revalidate: 600, tags: ['public-categories'] });
 
 export async function getV2FilActu(limit = 20) {
   const { items } = await listV2Articles({ pageSize: limit });
@@ -146,7 +147,7 @@ export async function getV2FilActu(limit = 20) {
   })), source: 'supabase' as const };
 }
 
-export async function getV2Topics(): Promise<{data: TopicItem[]; source: 'supabase'}> {
+export const getV2Topics = unstable_cache(async (): Promise<{data: TopicItem[]; source: 'supabase'}> => {
   const { data, error } = await client().from('articles')
     .select('slug,title,featured,is_alert').eq('status', 'published')
     .or('featured.eq.true,is_alert.eq.true').order('published_at', { ascending: false }).limit(5);
@@ -155,9 +156,9 @@ export async function getV2Topics(): Promise<{data: TopicItem[]; source: 'supaba
     label: a.title.length > 58 ? a.title.slice(0, 55).trimEnd() + '…' : a.title,
     link: '/article/' + a.slug,
   })), source: 'supabase' };
-}
+}, ['v2-header-topics'], { revalidate: 120, tags: ['public-articles'] });
 
-export async function getV2Programs() {
+export const getV2Programs = unstable_cache(async () => {
   const { data, error } = await client().from('shows')
     .select('id,slug,title,description,tagline,schedule_label,category_id,cover_media_id')
     .eq('is_active', true).order('position');
@@ -171,7 +172,7 @@ export async function getV2Programs() {
     })),
     source: 'supabase' as const,
   };
-}
+}, ['v2-public-programs'], { revalidate: 300, tags: ['public-programs'] });
 
 function playUrl(platform: string | null, externalId: string | null) {
   if (!externalId || !platform) return '';
@@ -180,7 +181,7 @@ function playUrl(platform: string | null, externalId: string | null) {
   return '';
 }
 
-export async function getV2Episodes(limit = 24): Promise<{data: PublicEpisode[];source:'supabase'}> {
+export const getV2Episodes = unstable_cache(async (limit = 24): Promise<{data: PublicEpisode[];source:'supabase'}> => {
   const { data, error } = await client().from('episodes')
     .select('id,show_id,title,description,platform,external_id,duration_seconds,aired_at,created_at')
     .eq('status', 'published').order('aired_at', { ascending: false }).limit(limit);
@@ -193,7 +194,7 @@ export async function getV2Episodes(limit = 24): Promise<{data: PublicEpisode[];
   })), source: 'supabase' };
 }
 
-export async function getV2Schedule() {
+export const getV2Schedule = unstable_cache(async () => {
   const { data, error } = await client().from('program_slots')
     .select('weekday,start_time,title,kind').order('weekday').order('start_time').limit(60);
   if (error) throw new Error(error.message);
