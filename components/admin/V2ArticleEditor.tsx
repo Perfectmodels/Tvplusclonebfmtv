@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeft, ArrowUpRight, Check, CheckCircle2, Circle, Copy, Eye, FileText,
+  ArrowLeft, ArrowUpRight, Archive, CalendarClock, Check, CheckCircle2, Circle, Copy, Eye, FileText,
   Globe2, ImagePlus, Image as ImageIcon, Link2, Save, Send, ShieldCheck,
-  X,
+  RotateCcw, ToggleLeft, ToggleRight, X,
 } from 'lucide-react';
 import TiptapEditor, { type EditorValue } from '../editor/TiptapEditor';
 import { COUNTRIES, GABON_PROVINCES } from '../../lib/editor/countries';
@@ -26,7 +26,7 @@ const initialForm: ArticleForm = {
 const emptyDoc = { type: 'doc', content: [{ type: 'paragraph' }] };
 const statuses: Record<string, string> = {
   draft: 'Brouillon', in_review: 'À valider', approved: 'Validé',
-  scheduled: 'Programmé', published: 'Publié',
+  scheduled: 'Programmé', published: 'En ligne', inactive: 'Hors ligne', archived: 'Archivé',
 };
 const MAX_IMAGE_BYTES = 1024 * 1024;
 function slugify(value: string) {
@@ -66,6 +66,9 @@ export default function V2ArticleEditor({
   const [dirty, setDirty] = useState(false);
   const [mediaPage, setMediaPage] = useState(1);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleLocal, setScheduleLocal] = useState(()=>new Date(Date.now()+2*60*60_000).toISOString().slice(0,16));
+  const [publicationDate, setPublicationDate] = useState<string|null>(null);
 
   const canEdit = canReview || (ownerId === actorId && ['draft', 'in_review'].includes(status));
   const cover = useMemo(() => media.find(item => item.id === form.cover_media_id), [media, form.cover_media_id]);
@@ -139,6 +142,7 @@ export default function V2ArticleEditor({
         });
         setStatus(article.status);
         setShortCode(article.short_code ?? null);
+        setPublicationDate(article.published_at ?? null);
         setOwnerId(article.author_id);
         setUpdatedAt(article.updated_at);
         setDirty(false);
@@ -177,7 +181,7 @@ export default function V2ArticleEditor({
       setStatus(result.data.status);
       if (result.data.short_code) setShortCode(result.data.short_code);
       setDirty(false);
-      setSuccess('Article enregistré dans Supabase.');
+      setSuccess('Article enregistré.');
       if (!id) router.replace('/admin-v2/articles/' + result.data.id + '/edit');
       return result.data;
     } catch (e) {
@@ -213,7 +217,16 @@ export default function V2ArticleEditor({
     } catch { setError('Impossible de copier le lien automatiquement.'); }
   }
 
-  async function workflow(action: 'submit' | 'approve' | 'publish' | 'revert') {
+  async function workflow(
+    action: 'submit' | 'approve' | 'publish' | 'revert' | 'schedule' | 'activate'
+      | 'deactivate' | 'archive' | 'restore',
+    scheduledAt?: string,
+  ) {
+    if (action === 'schedule' && (!scheduledAt || Date.parse(scheduledAt) <= Date.now()+60_000)) {
+      setError('Choisissez une date future, heure de Libreville.');return;
+    }
+    if (action === 'archive' && !window.confirm('Archiver cet article et le retirer du site public ?')) return;
+    if (action === 'deactivate' && !window.confirm('Retirer cet article du site public ?')) return;
     if (!id) return;
     if (action === 'publish' && !window.confirm('Publier cet article sur le site public ?')) return;
     let version = updatedAt;
@@ -226,12 +239,14 @@ export default function V2ArticleEditor({
     try {
       const response = await fetch('/api/admin-v2/articles/' + id + '/workflow', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, expected_updated_at: version }), cache: 'no-store',
+        body: JSON.stringify({ action, expected_updated_at: version, ...(scheduledAt ? {scheduled_at:scheduledAt} : {}) }), cache: 'no-store',
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error?.message ?? 'Action impossible');
       setStatus(result.data.status);
+      setPublicationDate(result.data.published_at ?? null);
       setUpdatedAt(result.data.updated_at);
+      setScheduleOpen(false);
       setSuccess('Nouveau statut : ' + (statuses[result.data.status] ?? result.data.status) + '.');
     } catch (e) { setError(e instanceof Error ? e.message : 'Erreur réseau'); }
     finally { setSaving(false); }
@@ -412,6 +427,8 @@ export default function V2ArticleEditor({
                 <span>Statut actuel</span>
                 <strong>{statuses[status] ?? status}</strong>
                 {updatedAt && <small>Dernière sauvegarde : {new Date(updatedAt).toLocaleString('fr-FR', {timeZone:'Africa/Libreville'})}</small>}
+                {status === 'scheduled' && publicationDate &&
+                  <small>Mise en ligne prévue : {new Date(publicationDate).toLocaleString('fr-FR', {timeZone:'Africa/Libreville'})}</small>}
               </div>
               <div className="v2-compose-progress-title">
                 <strong>Préparation de l’article</strong>
@@ -441,12 +458,41 @@ export default function V2ArticleEditor({
                 {id && canReview && status === 'in_review' &&
                   <button type="button" className="v2-compose-button secondary" disabled={saving}
                     onClick={() => void workflow('approve')}><Check size={16} /> Valider</button>}
-                {id && canReview && status !== 'published' &&
+                {id && canReview && ['draft','in_review','approved','scheduled'].includes(status) &&
                   <button type="button" className="v2-compose-button publish" disabled={saving}
-                    onClick={() => void workflow('publish')}><ArrowUpRight size={16} /> Publier</button>}
+                    onClick={() => void workflow('publish')}><ArrowUpRight size={16}/> Mettre en ligne</button>}
+                {id && canReview && status === 'inactive' &&
+                  <button type="button" className="v2-compose-button publish" disabled={saving}
+                    onClick={() => void workflow('activate')}><ToggleRight size={16}/> Activer en ligne</button>}
                 {id && canReview && status === 'published' &&
                   <button type="button" className="v2-compose-button secondary" disabled={saving}
-                    onClick={() => void workflow('revert')}>Dépublier l’article</button>}
+                    onClick={() => void workflow('deactivate')}><ToggleLeft size={16}/> Désactiver en ligne</button>}
+                {id && canReview && status === 'archived' &&
+                  <button type="button" className="v2-compose-button secondary" disabled={saving}
+                    onClick={() => void workflow('restore')}><RotateCcw size={16}/> Restaurer l’article</button>}
+                {id && canReview && status === 'scheduled' &&
+                  <button type="button" className="v2-compose-button secondary" disabled={saving}
+                    onClick={() => void workflow('revert')}><RotateCcw size={16}/> Annuler la programmation</button>}
+                {id && canReview && ['draft','in_review','approved','inactive','scheduled'].includes(status) &&
+                  <div className="v2-compose-schedule">
+                    <button type="button" className="v2-compose-button secondary" disabled={saving}
+                      onClick={() => setScheduleOpen(x => !x)}><CalendarClock size={16}/> Programmer la publication</button>
+                    {scheduleOpen && <div>
+                      <label>Jour et heure (Libreville)
+                        <input type="datetime-local" value={scheduleLocal}
+                          onChange={event => setScheduleLocal(event.target.value)}/>
+                      </label>
+                      <button type="button" className="v2-compose-button primary" disabled={saving}
+                        onClick={()=>{
+                          const timestamp=new Date(scheduleLocal+':00+01:00');
+                          if(Number.isNaN(timestamp.valueOf())) {setError('Date invalide.');return;}
+                          void workflow('schedule',timestamp.toISOString());
+                        }}>Confirmer la programmation</button>
+                    </div>}
+                  </div>}
+                {id && canReview && status !== 'archived' &&
+                  <button type="button" className="v2-compose-button secondary v2-compose-archive" disabled={saving}
+                    onClick={() => void workflow('archive')}><Archive size={16}/> Archiver l’article</button>}
                 <button type="button" className="v2-compose-button secondary"
                   disabled={!loaded} onClick={() => setPreviewOpen(true)}><Eye size={16} /> Aperçu de l’article</button>
               </div>
