@@ -21,9 +21,11 @@ const BTN = 'tiptap-btn';
 export default function TiptapEditor({
   initialJson,
   onChange,
+  autosaveHint = 'La sauvegarde est automatique',
 }: {
   initialJson?: unknown;
   onChange: (value: EditorValue) => void;
+  autosaveHint?: string;
 }) {
   const [fullscreen, setFullscreen] = useState(false);
 
@@ -121,7 +123,7 @@ export default function TiptapEditor({
       <div className="tiptap-footer">
         <span>{words} mots</span>
         <span>· ≈ {minutes} min de lecture</span>
-        <span className="tiptap-save-hint">La sauvegarde est automatique</span>
+        <span className="tiptap-save-hint">{autosaveHint}</span>
       </div>
     </div>
   );
