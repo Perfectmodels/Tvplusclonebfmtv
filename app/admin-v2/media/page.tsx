@@ -15,7 +15,10 @@ export default function MediaV2Page(){
       .finally(()=>{if(!controller.signal.aborted)setLoading(false)});
     return()=>controller.abort();
   },[page,revision]);
-  async function upload(file:File){setUploading(true);setError('');setMessage('');
+  async function upload(file:File){
+    if(!file.size||file.size>1024*1024){setError('La photo ne doit pas dépasser 1 Mo.');return}
+    if(!file.type.startsWith('image/')){setError('Veuillez choisir une image.');return}
+    setUploading(true);setError('');setMessage('');
     try{const form=new FormData();form.append('file',file);form.append('alt',alt||file.name);
       const r=await fetch('/api/admin-v2/media',{method:'POST',body:form,cache:'no-store'});const j=await r.json();
       if(!r.ok)throw Error(j.error?.message??'Envoi impossible');
@@ -24,9 +27,9 @@ export default function MediaV2Page(){
   }
   return <div><div className="v2-head"><div><h1 className="v2-title">Médiathèque</h1><p className="v2-lede">{total} médias. Stockage Supabase, images existantes préservées.</p></div></div>
     <section className="v2-card" style={{marginBottom:18}}><h2 className="v2-panel-title">Importer une couverture</h2>
-      <p className="v2-note">JPEG, PNG, WebP ou AVIF · 4 Mo maximum · export automatique au format WebP 1200 × 630.</p>
+      <p className="v2-note">JPEG, PNG, WebP, AVIF ou GIF · 1 Mo maximum · export automatique au format WebP 1200 × 630.</p>
       <div className="v2-toolbar"><label className="v2-field"><span>Description alternative</span><input value={alt} onChange={e=>setAlt(e.target.value)} maxLength={240}/></label>
-        <label className="v2-field"><span>Fichier</span><input type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploading} onChange={e=>{const f=e.target.files?.[0];if(f)upload(f);e.target.value=''}} /></label>
+        <label className="v2-field"><span>Fichier</span><input type="file" accept="image/*" disabled={uploading} onChange={e=>{const f=e.target.files?.[0];if(f)upload(f);e.target.value=''}} /></label>
       </div>{uploading&&<p role="status">Traitement de l’image…</p>}</section>
     {error&&<div className="v2-error" role="alert">{error}</div>}{message&&<div className="v2-success" role="status">{message}</div>}
     <section className="v2-card">{loading?<p role="status">Chargement de la médiathèque…</p>:

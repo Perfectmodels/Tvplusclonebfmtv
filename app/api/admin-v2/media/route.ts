@@ -28,15 +28,33 @@ export const POST=handleRoute(async(request:NextRequest)=>{
   const file=form.get('file');
   const alt=String(form.get('alt')??'').trim().slice(0,240);
   if(!(file instanceof File))throw new ApiError('Fichier manquant.',400);
-  if(!['image/jpeg','image/png','image/webp','image/avif'].includes(file.type))throw new ApiError('Image JPEG, PNG, WebP ou AVIF uniquement.',400);
-  if(!file.size||file.size>4*1024*1024)throw new ApiError('Fichier trop volumineux (4 Mo maximum).',400);
-  let processed:Buffer;
+  const MAX_BYTES = 1024 * 1024;
+  const allowed = new Set([
+    'image/jpeg', 'image/png', 'image/webp', 'image/avif',
+    'image/gif', 'image/tiff', 'image/heic', 'image/heif', 'image/bmp',
+  ]);
+  if (!allowed.has(file.type)) throw new ApiError(
+    'Format non pris en charge. Utilisez JPEG, PNG, WebP, AVIF, GIF, TIFF, HEIC ou BMP.', 400,
+  );
+  if (!file.size || file.size > MAX_BYTES) throw new ApiError(
+    'La photo doit peser au maximum 1 Mo.', 400,
+  );
+  let processed: Buffer | null = null;
   try {
-    processed=await sharp(Buffer.from(await file.arrayBuffer()),{limitInputPixels:35_000_000})
-      .rotate().resize(1200,630,{fit:'cover',position:'attention'})
-      .webp({quality:84,effort:4}).toBuffer();
-  }catch{throw new ApiError('Image illisible.',400);}
-  if(processed.length>5*1024*1024)throw new ApiError('Image optimisée trop volumineuse.',400);
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const source = sharp(bytes, { limitInputPixels: 35_000_000, animated: false, failOn: 'error' });
+    const metadata = await source.metadata();
+    if (!metadata.format || !['jpeg','png','webp','avif','gif','tiff','heif','bmp'].includes(metadata.format))
+      throw new Error('Invalid image');
+    // Une conversion WebP 1200×630 allège la photo sans stocker les originaux.
+    for (const quality of [82, 70, 58, 45]) {
+      const output = await sharp(bytes, { limitInputPixels: 35_000_000, animated: false, failOn: 'error' })
+        .rotate().resize(1200,630,{fit:'cover',position:'attention'})
+        .webp({quality,effort:4}).toBuffer();
+      if (output.length <= MAX_BYTES) { processed = output; break; }
+    }
+  } catch { throw new ApiError('Image illisible ou format non compatible.',400); }
+  if (!processed) throw new ApiError('Image trop volumineuse après optimisation (1 Mo maximum).',400);
   const path='article-covers/'+actor.id+'/'+randomUUID()+'.webp';
   const {error:uploadError}=await db.storage.from('media').upload(path,processed,{contentType:'image/webp',upsert:false,cacheControl:'31536000'});
   if(uploadError)throw new ApiError('Envoi du fichier refusé.',403,'UNAUTHORIZED');
