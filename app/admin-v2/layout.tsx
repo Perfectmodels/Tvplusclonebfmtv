@@ -4,6 +4,7 @@ import { getV2Actor, hasV2Permission } from '../../lib/auth/v2-admin';
 import { redirect } from 'next/navigation';
 import { usesTvplusV2 } from '../../lib/db/v2-public';
 import './admin-v2.css';
+import './regie.css';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Administration — TV+ Afrique', robots: { index: false, follow: false } };
 
