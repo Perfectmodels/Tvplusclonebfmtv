@@ -2,7 +2,7 @@ import Link from 'next/link';
 import {
   Activity, Archive, ArrowUpRight, BarChart3, CalendarClock,
   CheckCircle2, ChevronRight, Clock3, FilePenLine, FileText,
-  Images, LayoutDashboard, Layers3, Plus, ShieldCheck, UsersRound,
+  Images, Layers3, Plus, ShieldCheck, UsersRound,
 } from 'lucide-react';
 import { requireV2Page } from '../../lib/auth/v2-admin';
 import { createAuthClient } from '../../lib/auth/server';
@@ -26,9 +26,12 @@ export default async function DashboardV2() {
   const actor=await requireV2Page();
   const db=await createAuthClient();
   const now=new Date();
-  const startToday=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate())-60*60_000);
-  // Libreville est à UTC+1 toute l'année.
-  const startWeek=new Date(now.getTime()-7*24*60*60_000);
+  // Libreville est à UTC+1 toute l'année : minuit local n'est pas minuit UTC.
+  const gabonNow=new Date(now.getTime()+60*60_000);
+  const startToday=new Date(Date.UTC(
+    gabonNow.getUTCFullYear(),gabonNow.getUTCMonth(),gabonNow.getUTCDate(),
+  )-60*60_000);
+  const startWeek=new Date(startToday.getTime()-6*24*60*60_000);
   const startMonth=new Date(now.getTime()-30*24*60*60_000);
   const counts:Record<string,number>={};
   const statuses=['published','draft','in_review','approved','scheduled','inactive','archived'];
@@ -92,12 +95,19 @@ export default async function DashboardV2() {
   const categoryNames=new Map((categoryResult.data??[]).map(c=>[c.id,c.name]));
   const topCategories=[...categoryCounts].sort((a,b)=>b[1]-a[1]).slice(0,5);
   const maxCategory=Math.max(1,...topCategories.map(item=>item[1]));
+  const calendarKey=new Intl.DateTimeFormat('sv-SE',{
+    timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',
+  });
+  const perDay=new Map<string,number>();
+  for(const item of month){
+    if(!item.published_at)continue;
+    const key=calendarKey.format(new Date(item.published_at));
+    perDay.set(key,(perDay.get(key)??0)+1);
+  }
   const dayBars=Array.from({length:7},(_,i)=>{
     const date=new Date(startWeek.getTime()+i*24*60*60_000);
-    const key=new Intl.DateTimeFormat('sv-SE',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
-    const value=month.filter(item=>item.published_at&&
-      new Intl.DateTimeFormat('sv-SE',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'})
-        .format(new Date(item.published_at))===key).length;
+    const key=calendarKey.format(date);
+    const value=perDay.get(key)??0;
     return {date,label:dayLabel.format(date),value};
   });
   const maxDay=Math.max(1,...dayBars.map(day=>day.value));

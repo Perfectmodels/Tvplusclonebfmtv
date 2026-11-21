@@ -1229,3 +1229,12 @@
   .v2-dashboard-recent-row .v2-newsroom-status{font-size:9px}
   .v2-dashboard-total{font-size:20px}
 }
+
+/* Programmation intégrée à l'éditeur métier */
+.v2-compose-schedule{width:100%;display:flex;flex-direction:column;gap:8px}
+.v2-compose-schedule>.v2-compose-button{width:100%}
+.v2-compose-schedule>div{display:flex;flex-direction:column;gap:9px;padding:13px;border:1px solid #dce5f2;border-radius:8px;background:#f7f9fd}
+.v2-compose-schedule label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:750;color:#305070}
+.v2-compose-schedule input{width:100%;min-height:40px;padding:9px;border-radius:6px;border:1px solid #cfdbeb;background:#fff;font:inherit}
+.v2-compose-schedule .v2-compose-button{font-size:12px;min-height:38px}
+.v2-compose-archive{color:#8a5260!important}

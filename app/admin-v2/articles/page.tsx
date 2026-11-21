@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Archive, ArrowDownUp, CalendarClock, CheckCircle2, ChevronLeft, ChevronRight,
-  Clock3, Edit3, ExternalLink, FileText, Image as ImageIcon, MoreHorizontal,
+  Edit3, ExternalLink, FileText, Image as ImageIcon,
   Plus, RotateCcw, Search, ShieldCheck, SlidersHorizontal, ToggleLeft, ToggleRight, X,
 } from 'lucide-react';
 
@@ -65,6 +65,10 @@ export default function AdminV2Articles() {
   const [canReview,setCanReview]=useState(false);
 
   const refresh=useCallback(()=>setVersion(v=>v+1),[]);
+  useEffect(()=>{
+    const initial=new URLSearchParams(window.location.search).get('status');
+    if(initial && filters.some(tab=>tab.key===initial)) setFilter(initial);
+  },[]);
   useEffect(()=>{
     let live=true;
     Promise.all([
