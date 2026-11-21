@@ -43,7 +43,24 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
   const [muted, setMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<{ destroy: () => void } | null>(null);
-  const streamUrl = process.env.NEXT_PUBLIC_LIVE_STREAM_URL ?? '';
+  const fallbackStreamUrl = process.env.NEXT_PUBLIC_LIVE_STREAM_URL ?? '';
+  const [streamUrl, setStreamUrl] = useState(fallbackStreamUrl);
+
+  // Le direct est configuré depuis l'admin, sans redéploiement ni stockage vidéo.
+  // Le endpoint public est mis en cache côté CDN pendant 30 secondes.
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    fetch('/api/live-stream')
+      .then((response) => response.json())
+      .then((body) => {
+        if (!active) return;
+        const configured = body?.data?.enabled ? body.data.hlsUrl : '';
+        setStreamUrl(configured || fallbackStreamUrl);
+      })
+      .catch(() => { if (active) setStreamUrl(fallbackStreamUrl); });
+    return () => { active = false; };
+  }, [isOpen, fallbackStreamUrl]);
 
   const open = useCallback(() => {
     setIsOpen(true);
