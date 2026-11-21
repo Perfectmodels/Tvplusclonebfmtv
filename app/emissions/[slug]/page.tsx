@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '../../../components/Breadcrumb';
+import ReplayEmbed from '../../../components/video/ReplayEmbed';
 import { getPrograms, getEpisodes } from '../../../lib/db/repository';
 
 export const revalidate = 60;
@@ -36,12 +37,12 @@ export default async function EmissionPage({ params }: { params: Promise<{ slug:
           <div className="media-grid">
             {episodes.map((episode) => (
               <article key={episode.id} className="media-card">
-                {episode.thumbnail && <span className="media-image"><img src={episode.thumbnail} alt="" loading="lazy" /></span>}
+                <ReplayEmbed title={episode.title} url={episode.videoUrl} thumbnail={episode.thumbnail}/>
                 <span className="media-body">
                   <span className="media-meta">{new Date(episode.publishedAt).toLocaleDateString('fr-FR')}</span>
                   <strong className="media-title">{episode.title}</strong>
                   {episode.description && <span className="media-description">{episode.description}</span>}
-                  {episode.videoUrl && <a href={episode.videoUrl} target="_blank" rel="noopener noreferrer" className="direct-cta">Regarder l'épisode</a>}
+
                 </span>
               </article>
             ))}
