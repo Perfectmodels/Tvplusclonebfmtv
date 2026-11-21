@@ -49,6 +49,8 @@ export default function AdminV2Articles() {
   const [items,setItems]=useState<Article[]>([]);
   const [stats,setStats]=useState<ArticleStats>({total:0,counts:{}});
   const [categories,setCategories]=useState<Category[]>([]);
+  const [authors,setAuthors]=useState<{id:string;name:string}[]>([]);
+  const [author,setAuthor]=useState('');
   const [q,setQ]=useState('');
   const [filter,setFilter]=useState('');
   const [category,setCategory]=useState('');
@@ -75,11 +77,13 @@ export default function AdminV2Articles() {
       fetch('/api/admin-v2/articles/stats',{cache:'no-store'}).then(r=>r.json()),
       fetch('/api/admin-v2/categories',{cache:'no-store'}).then(r=>r.json()),
       fetch('/api/admin-v2/me',{cache:'no-store'}).then(r=>r.json()).catch(()=>null),
-    ]).then(([summary,cats,me])=>{
+      fetch('/api/admin-v2/articles/authors',{cache:'no-store'}).then(r=>r.json()).catch(()=>null),
+    ]).then(([summary,cats,me,authorsResult])=>{
       if(!live)return;
       if(summary.data)setStats(summary.data);
       if(cats.data?.items)setCategories(cats.data.items);
       if(me?.data?.permissions)setCanReview(me.data.permissions.includes('articles.review'));
+      if(authorsResult?.data?.items)setAuthors(authorsResult.data.items);
     }).catch(()=>{});
     return ()=>{live=false};
   },[version]);
@@ -89,7 +93,7 @@ export default function AdminV2Articles() {
     const timer=window.setTimeout(async()=>{
       try{
         setLoading(true);setError('');
-        const params=new URLSearchParams({page:String(page),status:filter,q,category,sort});
+        const params=new URLSearchParams({page:String(page),status:filter,q,category,author,sort});
         const res=await fetch('/api/admin-v2/articles?'+params.toString(),{
           signal:controller.signal,cache:'no-store',
         });
@@ -101,7 +105,7 @@ export default function AdminV2Articles() {
       }finally{if(!controller.signal.aborted)setLoading(false)}
     },q?280:0);
     return ()=>{controller.abort();clearTimeout(timer)};
-  },[page,q,filter,category,sort,version]);
+  },[page,q,filter,category,author,sort,version]);
 
   async function act(article:Article,action:Action,scheduled_at?:string) {
     const prompts:Partial<Record<Action,string>>={
@@ -213,6 +217,12 @@ export default function AdminV2Articles() {
               <option value="">Toutes les rubriques</option>
               {categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
             </select></label>
+          <label className="v2-newsroom-select"><FileText size={16} aria-hidden="true"/>
+            <select aria-label="Filtrer par auteur" value={author}
+              onChange={e=>{setAuthor(e.target.value);setPage(1)}}>
+              <option value="">Tous les auteurs</option>
+              {authors.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+            </select></label>
           <label className="v2-newsroom-select"><ArrowDownUp size={16} aria-hidden="true"/>
             <select aria-label="Trier les articles" value={sort} onChange={e=>{setSort(e.target.value);setPage(1)}}>
               <option value="updated">Dernières modifications</option>
@@ -230,7 +240,7 @@ export default function AdminV2Articles() {
             <FileText size={36}/><h3>Aucun article trouvé</h3>
             <p>Modifiez les filtres ou créez un nouvel article.</p>
             <button type="button" className="v2-newsroom-inline-link"
-              onClick={()=>{setQ('');setFilter('');setCategory('');setPage(1)}}>Réinitialiser les filtres</button>
+              onClick={()=>{setQ('');setFilter('');setCategory('');setAuthor('');setPage(1)}}>Réinitialiser les filtres</button>
           </div>:
           <div className="v2-newsroom-story-list">
             {items.map(a=>{

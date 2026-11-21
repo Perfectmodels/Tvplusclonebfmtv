@@ -25,7 +25,7 @@ export default function MediaV2Page(){
       setPage(1);setRevision(x=>x+1);setMessage('Image optimisée 1200 × 630 enregistrée.');
     }catch(e){setError(e instanceof Error?e.message:'Erreur réseau')}finally{setUploading(false)}
   }
-  return <div><div className="v2-head"><div><h1 className="v2-title">Médiathèque</h1><p className="v2-lede">{total} médias. Stockage Supabase, images existantes préservées.</p></div></div>
+  return <div><div className="v2-head"><div><h1 className="v2-title">Médiathèque</h1><p className="v2-lede">{total} médias enregistrés. Retrouvez vos photos et visuels de couverture.</p></div></div>
     <section className="v2-card" style={{marginBottom:18}}><h2 className="v2-panel-title">Importer une couverture</h2>
       <p className="v2-note">JPEG, PNG, WebP, AVIF ou GIF · 1 Mo maximum · export automatique au format WebP 1200 × 630.</p>
       <div className="v2-toolbar"><label className="v2-field"><span>Description alternative</span><input value={alt} onChange={e=>setAlt(e.target.value)} maxLength={240}/></label>
