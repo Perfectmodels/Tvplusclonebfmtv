@@ -299,9 +299,8 @@ export default function AdminV2Articles() {
                     {canReview&&a.status!=='archived'&&
                       <button type="button" disabled={busy} className="v2-newsroom-action archive"
                         onClick={()=>void act(a,'archive')}><Archive size={15}/> Archiver</button>}
-                    {online?<a className="v2-newsroom-action view" href={href} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink size={15}/> Voir l’article</a>:
-                      <span className="v2-newsroom-action-disabled"><ExternalLink size={15}/> Non public</span>}
+                    {online&&<a className="v2-newsroom-action view" href={href} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink size={15}/> Voir l’article</a>}
                   </div>
                 </article>
               );
