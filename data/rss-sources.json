@@ -1,0 +1,260 @@
+[
+  {
+    "name": "Actualite.cd — RDC",
+    "url": "https://actualite.cd/feed",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "BBC News — Afrique",
+    "url": "https://feeds.bbci.co.uk/news/world/africa/rss.xml",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Direct Infos Gabon",
+    "url": "https://directinfosgabon.com/feed/",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "France 24 — Afrique",
+    "url": "https://www.france24.com/fr/afrique/rss",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "France 24 — Sports",
+    "url": "https://www.france24.com/fr/sports/rss",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Gabon Actu",
+    "url": "https://gabonactu.com/feed/",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "Gabon Media Time",
+    "url": "https://gabonmediatime.com/feed/",
+    "active": false,
+    "priority": false
+  },
+  {
+    "name": "Gabon Review",
+    "url": "https://www.gabonreview.com/feed/",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "Google Actualités — Afrique centrale",
+    "url": "https://news.google.com/rss/search?q=Afrique%20centrale&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Cameroun",
+    "url": "https://news.google.com/rss/search?q=Cameroun&hl=fr&gl=CM&ceid=CM:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Cameroun politique",
+    "url": "https://news.google.com/rss/search?q=Cameroun%20politique&hl=fr&gl=CM&ceid=CM:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Centrafrique",
+    "url": "https://news.google.com/rss/search?q=Centrafrique&hl=fr&gl=CF&ceid=CF:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Congo économie",
+    "url": "https://news.google.com/rss/search?q=Congo%20Brazzaville%20economie&hl=fr&gl=CG&ceid=CG:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Congo-Brazzaville",
+    "url": "https://news.google.com/rss/search?q=Congo%20Brazzaville&hl=fr&gl=CG&ceid=CG:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Culture gabonaise",
+    "url": "https://news.google.com/rss/search?q=Gabon%20culture&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Économie CEMAC",
+    "url": "https://news.google.com/rss/search?q=economie%20CEMAC&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Économie gabonaise",
+    "url": "https://news.google.com/rss/search?q=Gabon%20economie&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "Google Actualités — Éducation gabonaise",
+    "url": "https://news.google.com/rss/search?q=Gabon%20education&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Emploi au Gabon",
+    "url": "https://news.google.com/rss/search?q=emploi%20Gabon&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Entreprises au Gabon",
+    "url": "https://news.google.com/rss/search?q=entreprises%20Gabon&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Environnement gabonais",
+    "url": "https://news.google.com/rss/search?q=Gabon%20environnement&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Football gabonais",
+    "url": "https://news.google.com/rss/search?q=football%20gabonais&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — France Afrique diplomatie",
+    "url": "https://news.google.com/rss/search?q=France%20Afrique%20diplomatie&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Gabon",
+    "url": "https://news.google.com/rss/search?q=Gabon&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "Google Actualités — Gabon énergie",
+    "url": "https://news.google.com/rss/search?q=Gabon%20energie&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Gabon infrastructures",
+    "url": "https://news.google.com/rss/search?q=Gabon%20infrastructures&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Guinée équatoriale",
+    "url": "https://news.google.com/rss/search?q=Guinee%20equatoriale&hl=fr&gl=GQ&ceid=GQ:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Justice gabonaise",
+    "url": "https://news.google.com/rss/search?q=Gabon%20justice&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Libreville",
+    "url": "https://news.google.com/rss/search?q=Libreville&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "Google Actualités — Politique gabonaise",
+    "url": "https://news.google.com/rss/search?q=Gabon%20politique&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "Google Actualités — Port-Gentil",
+    "url": "https://news.google.com/rss/search?q=Port-Gentil&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — RD Congo",
+    "url": "https://news.google.com/rss/search?q=Republique%20democratique%20du%20Congo&hl=fr&gl=CD&ceid=CD:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — RDC politique",
+    "url": "https://news.google.com/rss/search?q=RDC%20politique&hl=fr&gl=CD&ceid=CD:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Santé Afrique centrale",
+    "url": "https://news.google.com/rss/search?q=sante%20Afrique%20centrale&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Santé au Gabon",
+    "url": "https://news.google.com/rss/search?q=Gabon%20sante&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Google Actualités — Société gabonaise",
+    "url": "https://news.google.com/rss/search?q=Gabon%20societe&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "Google Actualités — Sport gabonais",
+    "url": "https://news.google.com/rss/search?q=Gabon%20football%20sport&hl=fr&gl=GA&ceid=GA:fr",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "Google Actualités — Tchad",
+    "url": "https://news.google.com/rss/search?q=Tchad&hl=fr&gl=TD&ceid=TD:fr",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "Journal du Gabon",
+    "url": "https://www.journaldugabon.com/feed/",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "Le Monde — Afrique",
+    "url": "https://www.lemonde.fr/afrique/rss_full.xml",
+    "active": false,
+    "priority": false
+  },
+  {
+    "name": "RFI — Afrique",
+    "url": "https://www.rfi.fr/fr/afrique/rss",
+    "active": true,
+    "priority": true
+  },
+  {
+    "name": "RFI — Économie",
+    "url": "https://www.rfi.fr/fr/economie/rss",
+    "active": true,
+    "priority": false
+  },
+  {
+    "name": "RFI — Sports",
+    "url": "https://www.rfi.fr/fr/sports/rss",
+    "active": true,
+    "priority": false
+  }
+]
