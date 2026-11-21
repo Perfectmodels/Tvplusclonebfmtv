@@ -26,11 +26,10 @@ export const POST=handleRoute(async(request:NextRequest)=>{
 });
 export const PATCH=handleRoute(async(request:NextRequest)=>{
   const {db}=await requireV2Api('schedule.manage');
-  const p=schema.safeParse(await request.json());
-  const body=await request.clone().json().catch(()=>null);
-  if(!p.success||!body?.id||!z.string().uuid().safeParse(body.id).success)
-    throw new ApiError('Destination invalide.',400);
-  const {data,error}=await db.from('live_distribution_channels').update(p.data).eq('id',body.id).select('id').maybeSingle();
+  const p=schema.extend({id:z.string().uuid()}).safeParse(await request.json());
+  if(!p.success)throw new ApiError('Destination invalide.',400);
+  const {id,...values}=p.data;
+  const {data,error}=await db.from('live_distribution_channels').update(values).eq('id',id).select('id').maybeSingle();
   if(error||!data)throw new ApiError('Modification refusée.',403,'UNAUTHORIZED');
   return ok(data);
 });
