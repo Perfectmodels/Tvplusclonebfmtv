@@ -5,6 +5,7 @@ import type { Story } from '../data';
 import type { PublicArticle, PublicEpisode, TopicItem } from './repository';
 import { categorySlug } from '../categories';
 import { relativeTime } from './format';
+import { videoWatchUrl } from '../video/providers';
 
 /**
  * Adaptateur de LECTURE pour la base existante TV+ V2.
@@ -173,13 +174,13 @@ export const getV2Topics = unstable_cache(async (): Promise<{data: TopicItem[]; 
 
 export const getV2Programs = unstable_cache(async () => {
   const { data, error } = await client().from('shows')
-    .select('id,slug,title,description,tagline,schedule_label,category_id,cover_media_id')
+    .select('id,slug,title,description,tagline,schedule_label,host_name,category_id,cover_media_id')
     .eq('is_active', true).order('position');
   if (error) throw new Error(error.message);
   const index = await lookups((data ?? []).map((p) => p.cover_media_id));
   return {
     data: (data ?? []).map((p) => ({
-      id: p.id, slug: p.slug, name: p.title, host: '',
+      id: p.id, slug: p.slug, name: p.title, host: p.host_name||'',
       slot: p.schedule_label, category: index.categories.get(p.category_id)?.name ?? 'Émission',
       image: imageUrl(index.media.get(p.cover_media_id)), description: p.description || p.tagline,
     })),
@@ -196,12 +197,12 @@ function playUrl(platform: string | null, externalId: string | null) {
 
 export const getV2Episodes = unstable_cache(async (limit = 24): Promise<{data: PublicEpisode[];source:'supabase'}> => {
   const { data, error } = await client().from('episodes')
-    .select('id,show_id,title,description,platform,external_id,duration_seconds,aired_at,created_at')
+    .select('id,show_id,title,description,platform,external_id,source_url,thumbnail_url,duration_seconds,aired_at,created_at')
     .eq('status', 'published').order('aired_at', { ascending: false }).limit(limit);
   if (error) throw new Error(error.message);
   return { data: (data ?? []).map((e) => ({
     id: e.id, programId: e.show_id, title: e.title, description: e.description ?? '',
-    videoUrl: playUrl(e.platform, e.external_id), thumbnail: '',
+    videoUrl: videoWatchUrl(e.platform, e.external_id, e.source_url), thumbnail: e.thumbnail_url||'',
     duration: e.duration_seconds != null ? Math.ceil(e.duration_seconds / 60) + ' min' : '',
     publishedAt: e.aired_at ?? e.created_at,
   })), source: 'supabase' };
