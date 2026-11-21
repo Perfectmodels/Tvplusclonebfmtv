@@ -66,6 +66,7 @@ export default function AdminV2Articles() {
   const [scheduling,setScheduling]=useState<Article|null>(null);
   const [scheduleLocal,setScheduleLocal]=useState(nextGabonHour);
   const [canReview,setCanReview]=useState(false);
+  const [actorId,setActorId]=useState('');
 
   const refresh=useCallback(()=>setVersion(v=>v+1),[]);
   useEffect(()=>{
@@ -84,6 +85,7 @@ export default function AdminV2Articles() {
       if(summary.data)setStats(summary.data);
       if(cats.data?.items)setCategories(cats.data.items);
       if(me?.data?.permissions)setCanReview(me.data.permissions.includes('articles.review'));
+      if(me?.data?.id)setActorId(me.data.id);
       if(authorsResult?.data?.items)setAuthors(authorsResult.data.items);
     }).catch(()=>{});
     return ()=>{live=false};
@@ -247,6 +249,7 @@ export default function AdminV2Articles() {
             {items.map(a=>{
               const busy=busyId===a.id;
               const online=a.status==='published';
+              const canModify=canReview||(actorId===a.author_id&&['draft','in_review'].includes(a.status));
               const href='/a/'+a.short_code;
               return (
                 <article key={a.id} className={'v2-newsroom-story'+(busy?' is-busy':'')}>
@@ -275,7 +278,7 @@ export default function AdminV2Articles() {
                   </div>
                   <div className="v2-newsroom-story-actions">
                     <Link href={'/admin-v2/articles/'+a.id+'/edit'} className="v2-newsroom-action edit">
-                      <Edit3 size={15}/> Modifier
+                      <Edit3 size={15}/> {canModify?'Modifier':'Consulter'}
                     </Link>
                     {canReview&&(online?
                       <button type="button" disabled={busy} className="v2-newsroom-action"
