@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Breadcrumb from '../../components/Breadcrumb';
 import QuestionSection from '../../components/QuestionSection';
+import ReplayEmbed from '../../components/video/ReplayEmbed';
 import { getEpisodes } from '../../lib/db/repository';
 
 export const revalidate = 60;
@@ -20,20 +21,11 @@ export default async function ReplaysPage() {
         <div className="media-grid">
           {episodes.map((episode) => (
             <article className="media-card" key={episode.id}>
-              <span className="media-image">
-                {episode.thumbnail ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={episode.thumbnail} alt="" loading="lazy" />
-                ) : null}
-                <span className="media-duration">{episode.duration}</span>
-              </span>
+              <ReplayEmbed title={episode.title} url={episode.videoUrl} thumbnail={episode.thumbnail} />
               <span className="media-body">
                 <span className="media-meta">REPLAY · {new Date(episode.publishedAt).toLocaleDateString('fr-FR')}</span>
                 <span className="media-title">{episode.title}</span>
                 {episode.description && <span className="media-description">{episode.description}</span>}
-                {episode.videoUrl && (
-                  <a className="admin-link" href={episode.videoUrl} target="_blank" rel="noopener noreferrer">Regarder</a>
-                )}
               </span>
             </article>
           ))}
