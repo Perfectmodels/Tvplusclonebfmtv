@@ -29,10 +29,25 @@ function safeUrl(input: unknown): string | null {
   return null;
 }
 
+const FONTS = new Set(['Barlow', 'Arial', 'Georgia', 'Times New Roman', 'Verdana']);
+const SIZES = new Set(['12', '14', '16', '18', '20', '24', '28', '32', '36']);
+
 function applyMarks(text: string, marks: Node['marks'] = []): string {
   let output = text;
   for (const mark of marks) {
     switch (mark.type) {
+      case 'editorialTextStyle': {
+        const attrs = mark.attrs ?? {};
+        const styles: string[] = [];
+        if (typeof attrs.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(attrs.color))
+          styles.push('color:' + attrs.color);
+        if (typeof attrs.fontFamily === 'string' && FONTS.has(attrs.fontFamily))
+          styles.push("font-family:'" + attrs.fontFamily + "'");
+        if (typeof attrs.fontSize === 'string' && SIZES.has(attrs.fontSize))
+          styles.push('font-size:' + attrs.fontSize + 'px');
+        if (styles.length) output = `<span style="${escapeHtml(styles.join(';'))}">${output}</span>`;
+        break;
+      }
       case 'bold': output = `<strong>${output}</strong>`; break;
       case 'italic': output = `<em>${output}</em>`; break;
       case 'underline': output = `<u>${output}</u>`; break;

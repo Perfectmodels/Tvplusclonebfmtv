@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
+import { Mark, mergeAttributes } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
@@ -11,10 +12,61 @@ import YouTube from '@tiptap/extension-youtube';
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough, List, ListOrdered,
   Quote, Link2, Image as ImageIcon, Youtube, Undo2, Redo2, AlignLeft, AlignCenter,
-  AlignRight, Minus, Maximize2, Heading2, Heading3, Heading4,
+  AlignRight, Minus, Maximize2, Heading2, Heading3, Heading4, Palette,
 } from 'lucide-react';
 
 export type EditorValue = { json: unknown; text: string; words: number };
+
+
+// Mark contrôlée : seules les polices et tailles de la liste éditoriale sont autorisées.
+const FONT_FAMILIES = [
+  { value: '', label: 'Police par défaut' },
+  { value: 'Barlow', label: 'Barlow' },
+  { value: 'Arial', label: 'Arial' },
+  { value: 'Georgia', label: 'Georgia' },
+  { value: 'Times New Roman', label: 'Times New Roman' },
+  { value: 'Verdana', label: 'Verdana' },
+];
+const FONT_SIZES = ['', '12', '14', '16', '18', '20', '24', '28', '32', '36'];
+const COLOR_PRESETS = ['#102547', '#111827', '#c71f36', '#0b4792', '#08785b', '#7735a4'];
+const fonts = new Set(FONT_FAMILIES.map(font => font.value));
+const sizes = new Set(FONT_SIZES);
+function validColor(value: unknown) {
+  return typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value) ? value : null;
+}
+
+const EditorialTextStyle = Mark.create({
+  name: 'editorialTextStyle',
+  addAttributes() {
+    return {
+      color: { default: null, parseHTML: element => validColor((element as HTMLElement).style.color) },
+      fontFamily: {
+        default: null,
+        parseHTML: element => {
+          const value = (element as HTMLElement).style.fontFamily.replaceAll(/["']/g, '');
+          return fonts.has(value) && value ? value : null;
+        },
+      },
+      fontSize: {
+        default: null,
+        parseHTML: element => {
+          const value = (element as HTMLElement).style.fontSize.replace(/px$/, '');
+          return sizes.has(value) && value ? value : null;
+        },
+      },
+    };
+  },
+  parseHTML() { return [{ tag: 'span[style]' }]; },
+  renderHTML({ HTMLAttributes }) {
+    const styles: string[] = [];
+    if (validColor(HTMLAttributes.color)) styles.push(`color: ${HTMLAttributes.color}`);
+    if (fonts.has(HTMLAttributes.fontFamily) && HTMLAttributes.fontFamily)
+      styles.push(`font-family: '${HTMLAttributes.fontFamily}'`);
+    if (sizes.has(HTMLAttributes.fontSize) && HTMLAttributes.fontSize)
+      styles.push(`font-size: ${HTMLAttributes.fontSize}px`);
+    return ['span', mergeAttributes({ style: styles.join('; ') }), 0];
+  },
+});
 
 const BTN = 'tiptap-btn';
 
@@ -33,6 +85,7 @@ export default function TiptapEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3, 4] }, link: { openOnClick: false } }),
+      EditorialTextStyle,
       Image.configure({ inline: false, allowBase64: false }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Placeholder.configure({ placeholder: 'Commencez à rédiger votre article…' }),
@@ -84,6 +137,48 @@ export default function TiptapEditor({
   return (
     <div className={'tiptap-shell' + (fullscreen ? ' is-fullscreen' : '')}>
       <div className="tiptap-toolbar" role="toolbar" aria-label="Mise en forme">
+        <div className="tiptap-toolbar-group tiptap-typography-controls" aria-label="Typographie">
+          <label className="tiptap-dropdown">
+            <span className="sr-only">Police du texte sélectionné</span>
+            <select aria-label="Police" title="Police" value={editor.getAttributes('editorialTextStyle').fontFamily ?? ''}
+              onChange={event => {
+                const value = event.target.value;
+                if (value) editor.chain().focus().setMark('editorialTextStyle', { fontFamily: value }).run();
+                else editor.chain().focus().setMark('editorialTextStyle', { fontFamily: null }).run();
+              }}>
+              {FONT_FAMILIES.map(font => <option key={font.value} value={font.value}>{font.label}</option>)}
+            </select>
+          </label>
+          <label className="tiptap-dropdown tiptap-size-select">
+            <span className="sr-only">Taille du texte sélectionné</span>
+            <select aria-label="Taille de la police" title="Taille du texte" value={editor.getAttributes('editorialTextStyle').fontSize ?? ''}
+              onChange={event => {
+                const value = event.target.value;
+                editor.chain().focus().setMark('editorialTextStyle', { fontSize: value || null }).run();
+              }}>
+              <option value="">Taille</option>
+              {FONT_SIZES.filter(Boolean).map(size => <option key={size} value={size}>{size} px</option>)}
+            </select>
+          </label>
+          <label className="tiptap-color-picker" title="Couleur de la police" aria-label="Couleur de la police">
+            <Palette size={16} aria-hidden="true" />
+            <input type="color" aria-label="Choisir une couleur" defaultValue="#102547"
+              onChange={event => editor.chain().focus().setMark('editorialTextStyle', { color: event.target.value }).run()} />
+          </label>
+          <div className="tiptap-color-swatches" aria-label="Couleurs rapides">
+            {COLOR_PRESETS.map(color => (
+              <button key={color} type="button" className="tiptap-color-swatch"
+                style={{ backgroundColor: color }} title={'Couleur ' + color}
+                aria-label={'Appliquer la couleur ' + color}
+                onClick={() => editor.chain().focus().setMark('editorialTextStyle', { color }).run()} />
+            ))}
+          </div>
+          <button type="button" className={BTN} title="Supprimer la mise en forme de police, couleur et taille"
+            onClick={() => editor.chain().focus().unsetMark('editorialTextStyle').run()}>
+            Réinitialiser
+          </button>
+        </div>
+
         <div className="tiptap-toolbar-group">
           <button type="button" className={BTN + (editor.isActive('bold') ? ' is-active' : '')} onClick={() => editor.chain().focus().toggleBold().run()} aria-label="Gras"><Bold size={16} /></button>
           <button type="button" className={BTN + (editor.isActive('italic') ? ' is-active' : '')} onClick={() => editor.chain().focus().toggleItalic().run()} aria-label="Italique"><Italic size={16} /></button>
