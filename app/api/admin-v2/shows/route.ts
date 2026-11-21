@@ -10,6 +10,8 @@ const schema=z.object({
   tagline:z.string().trim().max(200).default(''),
   description:z.string().trim().max(2500).default(''),
   schedule_label:z.string().trim().max(150).default(''),
+  host_name:z.string().trim().max(130).default(''),
+  frequency:z.string().trim().max(130).default(''),
   category_id:z.string().uuid().nullable().optional(),
   cover_media_id:z.string().uuid().nullable().optional(),
   is_active:z.boolean().default(false),
@@ -17,7 +19,7 @@ const schema=z.object({
 });
 export const GET=handleRoute(async()=>{
  const {db}=await requireV2Api('shows.manage');
- const {data,error}=await db.from('shows').select('id,slug,title,tagline,description,schedule_label,category_id,cover_media_id,is_active,position,updated_at').order('position');
+ const {data,error}=await db.from('shows').select('id,slug,title,tagline,description,schedule_label,host_name,frequency,category_id,cover_media_id,is_active,position,updated_at').order('position');
  if(error)throw new ApiError('Émissions indisponibles.',503,'UNAVAILABLE');
  return ok({items:data??[]});
 });
@@ -38,4 +40,16 @@ export const PATCH=handleRoute(async(request:NextRequest)=>{
  const {data,error}=await db.from('shows').update(values).eq('id',id).select('id,title,slug').maybeSingle();
  if(error||!data)throw new ApiError('Mise à jour refusée.',403,'UNAUTHORIZED');
  revalidateTag('public-programs');return ok(data);
+});
+
+export const DELETE=handleRoute(async(request:NextRequest)=>{
+ const {db}=await requireV2Api('shows.manage');
+ const parsed=z.object({id:z.string().uuid()}).safeParse(await request.json());
+ if(!parsed.success)throw new ApiError('Émission invalide.',400);
+ const {count,error:checkError}=await db.from('episodes').select('id',{head:true,count:'exact'}).eq('show_id',parsed.data.id);
+ if(checkError)throw new ApiError('Impossible de vérifier les épisodes associés.',503,'UNAVAILABLE');
+ if((count??0)>0)throw new ApiError('Cette émission possède des replays. Retirez-les ou affectez-les à une autre émission.',409,'CONFLICT');
+ const {error}=await db.from('shows').delete().eq('id',parsed.data.id);
+ if(error)throw new ApiError('Suppression refusée.',403,'UNAUTHORIZED');
+ revalidateTag('public-programs');return ok({deleted:true});
 });
