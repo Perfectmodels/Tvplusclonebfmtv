@@ -35,7 +35,7 @@ export const POST=handleRoute(async(request:NextRequest,{params}:Context)=>{
   if(body.data.action==='schedule')patch.published_at=body.data.scheduled_at;
   if(body.data.action==='approve'){patch.reviewed_by=actor.id;patch.reviewed_at=new Date().toISOString();}
   const {data,error}=await db.from('articles').update(patch).eq('id',id)
-    .eq('updated_at',body.data.expected_updated_at).select('id,slug,status,updated_at').maybeSingle();
+    .eq('updated_at',body.data.expected_updated_at).select('id,slug,short_code,status,updated_at').maybeSingle();
   if(error)throw new ApiError('Transition refusée par les permissions ou la base.',403,'UNAUTHORIZED');
   if(!data)throw new ApiError('Conflit de modification.',409,'CONFLICT');
   invalidatePublicArticle(article.slug);

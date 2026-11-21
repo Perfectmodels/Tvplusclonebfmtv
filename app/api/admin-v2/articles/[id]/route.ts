@@ -10,7 +10,7 @@ export const GET=handleRoute(async (_request:NextRequest,{params}:Context)=>{
   const {db}=await requireV2Api('articles.read_all');
   const {id}=await params;
   const {data,error}=await db.from('articles').select(
-    'id,slug,title,excerpt,category_id,cover_media_id,content_json,tags,seo_title,seo_description,status,country_code,province_slug,featured,is_alert,published_at,author_id,updated_at'
+    'id,slug,short_code,title,excerpt,category_id,cover_media_id,content_json,tags,seo_title,seo_description,status,country_code,province_slug,featured,is_alert,published_at,author_id,updated_at'
   ).eq('id',id).maybeSingle();
   if(error)throw new ApiError('Lecture de l’article impossible.',503,'UNAVAILABLE');
   if(!data)throw new ApiError('Article introuvable.',404,'NOT_FOUND');
@@ -29,7 +29,7 @@ export const PATCH=handleRoute(async (request:NextRequest,{params}:Context)=>{
   if(!existing)throw new ApiError('Article introuvable.',404,'NOT_FOUND');
   if(existing.updated_at!==expected)throw new ApiError('L’article a changé depuis votre dernière lecture. Rechargez-le avant d’enregistrer.',409,'CONFLICT');
   const {data,error}=await db.from('articles').update(patch).eq('id',id).eq('updated_at',expected)
-    .select('id,slug,status,updated_at').maybeSingle();
+    .select('id,slug,short_code,status,updated_at').maybeSingle();
   if(error?.code==='23505')throw new ApiError('Ce lien court est déjà utilisé.',409,'CONFLICT');
   if(error)throw new ApiError('Enregistrement refusé ou impossible.',403,'UNAUTHORIZED');
   if(!data)throw new ApiError('Conflit de modification. Actualisez cet article.',409,'CONFLICT');

@@ -15,7 +15,7 @@ export const GET = handleRoute(async (request: NextRequest) => {
   const status = p.get('status') ?? '';
   const search = (p.get('q') ?? '').trim().slice(0,100);
   let query = db.from('articles').select(
-    'id,slug,title,excerpt,category_id,cover_media_id,status,featured,is_alert,updated_at,created_at,published_at,author_id',
+    'id,slug,short_code,title,excerpt,category_id,cover_media_id,status,featured,is_alert,updated_at,created_at,published_at,author_id',
     { count:'exact' },
   );
   if (['draft','in_review','approved','scheduled','published'].includes(status)) query = query.eq('status',status);
@@ -31,7 +31,7 @@ export const POST = handleRoute(async (request: NextRequest) => {
   const body = cleanArticlePayload(await request.json());
   const {data,error} = await db.from('articles').insert({
     ...body, author_id:actor.id,status:'draft',published_at:null
-  }).select('id,slug,status,updated_at').single();
+  }).select('id,slug,short_code,status,updated_at').single();
   if(error?.code==='23505')throw new ApiError('Ce lien court existe déjà.',409,'CONFLICT');
   if(error)throw new ApiError('Impossible d’enregistrer le brouillon. Vérifiez les champs et les permissions.',400);
   invalidatePublicArticle(data.slug);

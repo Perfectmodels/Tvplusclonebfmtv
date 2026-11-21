@@ -32,6 +32,7 @@ export default function V2ArticleEditor({id,actorId,canReview}:{id?:string;actor
   const [status,setStatus]=useState('draft');
   const [updatedAt,setUpdatedAt]=useState('');
   const [ownerId,setOwnerId]=useState(actorId);
+  const [shortCode,setShortCode]=useState<string | null>(null);
   const [dirty,setDirty]=useState(false);
   const [mediaPage,setMediaPage]=useState(1);
   const canEdit=canReview||ownerId===actorId&&['draft','in_review'].includes(status);
@@ -53,7 +54,7 @@ export default function V2ArticleEditor({id,actorId,canReview}:{id?:string;actor
         featured:Boolean(a.featured),is_alert:Boolean(a.is_alert)});
       setInitialJson(a.content_json??emptyDoc);
       setContent({json:a.content_json??emptyDoc,text:'',words:0});
-      setStatus(a.status);setOwnerId(a.author_id);setUpdatedAt(a.updated_at);setDirty(false);setLoaded(true);
+      setStatus(a.status);setShortCode(a.short_code??null);setOwnerId(a.author_id);setUpdatedAt(a.updated_at);setDirty(false);setLoaded(true);
     }).catch(e=>{if(alive){setError(e.message);setLoaded(true)}});
     return()=>{alive=false};
   },[id]);
@@ -74,7 +75,7 @@ export default function V2ArticleEditor({id,actorId,canReview}:{id?:string;actor
         headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});
       const parsed=await response.json();
       if(!response.ok)throw new Error(parsed.error?.message??'Enregistrement impossible.');
-      setUpdatedAt(parsed.data.updated_at);setStatus(parsed.data.status);setDirty(false);
+      setUpdatedAt(parsed.data.updated_at);setStatus(parsed.data.status);if(parsed.data.short_code)setShortCode(parsed.data.short_code);setDirty(false);
       setSuccess('Article enregistré dans Supabase.');
       if(!id)router.replace('/admin-v2/articles/'+parsed.data.id+'/edit');
       return parsed.data;
@@ -126,7 +127,7 @@ export default function V2ArticleEditor({id,actorId,canReview}:{id?:string;actor
     <div className="v2-edit-grid">
       <section className="v2-card">
         <label className="v2-field"><span>Titre de l’article *</span><input maxLength={220} required value={form.title} disabled={!canEdit} onChange={e=>{const title=e.target.value;setForm(f=>({...f,title,slug:id?f.slug:slugify(title)}));setDirty(true)}}/></label>
-        <label className="v2-field"><span>Lien court *</span><input maxLength={120} required value={form.slug} disabled={!canEdit} onChange={e=>set('slug',slugify(e.target.value))}/><small>URL publique : /article/{form.slug||'titre-de-larticle'}</small></label>
+        <label className="v2-field"><span>Lien court *</span><input maxLength={120} required value={form.slug} disabled={!canEdit} onChange={e=>set('slug',slugify(e.target.value))}/><small>URL de partage : {shortCode ? '/a/' + shortCode : 'générée automatiquement à l’enregistrement'}</small></label>
         <label className="v2-field"><span>Résumé / chapô</span><textarea maxLength={2000} value={form.excerpt} disabled={!canEdit} onChange={e=>set('excerpt',e.target.value)} /></label>
         <h2 className="v2-panel-title">Contenu de l’article</h2>
         <TiptapEditor initialJson={initialJson} onChange={value=>{setContent(value);setDirty(true)}} autosaveHint="Cliquez sur Enregistrer pour sauvegarder."/>
