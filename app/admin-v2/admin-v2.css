@@ -17,7 +17,7 @@
 .v2-card{background:#fff;border:1px solid #dfe5ef;border-radius:11px;padding:22px;box-shadow:0 2px 10px #121e3710}
 .v2-title{font-size:26px;line-height:1.2;margin:0;color:#102547}
 .v2-lede{color:#64728a;margin:6px 0 20px}
-.v2-head{display:flex;gap:12px;align-items:start;justify-content:space-between;flex-wrap:wrap;margin-bottom:20px}
+.v2-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:20px}
 .v2-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px}
 .v2-stat-number{font-size:30px;font-weight:800;display:block;font-variant-numeric:tabular-nums}
 .v2-stat-label{font-size:12px;color:#576984}

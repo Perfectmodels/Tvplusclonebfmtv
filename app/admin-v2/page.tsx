@@ -16,16 +16,17 @@ export default async function DashboardV2() {
     db.from('media').select('id',{head:true,count:'exact'}),
     db.from('articles').select('id,slug,title,status,updated_at').order('updated_at',{ascending:false}).limit(8),
   ]);
-  const valid=(i:number)=>results[i].status==='fulfilled'?results[i].value:null;
+  const count=(i:number)=>{const result=results[i];return result.status==='fulfilled'?result.value.count:null;};
   const cards=[
-    {label:'Articles publiés',value:valid(0)?.count},
-    {label:'Brouillons',value:valid(1)?.count},
-    {label:'À valider',value:valid(2)?.count},
-    {label:'Programmés',value:valid(3)?.count},
-    {label:'Rubriques',value:valid(4)?.count},
-    {label:'Images et médias',value:valid(5)?.count},
+    {label:'Articles publiés',value:count(0)},
+    {label:'Brouillons',value:count(1)},
+    {label:'À valider',value:count(2)},
+    {label:'Programmés',value:count(3)},
+    {label:'Rubriques',value:count(4)},
+    {label:'Images et médias',value:count(5)},
   ];
-  const recent=valid(6)?.data??[];
+  const latest=results[6];
+  const recent=latest.status==='fulfilled'?latest.value.data??[]:[];
   return <div>
     <div className="v2-head"><div><h1 className="v2-title">Tableau de bord</h1><p className="v2-lede">Bienvenue {actor.name}. Vue des contenus réellement enregistrés sur TV+ Afrique.</p></div>
       {actor.permissions.includes('articles.create')&&<Link className="admin-btn admin-btn-primary" href="/admin-v2/articles/new">Rédiger un article</Link>}
