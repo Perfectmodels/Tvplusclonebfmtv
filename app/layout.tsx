@@ -27,9 +27,9 @@ async function getOptionalAccount() {
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
   const [{ data: categories }, { data: topics }, account] = await Promise.all([
-    getCategories(),
-    getHeaderTopics(),
-    getOptionalAccount(),
+    getCategories().catch(() => ({ data: [] as string[] })),
+    getHeaderTopics().catch(() => ({ data: [] as { label: string; link: string }[] })),
+    getOptionalAccount().catch(() => ({ user: null, profile: null })),
   ]);
 
   return (

@@ -22,12 +22,18 @@ export default async function Home({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const [{ items: filtered }, { data: feed }, { items: wire }, { data: categories }] = await Promise.all([
+  // Les erreurs d'un service n'empêchent pas les autres blocs de s'afficher.
+  // La recherche n'a pas besoin des flux RSS ni de charger la navigation des rubriques.
+  const results = await Promise.allSettled([
     listArticles({ search: q, pageSize: 30 }),
-    getFilActu(8),
-    getNewsFeed(20),
-    getCategories(),
+    q ? Promise.resolve({ data: [] }) : getFilActu(8),
+    q ? Promise.resolve({ items: [] }) : getNewsFeed(20),
+    q ? Promise.resolve({ data: [] }) : getCategories(),
   ]);
+  const filtered = results[0].status === 'fulfilled' ? results[0].value.items : [];
+  const feed = results[1].status === 'fulfilled' ? results[1].value.data : [];
+  const wire = results[2].status === 'fulfilled' ? results[2].value.items : [];
+  const categories = results[3].status === 'fulfilled' ? results[3].value.data : [];
 
   const alert = filtered.find((story) => story.kind === 'alert');
   const hero = filtered.find((story) => story.featured) ?? filtered[0];

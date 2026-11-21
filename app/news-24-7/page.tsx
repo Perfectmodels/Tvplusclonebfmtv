@@ -7,9 +7,13 @@ import { getNewsFeed } from '../../lib/rss/news';
 export const revalidate = 60;
 
 export default async function FilInfoPage() {
-  const [{ data: feed }, { items: wire }, { data: categories }, { items: allArticles }] = await Promise.all([
+  const results = await Promise.allSettled([
     getFilActu(20), getNewsFeed(20), getCategories(), listArticles({ pageSize: 30 }),
   ]);
+  const feed = results[0].status === 'fulfilled' ? results[0].value.data : [];
+  const wire = results[1].status === 'fulfilled' ? results[1].value.items : [];
+  const categories = results[2].status === 'fulfilled' ? results[2].value.data : [];
+  const allArticles = results[3].status === 'fulfilled' ? results[3].value.items : [];
   const alert = allArticles.find((story) => story.kind === 'alert');
   const slugs = new Set(feed.map((f) => f.slug));
   const extra = allArticles
@@ -39,6 +43,7 @@ export default async function FilInfoPage() {
         <span className="section-live-tag"><span /> Flux continu</span>
       </div>
       <div className="wire-grid">
+        {wire.length === 0 && <p className="empty-state">Le fil RSS est temporairement indisponible. Les autres rubriques restent accessibles.</p>}
         {wire.map((item) => (
           <a href={item.href} className="wire-item" key={item.id} target="_blank" rel="noopener noreferrer">
             <span className="wire-time">{item.time}</span>
