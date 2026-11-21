@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ImagePlus, FileText, Globe2, Image as ImageIcon } from 'lucide-react';
+import {
+  ArrowLeft, ArrowUpRight, Check, CheckCircle2, Circle, Copy, Eye, FileText,
+  Globe2, ImagePlus, Image as ImageIcon, Link2, Save, Send, ShieldCheck,
+  Sparkles, X,
+} from 'lucide-react';
 import TiptapEditor, { type EditorValue } from '../editor/TiptapEditor';
 import { COUNTRIES, GABON_PROVINCES } from '../../lib/editor/countries';
 
@@ -55,11 +59,24 @@ export default function V2ArticleEditor({
   const [shortCode, setShortCode] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [mediaPage, setMediaPage] = useState(1);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const canEdit = canReview || (ownerId === actorId && ['draft', 'in_review'].includes(status));
   const cover = useMemo(() => media.find(item => item.id === form.cover_media_id), [media, form.cover_media_id]);
   const chosenMedia = useMemo(() => media.slice(0, mediaPage * 18), [media, mediaPage]);
   const tagCount = parseKeywords(keywords).length;
+  const categoryName = categories.find(category => category.id === form.category_id)?.name ?? 'Rubrique non définie';
+  const countryName = COUNTRIES.find(country => country.code === form.country_code)?.name ?? form.country_code;
+  const articleLink = shortCode ? '/a/' + shortCode : null;
+  const checks = [
+    { label: 'Titre de l’article', valid: form.title.trim().length >= 5 },
+    { label: 'Chapeau renseigné', valid: form.excerpt.trim().length >= 20 },
+    { label: 'Rubrique et pays', valid: Boolean(form.category_id && form.country_code) },
+    { label: 'Contenu rédigé', valid: content.words > 0 },
+    { label: 'Photo de couverture', valid: Boolean(form.cover_media_id) },
+    { label: 'Mots-clés saisis', valid: tagCount > 0 },
+  ];
+  const completeCount = checks.filter(check => check.valid).length;
 
   const setField = <K extends keyof ArticleForm>(key: K, value: ArticleForm[K]) => {
     setForm(current => ({ ...current, [key]: value }));
@@ -158,6 +175,33 @@ export default function V2ArticleEditor({
     } finally { setSaving(false); }
   }, [canEdit, form, keywords, content.json, updatedAt, id, router]);
 
+  useEffect(() => {
+    if (!dirty) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [dirty]);
+
+  useEffect(() => {
+    const onKeyboardShortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        if (canEdit && loaded && !saving) void save();
+      }
+      if (event.key === 'Escape') setPreviewOpen(false);
+    };
+    document.addEventListener('keydown', onKeyboardShortcut);
+    return () => document.removeEventListener('keydown', onKeyboardShortcut);
+  }, [save, canEdit, loaded, saving]);
+
+  async function copyPublicLink() {
+    if (!articleLink || status !== 'published') return;
+    try {
+      await navigator.clipboard.writeText(window.location.origin + articleLink);
+      setSuccess('Lien public copié.');
+    } catch { setError('Impossible de copier le lien automatiquement.'); }
+  }
+
   async function workflow(action: 'submit' | 'approve' | 'publish' | 'revert') {
     if (!id) return;
     if (action === 'publish' && !window.confirm('Publier cet article sur le site public ?')) return;
@@ -208,99 +252,114 @@ export default function V2ArticleEditor({
   }
 
   return (
-    <div className="v2-article-form">
-      <div className="v2-head">
-        <div>
-          <Link href="/admin-v2/articles" className="admin-link">← Tous les articles</Link>
-          <h1 className="v2-title">{id ? 'Modifier l’article' : 'Rédiger un article'}</h1>
-          <p className="v2-lede">{statuses[status] ?? status} {dirty ? '· Modifications non enregistrées' : ''}</p>
-          <span className="v2-editor-url">Lien de partage :
-            <code>{shortCode ? '/a/' + shortCode : 'créé automatiquement à la première sauvegarde'}</code>
-          </span>
-        </div>
-        <div className="v2-actions">
-          <button type="button" className="admin-btn admin-btn-primary" disabled={saving || !loaded || !canEdit}
-            onClick={() => void save()}>{saving ? 'Enregistrement…' : 'Enregistrer le brouillon'}</button>
-          {id && canEdit && ['draft', 'in_review'].includes(status) &&
-            <button type="button" className="admin-btn admin-btn-ghost" disabled={saving} onClick={() => workflow('submit')}>Soumettre</button>}
-          {id && canReview && status === 'in_review' &&
-            <button type="button" className="admin-btn admin-btn-ghost" disabled={saving} onClick={() => workflow('approve')}>Valider</button>}
-          {id && canReview && status !== 'published' &&
-            <button type="button" className="admin-btn admin-btn-primary" disabled={saving} onClick={() => workflow('publish')}>Publier</button>}
-          {id && canReview && status === 'published' &&
-            <button type="button" className="admin-btn admin-btn-ghost" disabled={saving} onClick={() => workflow('revert')}>Dépublier</button>}
-        </div>
-      </div>
-
-      {error && <p className="v2-error" role="alert">{error}</p>}
-      {success && <p className="v2-success" role="status">{success}</p>}
-      {!loaded ? <div className="v2-card" role="status">Chargement de l’article…</div> : (
-        <>
-          <section className="v2-card" aria-labelledby="article-identite">
-            <div className="v2-editor-section-heading">
-              <span className="v2-editor-step">1</span>
-              <div><h2 id="article-identite">Informations de l’article</h2>
-                <p>Préparez le titre, le chapeau, les mots-clés et le classement de votre sujet.</p></div>
+    <div className="v2-article-form v2-compose-workspace">
+      <header className="v2-compose-header">
+        <div className="v2-compose-title-block">
+          <nav className="v2-compose-breadcrumb" aria-label="Fil d’Ariane">
+            <Link href="/admin-v2"><ArrowLeft size={14} /> Administration</Link>
+            <span aria-hidden="true">/</span>
+            <Link href="/admin-v2/articles">Articles</Link>
+            <span aria-hidden="true">/</span>
+            <strong>{id ? 'Modifier' : 'Nouvel article'}</strong>
+          </nav>
+          <div className="v2-compose-title-line">
+            <span className="v2-compose-title-icon"><FileText size={25} strokeWidth={1.8} /></span>
+            <div>
+              <p className="v2-compose-eyebrow">TV+ AFRIQUE · STUDIO ÉDITORIAL</p>
+              <h1>{id ? 'Édition de l’article' : 'Nouvel article'}</h1>
+              <p className="v2-compose-subtitle">Rédaction, référencement et préparation à la publication.</p>
             </div>
-            <div className="v2-editor-field-grid">
-              <label className="v2-field is-wide">
-                <span>Titre de l’article *</span>
+          </div>
+        </div>
+        <div className="v2-compose-header-actions">
+          <div className="v2-compose-signal" aria-live="polite">
+            <span className={'v2-compose-status-badge status-' + status}>{statuses[status] ?? status}</span>
+            <span className={'v2-compose-save-state ' + (dirty ? 'is-dirty' : '')}>
+              {saving ? 'Enregistrement…' : dirty ? 'Modifications non enregistrées' :
+                id ? 'Modifications enregistrées' : 'Nouvel article'}
+            </span>
+          </div>
+          <div className="v2-compose-action-row">
+            <button type="button" className="v2-compose-button secondary" onClick={() => setPreviewOpen(true)}
+              disabled={!loaded}><Eye size={17} /> Prévisualiser</button>
+            {canEdit && <button type="button" className="v2-compose-button primary"
+              onClick={() => void save()} disabled={saving || !loaded}>
+              <Save size={16} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+            </button>}
+          </div>
+        </div>
+      </header>
+
+      <nav className="v2-compose-jumpnav" aria-label="Étapes de rédaction">
+        <a href="#article-identite"><span>01</span> Informations</a>
+        <a href="#article-contenu"><span>02</span> Rédaction</a>
+        <a href="#article-seo"><span>03</span> SEO et partage</a>
+        <a href="#article-publication"><span>04</span> Publication</a>
+      </nav>
+
+      {error && <div className="v2-error v2-compose-feedback" role="alert">{error}</div>}
+      {success && <div className="v2-success v2-compose-feedback" role="status">{success}</div>}
+
+      {!loaded ? <div className="v2-compose-loading" role="status">Chargement de votre espace de rédaction…</div> : (
+        <div className="v2-compose-columns">
+          <main className="v2-compose-main">
+            <section className="v2-card v2-compose-card" id="article-identite" aria-labelledby="article-identite-title">
+              <div className="v2-compose-card-header">
+                <div><span className="v2-compose-number">01 · IDENTITÉ ÉDITORIALE</span>
+                  <h2 id="article-identite-title">Informations de l’article</h2>
+                  <p>Les éléments qui identifient votre sujet sur TV+ Afrique.</p></div>
+              </div>
+              <label className="v2-field v2-compose-title-field">
+                <span>Titre principal <b aria-hidden="true">*</b></span>
                 <input className="v2-editor-title-input" maxLength={220} required disabled={!canEdit}
-                  placeholder="Saisir le titre principal…" value={form.title}
+                  placeholder="Quel est le sujet de votre article ?" value={form.title}
                   onChange={event => {
                     const title = event.target.value;
                     setForm(current => ({ ...current, title, slug: id ? current.slug : slugify(title) }));
-                    setDirty(true);
+                    setDirty(true); setSuccess('');
                   }} />
+                <small className="v2-compose-field-count">{form.title.length} / 220 caractères</small>
               </label>
-              <label className="v2-field is-wide">
-                <span>Chapeau de l’article *</span>
-                <textarea className="v2-editor-chapeau" value={form.excerpt} maxLength={2000} required
-                  disabled={!canEdit} placeholder="Résumez en deux ou trois phrases l’essentiel de l’article…"
-                  onChange={event => setField('excerpt', event.target.value)} />
-                <small className="v2-editor-help">Ce résumé apparaît dans l’aperçu des articles et sert de description SEO par défaut.</small>
+              <label className="v2-field">
+                <span>Chapeau / résumé de l’article <b aria-hidden="true">*</b></span>
+                <textarea className="v2-editor-chapeau" maxLength={2000} required disabled={!canEdit}
+                  placeholder="Présentez l’essentiel de l’information en deux ou trois phrases…"
+                  value={form.excerpt} onChange={event => setField('excerpt', event.target.value)} />
+                <small className="v2-editor-help">Ce texte introduit l’article et sert de description SEO par défaut.</small>
               </label>
-              <label className="v2-field is-wide v2-editor-keywords">
-                <span>Mots-clés</span>
+              <label className="v2-field v2-compose-keywords">
+                <span>Mots-clés de l’article</span>
                 <input value={keywords} disabled={!canEdit} maxLength={1350}
-                  placeholder="actualité gabonaise, économie, Libreville"
+                  placeholder="Gabon, actualité, Libreville, institutions"
                   onChange={event => { setKeywords(event.target.value); setDirty(true); setSuccess(''); }} />
-                <small className="v2-editor-help">Séparez les mots-clés par une virgule · {tagCount}/20 mots-clés</small>
+                <small className="v2-editor-help">Séparez chaque mot-clé par une virgule. <strong>{tagCount}/20</strong> mots-clés.</small>
               </label>
-              <label className="v2-field">
-                <span><Globe2 size={15} aria-hidden="true" /> Pays concerné *</span>
-                <select value={form.country_code} disabled={!canEdit}
-                  onChange={event => {
-                    const country = event.target.value;
-                    setForm(current => ({ ...current, country_code: country, province_slug: country === 'GA' ? current.province_slug : '' }));
-                    setDirty(true);
-                  }}>
-                  {COUNTRIES.map(country => <option value={country.code} key={country.code}>{country.name}</option>)}
-                </select>
-              </label>
-              {form.country_code === 'GA' && (
-                <label className="v2-field">
-                  <span>Province du Gabon</span>
-                  <select value={form.province_slug} disabled={!canEdit}
-                    onChange={event => setField('province_slug', event.target.value)}>
-                    <option value="">Tout le Gabon / Non précisée</option>
-                    {GABON_PROVINCES.map(province =>
-                      <option key={province.value} value={province.value}>{province.label}</option>)}
-                  </select>
-                </label>
-              )}
-              <label className="v2-field">
-                <span>Rubrique *</span>
-                <select value={form.category_id} disabled={!canEdit} required
-                  onChange={event => setField('category_id', event.target.value)}>
-                  <option value="">Sélectionner la rubrique</option>
-                  {categories.map(category => <option value={category.id} key={category.id}>{category.name}</option>)}
-                </select>
-                {!categories.length && <small className="v2-editor-help">Les rubriques sont chargées depuis les paramètres du site.</small>}
-              </label>
-            </div>
-            <details className="v2-editor-collapsible">
-              <summary>Référencement SEO avancé et lien de l’article (facultatif)</summary>
+            </section>
+
+            <section className="v2-card v2-compose-card v2-compose-writing" id="article-contenu"
+              aria-labelledby="article-contenu-title">
+              <div className="v2-compose-card-header">
+                <div><span className="v2-compose-number">02 · PRODUCTION ÉDITORIALE</span>
+                  <h2 id="article-contenu-title">Rédiger le contenu</h2>
+                  <p>Un véritable espace de travail pour construire et mettre en forme votre article.</p></div>
+                <div className="v2-compose-wordcount"><strong>{content.words}</strong><span>mots</span></div>
+              </div>
+              <TiptapEditor initialJson={initialJson}
+                onChange={value => { setContent(value); setDirty(true); }}
+                autosaveHint="Sauvegarde manuelle · Ctrl/⌘ + S" />
+            </section>
+
+            <section className="v2-card v2-compose-card" id="article-seo" aria-labelledby="article-seo-title">
+              <div className="v2-compose-card-header">
+                <div><span className="v2-compose-number">03 · VISIBILITÉ EN LIGNE</span>
+                  <h2 id="article-seo-title">SEO et partage</h2>
+                  <p>Optimisez la visibilité de votre article dans les moteurs et sur les réseaux sociaux.</p></div>
+              </div>
+              <div className="v2-compose-search-preview">
+                <span className="v2-compose-search-site">TV+ Afrique · Article</span>
+                <strong>{form.seo_title.trim() || form.title.trim() || 'Le titre de votre article s’affichera ici'}</strong>
+                <span>{form.seo_description.trim() || form.excerpt.trim() || 'Le chapeau de l’article apparaîtra ici.'}</span>
+              </div>
               <div className="v2-editor-field-grid">
                 <label className="v2-field">
                   <span>Titre SEO personnalisé</span>
@@ -309,88 +368,212 @@ export default function V2ArticleEditor({
                     onChange={event => setField('seo_title', event.target.value)} />
                 </label>
                 <label className="v2-field">
-                  <span>Lien lisible (slug)</span>
+                  <span>Identifiant lisible (slug)</span>
                   <input value={form.slug} disabled={!canEdit} required maxLength={120}
                     onChange={event => setField('slug', slugify(event.target.value))} />
-                  <small className="v2-editor-help">Le lien partagé reste l’identifiant court /a/…</small>
                 </label>
                 <label className="v2-field is-wide">
                   <span>Description SEO personnalisée</span>
-                  <textarea maxLength={320} disabled={!canEdit}
-                    value={form.seo_description} placeholder="Par défaut : le chapeau de l’article"
+                  <textarea value={form.seo_description} disabled={!canEdit} maxLength={320}
+                    placeholder="Par défaut : le chapeau de l’article"
                     onChange={event => setField('seo_description', event.target.value)} />
                 </label>
               </div>
-            </details>
-            <div className="v2-editor-checks">
-              <label><input type="checkbox" checked={form.featured} disabled={!canEdit}
-                onChange={event => setField('featured', event.target.checked)} /> À la une</label>
-              <label><input type="checkbox" checked={form.is_alert} disabled={!canEdit}
-                onChange={event => setField('is_alert', event.target.checked)} /> Alerte info</label>
-            </div>
-          </section>
-
-          <section className="v2-card" aria-labelledby="article-contenu">
-            <div className="v2-editor-section-heading">
-              <span className="v2-editor-step">2</span>
-              <div><h2 id="article-contenu"><FileText size={18} aria-hidden="true" /> Contenu de l’article</h2>
-                <p>Rédigez votre texte, choisissez la police, la taille et les couleurs sans quitter l’éditeur.</p></div>
-            </div>
-            <TiptapEditor initialJson={initialJson}
-              onChange={value => { setContent(value); setDirty(true); }}
-              autosaveHint="Cliquez sur Enregistrer pour sauvegarder." />
-          </section>
-
-          <section className="v2-card" aria-labelledby="article-couverture">
-            <div className="v2-editor-section-heading">
-              <span className="v2-editor-step">3</span>
-              <div><h2 id="article-couverture"><ImageIcon size={18} aria-hidden="true" /> Photo de couverture</h2>
-                <p>JPEG, PNG, WebP, AVIF ou GIF — 1 Mo maximum. Format de sortie : 1200 × 630 pixels.</p></div>
-            </div>
-            <div className="v2-cover-layout">
-              <div className="v2-cover-preview" aria-label="Aperçu de la couverture">
-                {cover ? <img src={cover.url} alt={cover.alt || 'Photo de couverture'} /> :
-                  <div className="v2-cover-empty"><ImagePlus size={28} aria-hidden="true" />
-                    <p>{form.cover_media_id ? 'Image existante sélectionnée, hors des médias récents' :
-                      'Aucune photo de couverture sélectionnée'}</p></div>}
+              <div className="v2-compose-shortlink">
+                <Link2 size={16} aria-hidden="true" />
+                <span className="v2-compose-shortlink-label">Adresse courte de partage</span>
+                <code>{articleLink ? 'tvplusv2.vercel.app' + articleLink : 'Générée lors de la première sauvegarde'}</code>
+                {status === 'published' && articleLink &&
+                  <button type="button" className="v2-compose-link-button" onClick={() => void copyPublicLink()}>
+                    <Copy size={14} /> Copier</button>}
               </div>
-              <div>
-                <label className="v2-cover-upload">
-                  <strong>Importer une nouvelle photo</strong>
-                  <span className="v2-editor-help">Limite stricte : 1 Mo par fichier. Les images compatibles sont optimisées en WebP.</span>
-                  <input type="file" accept="image/*" disabled={!canEdit || uploading}
-                    onChange={event => {
-                      const file = event.target.files?.[0];
-                      if (file) void upload(file);
-                      event.target.value = '';
-                    }} />
-                  {uploading && <small role="status">Optimisation et téléversement…</small>}
-                </label>
-                <details className="v2-cover-options">
-                  <summary>Ou choisir une photo de la médiathèque</summary>
-                  <div className="v2-image-grid">
-                    {chosenMedia.map(item => (
-                      <button key={item.id} type="button" disabled={!canEdit}
-                        className="v2-image-choice" aria-pressed={form.cover_media_id === item.id}
-                        title={item.alt || 'Sélectionner cette photo'}
-                        onClick={() => setField('cover_media_id', item.id)}>
-                        <img src={item.url} alt={item.alt || 'Photo de la médiathèque'} loading="lazy" />
-                      </button>
-                    ))}
-                  </div>
-                  {media.length > chosenMedia.length &&
-                    <button type="button" className="admin-btn admin-btn-ghost"
-                      onClick={() => setMediaPage(page => page + 1)}>Afficher plus de photos</button>}
-                </details>
+            </section>
+          </main>
+
+          <aside className="v2-compose-rail" aria-label="Paramètres et suivi de publication">
+            <section className="v2-compose-side-card v2-compose-status-panel" id="article-publication"
+              aria-labelledby="article-publication-title">
+              <div className="v2-compose-side-heading">
+                <span className="v2-compose-side-icon"><ShieldCheck size={18} /></span>
+                <div><h2 id="article-publication-title">Publication</h2><span>Suivi et validation éditoriale</span></div>
               </div>
-            </div>
-          </section>
-          <div className="v2-editor-footer-actions">
-            <button type="button" className="admin-btn admin-btn-primary" disabled={saving || !canEdit}
-              onClick={() => void save()}>{saving ? 'Enregistrement…' : 'Enregistrer le brouillon'}</button>
-          </div>
-        </>
+              <div className="v2-compose-publishing-summary">
+                <span>Statut actuel</span>
+                <strong>{statuses[status] ?? status}</strong>
+                {updatedAt && <small>Dernière sauvegarde : {new Date(updatedAt).toLocaleString('fr-FR', {timeZone:'Africa/Libreville'})}</small>}
+              </div>
+              <div className="v2-compose-progress-title">
+                <strong>Préparation de l’article</strong>
+                <span>{completeCount} / {checks.length}</span>
+              </div>
+              <div className="v2-compose-progress" role="progressbar" aria-label="Éléments de préparation renseignés"
+                aria-valuemin={0} aria-valuemax={checks.length} aria-valuenow={completeCount}>
+                <span style={{ width: (completeCount / checks.length * 100) + '%' }} />
+              </div>
+              <ul className="v2-compose-checklist">
+                {checks.map(check => <li key={check.label} className={check.valid ? 'is-complete' : ''}>
+                  {check.valid ? <CheckCircle2 size={15} /> : <Circle size={15} />}
+                  {check.label}
+                </li>)}
+              </ul>
+              <p className="v2-compose-check-note">
+                Ces repères sont indicatifs. La publication dépend aussi des droits et de la validation éditoriale.
+              </p>
+              <div className="v2-compose-publish-actions">
+                {canEdit && <button type="button" className="v2-compose-button primary"
+                  disabled={saving} onClick={() => void save()}>
+                  <Save size={16} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+                </button>}
+                {id && canEdit && ['draft', 'in_review'].includes(status) &&
+                  <button type="button" className="v2-compose-button secondary" disabled={saving}
+                    onClick={() => void workflow('submit')}><Send size={15} /> Soumettre pour validation</button>}
+                {id && canReview && status === 'in_review' &&
+                  <button type="button" className="v2-compose-button secondary" disabled={saving}
+                    onClick={() => void workflow('approve')}><Check size={16} /> Valider</button>}
+                {id && canReview && status !== 'published' &&
+                  <button type="button" className="v2-compose-button publish" disabled={saving}
+                    onClick={() => void workflow('publish')}><ArrowUpRight size={16} /> Publier</button>}
+                {id && canReview && status === 'published' &&
+                  <button type="button" className="v2-compose-button secondary" disabled={saving}
+                    onClick={() => void workflow('revert')}>Dépublier l’article</button>}
+                <button type="button" className="v2-compose-button secondary"
+                  disabled={!loaded} onClick={() => setPreviewOpen(true)}><Eye size={16} /> Aperçu de l’article</button>
+              </div>
+            </section>
+
+            <section className="v2-compose-side-card" aria-labelledby="classement-title">
+              <div className="v2-compose-side-heading">
+                <span className="v2-compose-side-icon"><Globe2 size={17} /></span>
+                <div><h2 id="classement-title">Classement éditorial</h2><span>Rubrique et localisation</span></div>
+              </div>
+              <label className="v2-field">
+                <span>Catégorie <b aria-hidden="true">*</b></span>
+                <select required value={form.category_id} disabled={!canEdit}
+                  onChange={event => setField('category_id', event.target.value)}>
+                  <option value="">Choisir une rubrique</option>
+                  {categories.map(category =>
+                    <option value={category.id} key={category.id}>{category.name}</option>)}
+                </select>
+              </label>
+              <label className="v2-field">
+                <span>Pays concerné <b aria-hidden="true">*</b></span>
+                <select value={form.country_code} disabled={!canEdit}
+                  onChange={event => {
+                    const country = event.target.value;
+                    setForm(current => ({
+                      ...current, country_code: country,
+                      province_slug: country === 'GA' ? current.province_slug : '',
+                    }));
+                    setDirty(true); setSuccess('');
+                  }}>
+                  {COUNTRIES.map(country =>
+                    <option value={country.code} key={country.code}>{country.name}</option>)}
+                </select>
+              </label>
+              {form.country_code === 'GA' &&
+                <label className="v2-field">
+                  <span>Province</span>
+                  <select value={form.province_slug} disabled={!canEdit}
+                    onChange={event => setField('province_slug', event.target.value)}>
+                    <option value="">Tout le Gabon</option>
+                    {GABON_PROVINCES.map(province =>
+                      <option value={province.value} key={province.value}>{province.label}</option>)}
+                  </select>
+                </label>}
+              <div className="v2-compose-switches">
+                <label><span><strong>À la une</strong><small>Mettre l’article en avant</small></span>
+                  <input type="checkbox" checked={form.featured} disabled={!canEdit}
+                    onChange={event => setField('featured', event.target.checked)} /></label>
+                <label><span><strong>Alerte info</strong><small>Signaler une actualité urgente</small></span>
+                  <input type="checkbox" checked={form.is_alert} disabled={!canEdit}
+                    onChange={event => setField('is_alert', event.target.checked)} /></label>
+              </div>
+            </section>
+
+            <section className="v2-compose-side-card" aria-labelledby="article-couverture-title" id="article-couverture">
+              <div className="v2-compose-side-heading">
+                <span className="v2-compose-side-icon"><ImageIcon size={17} /></span>
+                <div><h2 id="article-couverture-title">Couverture</h2><span>Visuel principal · 1200 × 630</span></div>
+              </div>
+              <div className="v2-compose-cover">
+                {cover ? <img src={cover.url} alt={cover.alt || 'Couverture de l’article'} /> :
+                  <div><ImagePlus size={23} /><span>Aucune image sélectionnée</span></div>}
+              </div>
+              <label className="v2-compose-upload">
+                <ImagePlus size={16} />
+                {uploading ? 'Importation en cours…' : 'Importer une image'}
+                <input type="file" accept="image/*" disabled={!canEdit || uploading}
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    if (file) void upload(file);
+                    event.target.value = '';
+                  }} />
+              </label>
+              <p className="v2-compose-cover-help">JPEG, PNG, WebP, AVIF, GIF · maximum 1 Mo.</p>
+              <details className="v2-compose-library">
+                <summary>Choisir dans la médiathèque</summary>
+                <div className="v2-image-grid">
+                  {chosenMedia.map(item =>
+                    <button type="button" key={item.id} className="v2-image-choice"
+                      aria-pressed={form.cover_media_id === item.id} disabled={!canEdit}
+                      title={item.alt || 'Choisir cette image'}
+                      onClick={() => setField('cover_media_id', item.id)}>
+                      <img src={item.url} alt={item.alt || 'Photo de la médiathèque'} loading="lazy" />
+                    </button>)}
+                </div>
+                {media.length > chosenMedia.length &&
+                  <button type="button" className="v2-compose-button secondary"
+                    onClick={() => setMediaPage(page => page + 1)}>Voir plus d’images</button>}
+              </details>
+            </section>
+          </aside>
+        </div>
       )}
+
+      {loaded && canEdit &&
+        <div className="v2-compose-mobile-save">
+          <span>{dirty ? 'Modifications en attente' : statuses[status] ?? status}</span>
+          <button type="button" className="v2-compose-button primary"
+            disabled={saving} onClick={() => void save()}>
+            <Save size={15} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>}
+
+      {previewOpen && <div className="v2-compose-preview-backdrop"
+        onClick={() => setPreviewOpen(false)} role="presentation">
+        <div className="v2-compose-preview-dialog" role="dialog" aria-modal="true"
+          aria-labelledby="compose-preview-title" onClick={event => event.stopPropagation()}>
+          <header>
+            <div><span className="v2-compose-eyebrow">PRÉVISUALISATION ÉDITORIALE</span>
+              <h2 id="compose-preview-title">Aperçu de l’article</h2></div>
+            <button type="button" onClick={() => setPreviewOpen(false)} aria-label="Fermer l’aperçu">
+              <X size={21} /></button>
+          </header>
+          <p className="v2-compose-preview-note">Aperçu local non publié : la typographie finale est rendue sur le site public.</p>
+          <div className="v2-compose-preview-body">
+            <div className="v2-compose-preview-hero">
+              {cover?.url && <img src={cover.url} alt="" />}
+              <div className="v2-compose-preview-gradient" />
+              <div className="v2-compose-preview-hero-text">
+                <strong>{categoryName}</strong>
+                <h3>{form.title.trim() || 'Votre titre d’article'}</h3>
+                <p>{form.excerpt.trim() || 'Le résumé de l’article apparaîtra ici.'}</p>
+              </div>
+            </div>
+            <div className="v2-compose-preview-article">
+              <span>{countryName} {form.province_slug && '· ' + (GABON_PROVINCES.find(p => p.value === form.province_slug)?.label ?? '')}</span>
+              <p>{content.text.trim() || 'Le corps du texte pourra être consulté après sa rédaction.'}</p>
+            </div>
+          </div>
+          <footer>
+            {status === 'published' && articleLink &&
+              <a href={articleLink} target="_blank" rel="noopener noreferrer" className="v2-compose-button secondary">
+                <ArrowUpRight size={15} /> Voir sur le site</a>}
+            <button type="button" className="v2-compose-button primary" onClick={() => setPreviewOpen(false)}>
+              Retour à la rédaction</button>
+          </footer>
+        </div>
+      </div>}
     </div>
   );
 }
