@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { ApiError } from '../../api/response';
-import { renderTiptapHtml } from '../../editor/render';
+import { ApiError } from '../api/response';
+import { renderTiptapHtml } from '../editor/render';
 import { revalidatePath, revalidateTag } from 'next/cache';
 
 export const articlePayload = z.object({
