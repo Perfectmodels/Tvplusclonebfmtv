@@ -202,7 +202,7 @@ export const getV2Episodes = unstable_cache(async (limit = 24): Promise<{data: P
   if (error) throw new Error(error.message);
   return { data: (data ?? []).map((e) => ({
     id: e.id, programId: e.show_id, title: e.title, description: e.description ?? '',
-    videoUrl: videoWatchUrl(e.platform, e.external_id, e.source_url), thumbnail: e.thumbnail_url||'',
+    videoUrl: videoWatchUrl(e.platform, e.external_id, e.source_url), thumbnail: e.thumbnail_url || (e.platform==='youtube' && /^[a-zA-Z0-9_-]{11}$/.test(e.external_id||'') ? 'https://i.ytimg.com/vi/'+e.external_id+'/hqdefault.jpg' : ''),
     duration: e.duration_seconds != null ? Math.ceil(e.duration_seconds / 60) + ' min' : '',
     publishedAt: e.aired_at ?? e.created_at,
   })), source: 'supabase' };
