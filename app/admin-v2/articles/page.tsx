@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import V2ArticleThumb from '../../../components/admin/V2ArticleThumb';
 import {
   Archive, ArrowDownUp, CalendarClock, CheckCircle2, ChevronLeft, ChevronRight,
-  Edit3, ExternalLink, FileText, Image as ImageIcon,
+  Edit3, ExternalLink, FileText,
   Plus, RotateCcw, Search, ShieldCheck, SlidersHorizontal, ToggleLeft, ToggleRight, X,
 } from 'lucide-react';
 
@@ -251,8 +252,7 @@ export default function AdminV2Articles() {
                 <article key={a.id} className={'v2-newsroom-story'+(busy?' is-busy':'')}>
                   <Link href={'/admin-v2/articles/'+a.id+'/edit'} className="v2-newsroom-story-image"
                     aria-label={'Modifier '+a.title}>
-                    {a.cover_url?<img loading="lazy" src={a.cover_url} alt={a.cover_alt||''}/>:
-                      <span><ImageIcon size={26}/><small>Sans visuel</small></span>}
+                    <V2ArticleThumb src={a.cover_url} alt={a.cover_alt||''}/>
                   </Link>
                   <div className="v2-newsroom-story-details">
                     <div className="v2-newsroom-story-kicker">

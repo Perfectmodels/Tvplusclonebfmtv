@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import V2ArticleThumb from '../../components/admin/V2ArticleThumb';
 import {
   Activity, Archive, ArrowUpRight, BarChart3, CalendarClock,
   CheckCircle2, ChevronRight, Clock3, FilePenLine, FileText,
@@ -211,7 +212,7 @@ export default async function DashboardV2() {
         {live.length?<div className="v2-dashboard-story-feed">
           {live.map(article=><div className="v2-dashboard-story" key={article.id}>
             <span className="v2-dashboard-story-thumb">
-              {article.cover_url?<img src={article.cover_url} loading="lazy" alt=""/>:<FileText size={21}/>}
+              <V2ArticleThumb src={article.cover_url} alt="" compact/>
             </span>
             <div><span className="v2-dashboard-story-label">{article.category_name} · {dateText(article.published_at)}</span>
               <Link href={'/admin-v2/articles/'+article.id+'/edit'}>{article.title}</Link>
