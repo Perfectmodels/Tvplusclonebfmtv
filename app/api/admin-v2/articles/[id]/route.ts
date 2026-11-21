@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { requireV2Api, requireV2AnyApi } from '../../../../../lib/auth/v2-admin';
 import { handleRoute, ok, ApiError } from '../../../../../lib/api/response';
-import { cleanArticlePayload, invalidatePublicArticle } from '../route';
+import { cleanArticlePayload, invalidatePublicArticle } from '../../../../../lib/admin-v2/article-write';
 
 export const dynamic='force-dynamic';
 type Context={params:Promise<{id:string}>};

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireV2AnyApi, hasV2Permission } from '../../../../../../lib/auth/v2-admin';
 import { handleRoute, ok, ApiError } from '../../../../../../lib/api/response';
-import { invalidatePublicArticle } from '../../route';
+import { invalidatePublicArticle } from '../../../../../../lib/admin-v2/article-write';
 export const dynamic='force-dynamic';
 type Context={params:Promise<{id:string}>};
 const schema=z.object({
