@@ -192,7 +192,7 @@ export const getV2Episodes = unstable_cache(async (limit = 24): Promise<{data: P
     duration: e.duration_seconds != null ? Math.ceil(e.duration_seconds / 60) + ' min' : '',
     publishedAt: e.aired_at ?? e.created_at,
   })), source: 'supabase' };
-}
+}, ['v2-public-episodes'], { revalidate: 120, tags: ['public-episodes'] });
 
 export const getV2Schedule = unstable_cache(async () => {
   const { data, error } = await client().from('program_slots')
@@ -202,7 +202,7 @@ export const getV2Schedule = unstable_cache(async () => {
     time: String(p.start_time).slice(0, 5), title: p.title,
     category: p.kind, live: false,
   })), source: 'supabase' as const };
-}
+}, ['v2-public-schedule'], { revalidate: 600, tags: ['public-schedule'] });
 
 export async function searchV2(query: string) {
   const { items } = await listV2Articles({ search: query, pageSize: 40 });
