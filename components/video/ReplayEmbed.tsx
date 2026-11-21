@@ -8,7 +8,7 @@ export default function ReplayEmbed({title,url,thumbnail}:{title:string;url:stri
  const detected=parseVideoUrl(url);
  const embed=detected?videoEmbedUrl(detected.platform,detected.externalId,url):'';
  return <div className="tvplus-replay-embed">
-  {active&&embed?<iframe src={embed+'?autoplay=1'} title={'Lecture : '+title} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" loading="lazy" />:
+  {active&&embed?<iframe src={embed} title={'Lecture : '+title} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" loading="lazy" />:
    <button className="tvplus-replay-launch" type="button" disabled={!embed} onClick={()=>setActive(true)} aria-label={'Lire '+title}>
     {thumbnail?<img src={thumbnail} alt="" loading="lazy"/>:<span className="tvplus-replay-cover-fallback">TV+ AFRIQUE</span>}
     <span className="tvplus-replay-play"><Play size={23} fill="currentColor"/></span>
