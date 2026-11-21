@@ -74,10 +74,12 @@ export default function TiptapEditor({
   initialJson,
   onChange,
   autosaveHint = 'La sauvegarde est automatique',
+  editable = true,
 }: {
   initialJson?: unknown;
   onChange: (value: EditorValue) => void;
   autosaveHint?: string;
+  editable?: boolean;
 }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [, refreshSelection] = useState(0);
@@ -85,6 +87,7 @@ export default function TiptapEditor({
 
   const editor = useEditor({
     immediatelyRender: false,
+    editable,
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3, 4] }, link: { openOnClick: false } }),
       EditorialTextStyle,
@@ -111,8 +114,12 @@ export default function TiptapEditor({
 
   useEffect(() => {
     if (!editor || !initialJson) return;
-    editor.commands.setContent(initialJson as any);
+    editor.commands.setContent(initialJson as any, { emitUpdate: false });
   }, [editor, initialJson]);
+
+  useEffect(() => {
+    if (editor) editor.setEditable(editable);
+  }, [editor, editable]);
 
   useEffect(() => {
     const closeOnOutsideClick = (event: PointerEvent) => {
@@ -164,7 +171,7 @@ export default function TiptapEditor({
 
   return (
     <div className={'tiptap-shell tiptap-refined' + (fullscreen ? ' is-fullscreen' : '')}>
-      <div className="tiptap-toolbar" role="toolbar" aria-label="Outils de rédaction">
+      {editable && <div className="tiptap-toolbar" role="toolbar" aria-label="Outils de rédaction">
 
         {/* Première ligne : réglages de typographie. Les couleurs restent dans un menu discret. */}
         <div className="tiptap-toolbar-top">
@@ -300,7 +307,7 @@ export default function TiptapEditor({
             </button>
           </div>
         </div>
-      </div>
+      </div>}
 
       <EditorContent editor={editor} className="tiptap-content" />
 

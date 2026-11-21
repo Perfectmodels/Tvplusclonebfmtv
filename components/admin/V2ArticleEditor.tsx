@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   ArrowLeft, ArrowUpRight, Check, CheckCircle2, Circle, Copy, Eye, FileText,
   Globe2, ImagePlus, Image as ImageIcon, Link2, Save, Send, ShieldCheck,
-  Sparkles, X,
+  X,
 } from 'lucide-react';
 import TiptapEditor, { type EditorValue } from '../editor/TiptapEditor';
 import { COUNTRIES, GABON_PROVINCES } from '../../lib/editor/countries';
@@ -36,6 +36,12 @@ function slugify(value: string) {
 }
 function parseKeywords(value: string) {
   return Array.from(new Set(value.split(',').map(item => item.trim()).filter(Boolean)));
+}
+function extractArticleText(node: unknown): string {
+  if (!node || typeof node !== 'object') return '';
+  const item = node as { text?: unknown; content?: unknown[] };
+  if (typeof item.text === 'string') return item.text;
+  return Array.isArray(item.content) ? item.content.map(extractArticleText).filter(Boolean).join(' ') : '';
 }
 
 export default function V2ArticleEditor({
@@ -125,7 +131,12 @@ export default function V2ArticleEditor({
             }).catch(()=>{});
         }
         setInitialJson(article.content_json ?? emptyDoc);
-        setContent({ json: article.content_json ?? emptyDoc, text: '', words: 0 });
+        const initialText = extractArticleText(article.content_json ?? emptyDoc);
+        setContent({
+          json: article.content_json ?? emptyDoc,
+          text: initialText,
+          words: initialText.trim() ? initialText.trim().split(/\s+/).length : 0,
+        });
         setStatus(article.status);
         setShortCode(article.short_code ?? null);
         setOwnerId(article.author_id);
@@ -302,7 +313,7 @@ export default function V2ArticleEditor({
 
       {!loaded ? <div className="v2-compose-loading" role="status">Chargement de votre espace de rédaction…</div> : (
         <div className="v2-compose-columns">
-          <main className="v2-compose-main">
+          <div className="v2-compose-main">
             <section className="v2-card v2-compose-card" id="article-identite" aria-labelledby="article-identite-title">
               <div className="v2-compose-card-header">
                 <div><span className="v2-compose-number">01 · IDENTITÉ ÉDITORIALE</span>
@@ -344,7 +355,7 @@ export default function V2ArticleEditor({
                   <p>Un véritable espace de travail pour construire et mettre en forme votre article.</p></div>
                 <div className="v2-compose-wordcount"><strong>{content.words}</strong><span>mots</span></div>
               </div>
-              <TiptapEditor initialJson={initialJson}
+              <TiptapEditor initialJson={initialJson} editable={canEdit}
                 onChange={value => { setContent(value); setDirty(true); }}
                 autosaveHint="Sauvegarde manuelle · Ctrl/⌘ + S" />
             </section>
@@ -388,7 +399,7 @@ export default function V2ArticleEditor({
                     <Copy size={14} /> Copier</button>}
               </div>
             </section>
-          </main>
+          </div>
 
           <aside className="v2-compose-rail" aria-label="Paramètres et suivi de publication">
             <section className="v2-compose-side-card v2-compose-status-panel" id="article-publication"
