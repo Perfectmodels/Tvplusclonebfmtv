@@ -51,3 +51,12 @@ export const PATCH=handleRoute(async(request:NextRequest)=>{
  if(error||!data)throw new ApiError('Modification du replay refusée.',403,'UNAUTHORIZED');
  revalidateTag('public-episodes');return ok(data);
 });
+
+export const DELETE=handleRoute(async(request:NextRequest)=>{
+ const {db}=await requireV2Api('shows.manage');
+ const p=z.object({id:z.string().uuid()}).safeParse(await request.json());
+ if(!p.success)throw new ApiError('Identifiant invalide.',400);
+ const {error}=await db.from('episodes').delete().eq('id',p.data.id);
+ if(error)throw new ApiError('Suppression du replay refusée.',403,'UNAUTHORIZED');
+ revalidateTag('public-episodes');return ok({deleted:true});
+});
