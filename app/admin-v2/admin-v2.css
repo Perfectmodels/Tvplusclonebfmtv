@@ -1123,10 +1123,10 @@
 .v2-dashboard-panel>header>svg{color:#6c85a5}
 .v2-dashboard-total{color:#163a70;font-size:24px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .v2-dashboard-total span{font-size:11px;font-weight:650;color:#7f8ea0}
-.v2-dashboard-chart{display:flex;align-items:end;justify-content:space-between;gap:10px;height:211px;padding:8px 0 0}
+.v2-dashboard-chart{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;height:211px;padding:8px 0 0}
 .v2-dashboard-bar-column{display:flex;flex:1;align-items:center;flex-direction:column;gap:8px;min-width:0;height:100%}
 .v2-dashboard-bar-count{font-size:11px;font-weight:800;color:#465d7b;height:18px}
-.v2-dashboard-bar-space{flex:1;display:flex;align-items:end;justify-content:center;width:100%;border-bottom:1px solid #dee6f0;background:linear-gradient(180deg,#fff 0%,#fff 35%,#f9fbfd 100%)}
+.v2-dashboard-bar-space{flex:1;display:flex;align-items:flex-end;justify-content:center;width:100%;border-bottom:1px solid #dee6f0;background:linear-gradient(180deg,#fff 0%,#fff 35%,#f9fbfd 100%)}
 .v2-dashboard-bar-space>div{width:min(34px,66%);min-height:3px;background:linear-gradient(0deg,#153f82,#7198c6);border-radius:4px 4px 0 0}
 .v2-dashboard-bar-day{height:19px;font-size:10px;color:#73849c;text-align:center;white-space:nowrap}
 .v2-dashboard-footnote{display:flex;flex-wrap:wrap;gap:15px;padding-top:18px;margin-top:18px;border-top:1px solid #e8edf4;font-size:11px;color:#71839b}
