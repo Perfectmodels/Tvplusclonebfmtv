@@ -5,14 +5,15 @@ import { CalendarClock, ExternalLink, Film, Plus, Search, Trash2 } from 'lucide-
 import { parseVideoUrl, videoEmbedUrl } from '../../../lib/video/providers';
 
 type Replay={id:string;show_id:string;title:string;description:string;aired_at:string;duration_seconds:number|null;platform:string|null;external_id:string|null;source_url:string;thumbnail_url:string;publish_at:string|null;status:'draft'|'published'};
-const empty={show_id:'',title:'',description:'',aired_at:new Date().toISOString(),duration_seconds:null,source_url:'',thumbnail_url:'',publish_at:null,status:'draft' as const};
+type ReplayForm=Omit<Replay,'id'|'platform'|'external_id'>;
+const empty:ReplayForm={show_id:'',title:'',description:'',aired_at:new Date().toISOString(),duration_seconds:null,source_url:'',thumbnail_url:'',publish_at:null,status:'draft'};
 const display=(iso:string|null)=>iso?new Date(iso).toLocaleString('fr-GA',{timeZone:'Africa/Libreville',dateStyle:'medium',timeStyle:'short'}):'—';
 const local=(iso:string|null)=>iso?new Date(iso).toLocaleString('sv-SE',{timeZone:'Africa/Libreville'}).replace(' ','T').slice(0,16):'';
 const utc=(value:string)=>value?new Date(value+':00+01:00').toISOString():null;
 
 export default function ReplaysV2(){
  const [items,setItems]=useState<Replay[]>([]),[shows,setShows]=useState<{id:string;title:string}[]>([]);
- const [editing,setEditing]=useState<string|null>(null),[form,setForm]=useState(empty);
+ const [editing,setEditing]=useState<string|null>(null),[form,setForm]=useState<ReplayForm>(empty);
  const [mode,setMode]=useState<'draft'|'published'|'scheduled'>('draft');
  const [when,setWhen]=useState('');
  const [filter,setFilter]=useState('all'),[query,setQuery]=useState(''),[showFilter,setShowFilter]=useState('');
@@ -25,7 +26,7 @@ export default function ReplaysV2(){
  },[]);
  useEffect(()=>{load().catch(e=>setError(e.message)).finally(()=>setLoading(false))},[load]);
  function edit(item:Replay){setEditing(item.id);const {id,platform,external_id,...fields}=item;setForm(fields);setWhen(local(item.publish_at));setMode(item.status==='published'?'published':item.publish_at?'scheduled':'draft');setMessage('')}
- const change=<K extends keyof typeof empty>(key:K,value:(typeof empty)[K])=>setForm(f=>({...f,[key]:value}));
+ const change=<K extends keyof ReplayForm>(key:K,value:ReplayForm[K])=>setForm(f=>({...f,[key]:value}));
  function reset(){setForm({...empty,aired_at:new Date().toISOString()});setMode('draft');setWhen('');setEditing(null)}
  async function save(event:React.FormEvent){
   event.preventDefault();setBusy(true);setError('');setMessage('');
