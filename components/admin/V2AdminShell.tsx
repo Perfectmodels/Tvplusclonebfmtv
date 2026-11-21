@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Newspaper, Images, ListTree, Tv, MonitorPlay, RectangleHorizontal, Menu, X, LogOut, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Newspaper, Images, ListTree, Tv, PlayCircle, MonitorPlay, RectangleHorizontal, Menu, X, LogOut, ExternalLink } from 'lucide-react';
 import TvPlusLogo from '../TvPlusLogo';
 
 const NAV = [
@@ -12,6 +12,7 @@ const NAV = [
   {href:'/admin-v2/media', label:'Médiathèque', icon:Images},
   {href:'/admin-v2/categories', label:'Rubriques', icon:ListTree},
   {href:'/admin-v2/shows', label:'Émissions', icon:Tv},
+  {href:'/admin-v2/replays', label:'Replays', icon:PlayCircle},
   {href:'/admin-v2/live', label:'Direct', icon:MonitorPlay},
   {href:'/admin-v2/advertising', label:'Publicités', icon:RectangleHorizontal},
 ];
@@ -25,7 +26,7 @@ export default function V2AdminShell({children, role, email, permissions}:{child
     if(x.href.endsWith('/articles'))return permissions.includes('articles.read_all');
     if(x.href.endsWith('/media'))return permissions.includes('media.upload');
     if(x.href.endsWith('/categories'))return permissions.includes('categories.manage');
-    if(x.href.endsWith('/shows'))return permissions.includes('shows.manage');
+    if(x.href.endsWith('/shows')||x.href.endsWith('/replays'))return permissions.includes('shows.manage');
     if(x.href.endsWith('/live'))return permissions.includes('schedule.manage');
     if(x.href.endsWith('/advertising'))return permissions.includes('settings.manage');
     return false;
