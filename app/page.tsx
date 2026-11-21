@@ -7,6 +7,7 @@ import QuestionSection from '../components/QuestionSection';
 import FilActuFeed from '../components/FilActuFeed';
 import NewsTicker from '../components/NewsTicker';
 import AdvertisingCarousel from '../components/AdvertisingCarousel';
+import { getHomepageAds } from '../lib/ads/v2';
 import SectionHeading from '../components/SectionHeading';
 import StoryCard from '../components/StoryCard';
 import { listArticles, getFilActu, getCategories } from '../lib/db/repository';
@@ -29,11 +30,13 @@ export default async function Home({
     q ? Promise.resolve({ data: [] }) : getFilActu(8),
     q ? Promise.resolve({ items: [] }) : getNewsFeed(20),
     q ? Promise.resolve({ data: [] }) : getCategories(),
+    q ? Promise.resolve(null) : getHomepageAds(),
   ]);
   const filtered = results[0].status === 'fulfilled' ? results[0].value.items : [];
   const feed = results[1].status === 'fulfilled' ? results[1].value.data : [];
   const wire = results[2].status === 'fulfilled' ? results[2].value.items : [];
   const categories = results[3].status === 'fulfilled' ? results[3].value.data : [];
+  const ads = results[4].status === 'fulfilled' ? results[4].value : null;
 
   const alert = filtered.find((story) => story.kind === 'alert');
   const hero = filtered.find((story) => story.featured) ?? filtered[0];
@@ -80,7 +83,7 @@ export default async function Home({
               </div>
             </section>
 
-            <AdvertisingCarousel placement="after-hero" />
+            <AdvertisingCarousel placement="after-hero" ads={ads?.["after-hero"] ?? undefined} />
 
             <section id="fil-info" className="home-news-feed" aria-labelledby="fil-title">
               <SectionHeading
@@ -92,14 +95,14 @@ export default async function Home({
               <FilActuFeed items={feed} categories={categories} />
             </section>
 
-            <AdvertisingCarousel placement="after-feed" />
+            <AdvertisingCarousel placement="after-feed" ads={ads?.["after-feed"] ?? undefined} />
 
             <section className="home-duo" aria-label="Direct et questions du public">
               <LivePlayer />
               <QuestionSection />
             </section>
 
-            <AdvertisingCarousel placement="after-live" />
+            <AdvertisingCarousel placement="after-live" ads={ads?.["after-live"] ?? undefined} />
 
             {selection.length > 0 && (
               <section aria-labelledby="selection-title">
@@ -110,7 +113,7 @@ export default async function Home({
               </section>
             )}
 
-            <AdvertisingCarousel placement="after-selection" />
+            <AdvertisingCarousel placement="after-selection" ads={ads?.["after-selection"] ?? undefined} />
 
             <div className="home-category-stack">
               {blocks.map((block) => (
@@ -139,7 +142,7 @@ export default async function Home({
               </section>
             </div>
 
-            <AdvertisingCarousel placement="before-newsletter" />
+            <AdvertisingCarousel placement="before-newsletter" ads={ads?.["before-newsletter"] ?? undefined} />
 
             <Newsletter />
           </>

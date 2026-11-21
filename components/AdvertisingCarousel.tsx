@@ -22,8 +22,8 @@ const placementLabels: Record<PlacementId, string> = {
   'before-newsletter': 'Bandeau publicitaire 5',
 };
 
-export default function AdvertisingCarousel({ placement }: { placement: PlacementId }) {
-  const ads: Ad[] = placements[placement];
+export default function AdvertisingCarousel({ placement, ads: suppliedAds }: { placement: PlacementId; ads?: Ad[] }) {
+  const ads: Ad[] = suppliedAds ?? placements[placement];
   const [active, setActive] = useState(0);
   const [manualPause, setManualPause] = useState(false);
   const [hovered, setHovered] = useState(false);
