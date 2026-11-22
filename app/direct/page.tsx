@@ -19,7 +19,7 @@ export default async function DirectPage() {
       <div className="editorial-page-intro">
         <span className="editorial-eyebrow">TV+ AFRIQUE · ESPACE LIVE</span>
         <h1 className="page-title">L'espace Live TV+ Afrique</h1>
-        <p className="page-intro">Retrouvez la diffusion TV+ Afrique lorsqu'elle est activée. En attendant, un flux externe clairement identifié permet de tester le lecteur vidéo.</p>
+        <p className="page-intro">Suivez la chaîne sélectionnée dans la régie TV+ Afrique, sur tous vos écrans. Le flux est mis à jour depuis l’administration.</p>
       </div>
 
       <div className="direct-main-player">
