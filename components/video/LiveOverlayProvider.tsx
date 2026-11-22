@@ -44,8 +44,7 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
   const [muted, setMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<{ destroy: () => void } | null>(null);
-  const fallbackStreamUrl = process.env.NEXT_PUBLIC_LIVE_STREAM_URL ?? '';
-  const [streamUrl, setStreamUrl] = useState(fallbackStreamUrl);
+  const [streamUrl, setStreamUrl] = useState('');
   const [embedUrl, setEmbedUrl] = useState('');
   const [externalUrl, setExternalUrl] = useState('');
   const [standbyMessage, setStandbyMessage] = useState('Le direct reprendra prochainement.');
@@ -66,9 +65,9 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
         setExternalUrl(config?.enabled ? config.playbackUrl || '' : '');
         setStandbyMessage(config?.standbyMessage || 'Le direct reprendra prochainement.');
       })
-      .catch(() => { if (active) {setStreamUrl(fallbackStreamUrl);setEmbedUrl('');setExternalUrl('');} });
+      .catch(() => { if (active) {setStreamUrl('');setEmbedUrl('');setExternalUrl('');setStatus('no-stream');} });
     return () => { active = false; };
-  }, [isOpen, fallbackStreamUrl]);
+  }, [isOpen]);
 
   const open = useCallback(() => {
     setIsOpen(true);
