@@ -1,56 +1,61 @@
-import { DEMO_CHANNEL } from './demo-channel';
-
 export type PublicLiveSource = {
+  enabled: boolean;
   mode: 'hls' | 'iframe';
   hlsUrl: string;
   embedUrl: string;
   externalUrl: string;
-  isDemo: boolean;
   title: string;
   description: string;
   standbyMessage: string;
 };
 
-export const demoLiveSource: PublicLiveSource = {
+/** L'absence de diffusion configurée ne déclenche jamais un flux de secours. */
+export const offlineLiveSource: PublicLiveSource = {
+  enabled: false,
   mode: 'hls',
-  hlsUrl: DEMO_CHANNEL.hlsUrl,
+  hlsUrl: '',
   embedUrl: '',
-  externalUrl: DEMO_CHANNEL.watchUrl,
-  isDemo: true,
-  title: DEMO_CHANNEL.name,
-  description: 'France 24 — flux externe de démonstration, distinct du direct TV+ Afrique.',
-  standbyMessage: '',
+  externalUrl: '',
+  title: 'TV+ Afrique',
+  description: '',
+  standbyMessage: 'Aucun flux n’est actuellement diffusé.',
 };
 
 /**
- * Normalisation UNIQUE pour la page /direct, le lecteur d'accueil flottant
- * et la fenêtre Live. La régie TV+ prévaut toujours sur la démonstration.
+ * Résolution unique des paramètres de la régie pour les trois lecteurs publics.
+ * Aucune URL vidéo n'est codée en dur : la source vient de /api/live-stream.
  */
 export function resolvePublicLiveSource(config: unknown): PublicLiveSource {
-  if (!config || typeof config !== 'object') return demoLiveSource;
+  if (!config || typeof config !== 'object') return offlineLiveSource;
   const value = config as Record<string, unknown>;
   const hlsUrl = typeof value.hlsUrl === 'string' ? value.hlsUrl : '';
   const embedUrl = typeof value.embedUrl === 'string' ? value.embedUrl : '';
-  if (value.enabled !== true || (!hlsUrl && !embedUrl)) return demoLiveSource;
+  const standbyMessage = typeof value.standbyMessage === 'string' && value.standbyMessage
+    ? value.standbyMessage
+    : offlineLiveSource.standbyMessage;
+
+  if (value.enabled !== true || (!hlsUrl && !embedUrl)) {
+    return { ...offlineLiveSource, standbyMessage };
+  }
   return {
+    enabled: true,
     mode: embedUrl ? 'iframe' : 'hls',
     hlsUrl,
     embedUrl,
     externalUrl: typeof value.playbackUrl === 'string' ? value.playbackUrl : '',
-    isDemo: false,
-    title: typeof value.title === 'string' && value.title ? value.title : 'TV+ Afrique',
+    title: typeof value.title === 'string' && value.title ? value.title : 'En direct',
     description: typeof value.description === 'string' ? value.description : '',
-    standbyMessage: typeof value.standbyMessage === 'string' ? value.standbyMessage : '',
+    standbyMessage,
   };
 }
 
 export async function fetchPublicLiveSource(): Promise<PublicLiveSource> {
   try {
     const response = await fetch('/api/live-stream', { cache: 'no-store' });
-    if (!response.ok) return demoLiveSource;
+    if (!response.ok) return offlineLiveSource;
     const body = await response.json();
     return resolvePublicLiveSource(body?.data);
   } catch {
-    return demoLiveSource;
+    return offlineLiveSource;
   }
 }
