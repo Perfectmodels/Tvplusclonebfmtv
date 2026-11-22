@@ -97,8 +97,8 @@ function youtubeId(url:URL) {
 export function isVercelOrSitePlaybackUrl(input:string,siteHostname='tvplusv2.vercel.app'):boolean {
  const url=parsedHttps(input);
  if(!url)return false;
- const host=url.hostname.toLowerCase().replace(/\\.$/,'');
- const site=siteHostname.toLowerCase().replace(/\\.$/,'');
+ const host=url.hostname.toLowerCase().replace(/\.$/,'');
+ const site=siteHostname.toLowerCase().replace(/\.$/,'');
  return host===site || host==='vercel.app' || host.endsWith('.vercel.app');
 }
 
