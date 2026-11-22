@@ -3,65 +3,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { DEMO_CHANNEL } from '../../lib/video/demo-channel';
-
-type Source = {
-  mode: 'hls' | 'iframe';
-  url: string;
-  externalUrl: string;
-  isDemo: boolean;
-  title: string;
-};
-
-const demo: Source = {
-  mode: 'hls',
-  url: DEMO_CHANNEL.hlsUrl,
-  externalUrl: DEMO_CHANNEL.watchUrl,
-  isDemo: true,
-  title: DEMO_CHANNEL.name,
-};
+import { usePublicLiveSource } from '../../hooks/use-public-live-source';
 
 /** Lecteur intégré : flux TV+ configuré en priorité, sinon essai externe identifié. */
 export default function DirectLiveStage() {
-  const [source, setSource] = useState<Source | null>(null);
+  const source = usePublicLiveSource();
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
   const [useYouTube, setUseYouTube] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    fetch('/api/live-stream', { cache: 'no-store' })
-      .then((response) => {
-        if (!response.ok) throw new Error('Configuration indisponible');
-        return response.json();
-      })
-      .then((body) => {
-        if (!mounted) return;
-        const config = body?.data;
-        const enabled = Boolean(config?.enabled);
-        if (enabled && typeof config?.embedUrl === 'string' && config.embedUrl) {
-          setSource({
-            mode: 'iframe',
-            url: config.embedUrl,
-            externalUrl: config.playbackUrl || '',
-            isDemo: false,
-            title: config.title || 'TV+ Afrique',
-          });
-        } else if (enabled && typeof config?.hlsUrl === 'string' && config.hlsUrl) {
-          setSource({
-            mode: 'hls',
-            url: config.hlsUrl,
-            externalUrl: config.playbackUrl || '',
-            isDemo: false,
-            title: config.title || 'TV+ Afrique',
-          });
-        } else {
-          setSource(demo);
-        }
-      })
-      .catch(() => { if (mounted) setSource(demo); });
-    return () => { mounted = false; };
-  }, []);
 
   useEffect(() => {
     if (source?.mode !== 'hls' || useYouTube) return;
@@ -73,7 +23,7 @@ export default function DirectLiveStage() {
       setError(false);
       try {
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = source.url;
+          video.src = source.hlsUrl;
           await video.play().catch(() => undefined);
           return;
         }
@@ -91,7 +41,7 @@ export default function DirectLiveStage() {
         hls.on(Hls.Events.ERROR, (_event: unknown, detail: { fatal?: boolean }) => {
           if (!cancelled && detail.fatal) setError(true);
         });
-        hls.loadSource(source.url);
+        hls.loadSource(source.hlsUrl);
         hls.attachMedia(video);
       } catch {
         if (!cancelled) setError(true);
@@ -105,7 +55,7 @@ export default function DirectLiveStage() {
       video.removeAttribute('src');
       video.load();
     };
-  }, [source, retry, useYouTube]);
+  }, [source?.mode, source?.hlsUrl, retry, useYouTube]);
 
   return (
     <div className="direct-live-stage">
@@ -122,7 +72,7 @@ export default function DirectLiveStage() {
         ) : source?.mode === 'iframe' ? (
           <iframe
             title={source.title}
-            src={source.url}
+            src={source.embedUrl}
             style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             allowFullScreen
