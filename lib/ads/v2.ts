@@ -8,7 +8,13 @@ export type Ad = {id:string;imageUrl:string;href:string;alt:string;advertiser:st
 export type Placement = keyof typeof placements;
 type Ads = Record<Placement,Ad[]>;
 const names: Placement[]=['after-hero','after-feed','after-live','after-selection','before-newsletter'];
-const empty=():Ads=>Object.fromEntries(names.map(name=>[name,[]])) as Ads;
+const empty = (): Ads => ({
+  'after-hero': [],
+  'after-feed': [],
+  'after-live': [],
+  'after-selection': [],
+  'before-newsletter': [],
+});
 
 /** Ne montrer que les campagnes réellement actives et disposant d'un visuel. */
 const cached=unstable_cache(async ():Promise<Ads>=>{
