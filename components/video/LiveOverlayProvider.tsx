@@ -19,6 +19,7 @@ import {
   VolumeX,
   X,
 } from 'lucide-react';
+import { DEMO_CHANNEL } from '../../lib/video/demo-channel';
 
 type LiveOverlayContextValue = {
   isOpen: boolean;
@@ -41,7 +42,8 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
   const [status, setStatus] = useState<Status>('idle');
   const [attempt, setAttempt] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const [isDemo, setIsDemo] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<{ destroy: () => void } | null>(null);
   const [streamUrl, setStreamUrl] = useState('');
@@ -59,13 +61,14 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
       .then((body) => {
         if (!active) return;
         const config = body?.data;
-        const configured = config?.enabled ? config.hlsUrl : '';
-        setStreamUrl(config?.enabled ? configured : '');
-        setEmbedUrl(config?.enabled ? config.embedUrl || '' : '');
-        setExternalUrl(config?.enabled ? config.playbackUrl || '' : '');
+        const officialActive = Boolean(config?.enabled && (config?.hlsUrl || config?.embedUrl));
+        setIsDemo(!officialActive);
+        setStreamUrl(officialActive ? config.hlsUrl || '' : DEMO_CHANNEL.hlsUrl);
+        setEmbedUrl(officialActive ? config.embedUrl || '' : '');
+        setExternalUrl(officialActive ? config.playbackUrl || '' : DEMO_CHANNEL.watchUrl);
         setStandbyMessage(config?.standbyMessage || 'Le direct reprendra prochainement.');
       })
-      .catch(() => { if (active) {setStreamUrl('');setEmbedUrl('');setExternalUrl('');setStatus('no-stream');} });
+      .catch(() => { if (active) {setStreamUrl(DEMO_CHANNEL.hlsUrl);setEmbedUrl('');setExternalUrl(DEMO_CHANNEL.watchUrl);setIsDemo(true);} });
     return () => { active = false; };
   }, [isOpen]);
 
@@ -86,6 +89,7 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
     setIsOpen(false);
     setEmbedUrl('');
     setExternalUrl('');
+    setIsDemo(false);
     setPlaying(false);
     setStatus('idle');
   }, []);
@@ -208,8 +212,8 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
       {isOpen && (
         <section className="live-overlay" role="region" aria-label="Lecteur direct TV Plus">
           <header className="live-overlay-head">
-            <span className="live-overlay-badge"><span className="live-overlay-pulse" /> Direct</span>
-            <span className="live-overlay-title">TV Plus — en direct</span>
+            <span className="live-overlay-badge">{!isDemo && <span className="live-overlay-pulse" />} {isDemo ? 'Simulation' : 'Direct'}</span>
+            <span className="live-overlay-title">{isDemo ? 'France 24 · flux externe de démonstration' : 'TV Plus — en direct'}</span>
             <button type="button" className="live-control-btn" onClick={close} aria-label="Fermer le lecteur">
               <X size={15} />
             </button>
@@ -242,7 +246,7 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
                   <strong>Appuyez sur Lecture pour regarder le direct.</strong>
                 ) : status === 'error' ? (
                   <>
-                    <strong>Impossible de charger le flux</strong>
+                    <strong>Impossible de charger le flux{isDemo ? ' de démonstration' : ''}</strong>
                     <button type="button" className="live-retry" onClick={() => { setStatus('idle'); setAttempt((n) => n + 1); }}>
                       Réessayer
                     </button>
@@ -271,7 +275,12 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
               <Maximize2 size={15} />
             </button>
             </>}
-            <span className="live-overlay-watermark">TV+</span>
+            {externalUrl && streamUrl && (
+              <a href={externalUrl} target="_blank" rel="noopener noreferrer" className="live-control-btn" aria-label="Voir la vidéo sur le site de la chaîne">
+                Source <ExternalLink size={15} />
+              </a>
+            )}
+            <span className="live-overlay-watermark">{isDemo ? 'FRANCE 24' : 'TV+'}</span>
           </footer>
         </section>
       )}
