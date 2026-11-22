@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { ChevronRight, Play } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import Breadcrumb from '../../components/Breadcrumb';
 import StoryCard from '../../components/StoryCard';
-import TvPlusLogo from '../../components/TvPlusLogo';
+import DirectLiveStage from '../../components/video/DirectLiveStage';
 import { getTvSchedule, listArticles } from '../../lib/db/repository';
 
 export const revalidate = 60;
@@ -17,18 +17,13 @@ export default async function DirectPage() {
     <main className="shell direct-page">
       <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Le direct' }]} />
       <div className="editorial-page-intro">
-        <span className="editorial-eyebrow"><span className="direct-dot" /> TV+ AFRIQUE · EN DIRECT</span>
-        <h1 className="page-title">Regardez TV+ Afrique</h1>
-        <p className="page-intro">L'information, les émissions et les grands rendez-vous de TV+ Afrique, sur tous vos écrans.</p>
+        <span className="editorial-eyebrow">TV+ AFRIQUE · ESPACE LIVE</span>
+        <h1 className="page-title">L'espace Live TV+ Afrique</h1>
+        <p className="page-intro">Retrouvez la diffusion TV+ Afrique lorsqu'elle est activée. En attendant, un flux externe clairement identifié permet de tester le lecteur vidéo.</p>
       </div>
 
       <div className="direct-main-player">
-        <button type="button" className="direct-player-large tvplus-video-placeholder" data-open-live aria-label="Ouvrir le lecteur du direct TV Plus Afrique">
-          <TvPlusLogo />
-          <span className="direct-player-badge"><span /> Le direct</span>
-          <span className="play-button"><Play size={32} fill="currentColor" /></span>
-          <span className="video-placeholder-caption">Regarder le direct TV+</span>
-        </button>
+        <DirectLiveStage />
         <div className="direct-schedule">
           <h2>Programme TV+</h2>
           <p className="direct-schedule-intro">Les horaires renseignés par la rédaction.</p>
