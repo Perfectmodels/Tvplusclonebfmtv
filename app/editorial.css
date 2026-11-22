@@ -347,6 +347,8 @@ button.direct-player, button.direct-player-large {
 }
 @media (max-width: 480px) {
   .advertising-carousel__creative { aspect-ratio: 3 / 1; min-height: 101px; max-height: 128px; }
+  /* Sur mobile, montrer le message lisible plutôt que réduire le bandeau entier. */
+  .advertising-carousel__image { object-fit: cover; object-position: left center; }
   .advertising-carousel__placeholder strong { font-size: 17px; }
   .advertising-carousel__heading { font-size: 9px; }
 }
