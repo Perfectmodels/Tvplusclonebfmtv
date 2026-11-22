@@ -12,7 +12,7 @@ const sections = [
   ] },
   { title: 'Les émissions', links: [
     ['Émissions & replays', '/replay-emissions'], ['Podcasts', '/podcasts'],
-    ['Programme TV', '/programme-tv'], ['Canaux TV', '/canaux-tv'],
+    ['Programme TV', '/programme-tv'],
   ] },
   { title: 'Services', links: [
     ['Newsletters', '/newsletters'], ['Témoins', '/temoins'], ['Pratique', '/pratique'], ['Contact', '/contacts'],
@@ -20,9 +20,6 @@ const sections = [
   { title: 'Informations légales', links: [
     ['À propos', '/a-propos'], ['Mentions légales', '/mentions-legales'],
     ['CGU', '/cgu'], ['Données personnelles', '/donnees-personnelles'],
-  ] },
-  { title: 'Espace personnel', links: [
-    ['Connexion', '/connexion'], ['Inscription', '/inscription'], ['Mon compte', '/compte'],
   ] },
 ];
 
