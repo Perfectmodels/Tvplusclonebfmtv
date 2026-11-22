@@ -348,7 +348,7 @@ button.direct-player, button.direct-player-large {
 @media (max-width: 480px) {
   .advertising-carousel__creative { aspect-ratio: 3 / 1; min-height: 101px; max-height: 128px; }
   /* Sur mobile, montrer le message lisible plutôt que réduire le bandeau entier. */
-  .advertising-carousel__image { object-fit: cover; object-position: left center; }
+  .advertising-carousel__image { object-fit: contain; object-position: center center; }
   .advertising-carousel__placeholder strong { font-size: 17px; }
   .advertising-carousel__heading { font-size: 9px; }
 }
@@ -493,4 +493,11 @@ button.direct-player, button.direct-player-large {
 @media (max-width: 560px) {
   .home-top-stories { margin-top: 23px; }
   .editorial-category-section.is-selection { padding: 12px 10px 16px; }
+}
+
+/* Bandeaux mobiles : ratio natif 720×300, titres complets sans découpage. */
+.advertising-carousel__picture { display: block; width: 100%; height: 100%; }
+@media (max-width: 560px) {
+  .advertising-carousel__creative { aspect-ratio: 12 / 5; min-height: 0; max-height: none; }
+  .advertising-carousel__image { object-fit: contain; object-position: center center; background: transparent; }
 }

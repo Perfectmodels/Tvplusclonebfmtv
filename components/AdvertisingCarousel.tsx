@@ -73,16 +73,22 @@ export default function AdvertisingCarousel({ placement, ads: suppliedAds }: { p
   if (!ads.length) return null;
 
   const current = ads[active] ?? ads[0];
+  // Les 25 créations disposent d'un format mobile ; les visuels personnalisés restent inchangés.
+  const bannerMatch = /^https:\/\/tvplusv2\.vercel\.app\/ads\/campagne-([1-5])-([1-5])\.svg$/i.exec(current.imageUrl);
+  const mobileUrl = bannerMatch ? `/ads/mobile/campagne-${bannerMatch[1]}-${bannerMatch[2]}.svg` : null;
   const validLink = /^https?:\/\//i.test(current.href) ? current.href : null;
   const graphic = current.imageUrl ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      className="advertising-carousel__image"
-      src={current.imageUrl}
-      alt={current.alt || (current.advertiser ? `Annonce de ${current.advertiser}` : 'Visuel publicitaire')}
-      loading="lazy"
-      decoding="async"
-    />
+    <picture className="advertising-carousel__picture">
+      {mobileUrl && <source srcSet={mobileUrl} media="(max-width: 560px)" type="image/svg+xml" />}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="advertising-carousel__image"
+        src={current.imageUrl}
+        alt={current.alt || (current.advertiser ? `Annonce de ${current.advertiser}` : 'Visuel publicitaire')}
+        loading="lazy"
+        decoding="async"
+      />
+    </picture>
   ) : (
     <div className="advertising-carousel__placeholder">
       <strong>Espace publicitaire</strong>
