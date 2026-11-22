@@ -25,6 +25,7 @@ export default function DirectLiveStage() {
   const [source, setSource] = useState<Source | null>(null);
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [useYouTube, setUseYouTube] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function DirectLiveStage() {
   }, []);
 
   useEffect(() => {
-    if (source?.mode !== 'hls') return;
+    if (source?.mode !== 'hls' || useYouTube) return;
     const video = videoRef.current;
     if (!video) return;
     let cancelled = false;
@@ -104,12 +105,21 @@ export default function DirectLiveStage() {
       video.removeAttribute('src');
       video.load();
     };
-  }, [source, retry]);
+  }, [source, retry, useYouTube]);
 
   return (
     <div className="direct-live-stage">
       <div style={{ position: 'relative', aspectRatio: '16 / 9', background: '#020617', overflow: 'hidden' }}>
-        {source?.mode === 'iframe' ? (
+        {source?.isDemo && useYouTube ? (
+          <iframe
+            title="France 24 — démonstration (YouTube)"
+            src={DEMO_CHANNEL.youtubeEmbedUrl}
+            style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+            allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        ) : source?.mode === 'iframe' ? (
           <iframe
             title={source.title}
             src={source.url}
@@ -139,6 +149,9 @@ export default function DirectLiveStage() {
           <div role="alert" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 20, background: 'rgba(2,6,23,.91)', color: '#fff', textAlign: 'center' }}>
             <strong>Le flux vidéo ne peut pas être chargé sur ce navigateur.</strong>
             <button type="button" onClick={() => { setError(false); setRetry((n) => n + 1); }} style={{ border: '1px solid #fff', padding: '8px 16px', borderRadius: 6 }}>Réessayer</button>
+            {source.isDemo && !useYouTube && (
+              <button type="button" onClick={() => { setError(false); setUseYouTube(true); }} style={{ border: '1px solid #fff', padding: '8px 16px', borderRadius: 6 }}>Essayer le lecteur YouTube officiel</button>
+            )}
             {source.externalUrl && <a href={source.externalUrl} rel="noopener noreferrer" target="_blank" style={{ color: '#93c5fd' }}>Regarder sur le site du diffuseur <ExternalLink size={14} style={{ display: 'inline' }} /></a>}
           </div>
         )}
