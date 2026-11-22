@@ -51,7 +51,6 @@ export default function Footer({ categories = staticCategories }: { categories?:
             <Link href="/plan-du-site">Plan du site</Link>
             <Link href="/programme-tv">Programme TV</Link>
             <Link href="/replays">Replays</Link>
-            <Link href="/canaux-tv">Canaux TV</Link>
             <Link href="/suivez-nous">Suivez-nous</Link>
             <Link href="/applications">Applications</Link>
           </div>
