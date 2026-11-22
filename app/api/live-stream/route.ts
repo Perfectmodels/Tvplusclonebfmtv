@@ -5,7 +5,8 @@ import { resolveLivePlayback } from '../../../lib/video/live-platforms';
 
 export const dynamic='force-dynamic';
 const empty={enabled:false,title:'TV+ Afrique',description:'',hlsUrl:'',platform:'hls',embedUrl:'',playbackUrl:'',standbyMessage:'Le direct reprendra prochainement.'};
-const headers={'Cache-Control':'no-store'};
+// Courte mise en cache CDN : moins de calculs et requêtes Supabase, régie reste la source unique.
+const headers={'Cache-Control':'public, s-maxage=60, stale-while-revalidate=30'};
 export async function GET(request:NextRequest){
  try{
   const {data,error}=await getPublicServerSupabase().from('site_live_settings')
