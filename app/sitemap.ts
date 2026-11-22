@@ -23,7 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticRoutes = [
     '', '/news-24-7', '/direct', '/videos', '/replay-emissions', '/replays',
-    '/podcasts', '/programme-tv', '/canaux-tv', '/newsletters',
+    '/podcasts', '/programme-tv', '/newsletters',
   ].map((route) => ({
     url: `${base}${route}`,
     changeFrequency: 'daily' as const,
