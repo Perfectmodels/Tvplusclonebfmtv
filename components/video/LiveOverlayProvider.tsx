@@ -250,6 +250,9 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
                     <button type="button" className="live-retry" onClick={() => { setStatus('idle'); setAttempt((n) => n + 1); }}>
                       Réessayer
                     </button>
+                    {isDemo && <button type="button" className="live-retry" onClick={() => { setEmbedUrl(DEMO_CHANNEL.youtubeEmbedUrl); setStatus('ready'); }}>
+                      Essayer sur YouTube
+                    </button>}
                   </>
                 ) : (
                   <strong>Chargement du direct…</strong>
