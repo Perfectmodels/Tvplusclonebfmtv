@@ -5,7 +5,7 @@ import {
  Activity,BookOpen,CheckCircle2,ChevronDown,ExternalLink,Eye,EyeOff,KeyRound,
  LockKeyhole,MonitorPlay,Plus,RadioTower,RotateCcw,Save,Server,ShieldCheck,Trash2
 } from 'lucide-react';
-import { STREAM_PROVIDERS,LIVE_PLAYER_PLATFORMS,resolveLivePlayback,extractLiveUrl } from '../../../lib/video/live-platforms';
+import { STREAM_PROVIDERS,LIVE_PLAYER_PLATFORMS,resolveLivePlayback,extractLiveUrl,isVercelOrSitePlaybackUrl } from '../../../lib/video/live-platforms';
 
 type Settings={
  title:string;description:string;standby_message:string;player_platform:string;playback_url:string;
@@ -76,7 +76,11 @@ export default function RegieDirect(){
     method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify(settings)
    });const j=await r.json();
-   if(!r.ok)throw Error(j.error?.message||'Configuration du lecteur invalide.');
+   if(!r.ok){
+    const fields=j.error?.details?.fieldErrors;
+    const first=fields?Object.values(fields).flat().find(Boolean):null;
+    throw Error(typeof first==='string'?first:j.error?.message||'Configuration du lecteur invalide.');
+   }
    setSettings({...initial,...j.data});
    setMessage('Configuration du lecteur TV+ enregistrée.');
   }catch(e){setError(e instanceof Error?e.message:'Erreur de réseau.');}
@@ -210,7 +214,7 @@ export default function RegieDirect(){
     </form>}
    </section>
    <section className="v2-card" aria-labelledby="live-reader-title">
-    <div className="v2-regie-section-head"><div><h2 id="live-reader-title" className="v2-panel-title">2. Lecteur visible sur TV+ Afrique</h2><p className="v2-note">La source de lecture est différente du serveur d’émission. Le site lit du HLS ou un lecteur vidéo intégrable.</p></div></div>
+    <div className="v2-regie-section-head"><div><h2 id="live-reader-title" className="v2-panel-title">2. Lecteur visible sur TV+ Afrique</h2><p className="v2-note">Les playlists HLS et segments vidéo sont téléchargés directement depuis le diffuseur ou son CDN, jamais depuis Vercel. Utilisez une adresse HTTPS externe, autorisant CORS pour le HLS.</p></div></div>
     <div className="v2-edit-grid">
      <form onSubmit={saveSettings}>
       <label className="v2-field"><span>Titre du direct *</span><input required minLength={3} maxLength={120} value={settings.title} onChange={e=>field('title',e.target.value)}/></label>
@@ -220,7 +224,7 @@ export default function RegieDirect(){
       <label className="v2-field"><span>URL publique de lecture ou code iframe (Restream)</span><textarea rows={3} maxLength={3500}
        placeholder={settings.player_platform==='restream'?'<iframe src="https://player.restream.io/?…"></iframe>':settings.player_platform==='hls'?'https://…/playlist.m3u8':'https://…'}
        value={settings.playback_url} onChange={e=>field('playback_url',e.target.value)}/></label>
-      {settings.playback_url&&<p className="v2-note">{current.playbackUrl ? current.embedUrl?'Lecteur intégrable compatible.':current.hlsUrl?'Flux HLS reconnu.':'Lien externe uniquement : pas de lecteur iframe garanti.' : 'URL ou iframe non reconnu. Vérifiez le type de lecteur et le lien HTTPS.'}</p>}
+      {settings.playback_url&&<p className="v2-note">{isVercelOrSitePlaybackUrl(settings.playback_url)?'Adresse refusée : ne diffusez pas de vidéo via Vercel. Utilisez le CDN HLS ou le lecteur de votre fournisseur.':current.playbackUrl ? current.embedUrl?'Lecteur intégrable externe compatible.':current.hlsUrl?'URL de flux HLS externe reconnue (vérifiez aussi les règles CORS du diffuseur).':'Lien externe uniquement : pas de lecteur iframe garanti.' : 'URL ou iframe non reconnu. Vérifiez le type de lecteur et le lien HTTPS.'}</p>}
       <label className="v2-field"><span>Message d’attente hors antenne</span><input maxLength={350} value={settings.standby_message} onChange={e=>field('standby_message',e.target.value)}/></label>
       <div className="v2-regie-times">
        <label className="v2-field"><span>Début d’affichage · Libreville</span><input type="datetime-local" value={local(settings.starts_at)} onChange={e=>field('starts_at',utc(e.target.value))}/></label>

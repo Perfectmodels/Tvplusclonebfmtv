@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { handleRoute,ok,ApiError } from '../../../../lib/api/response';
-import { LIVE_PLAYER_IDS,extractLiveUrl,resolveLivePlayback } from '../../../../lib/video/live-platforms';
+import { LIVE_PLAYER_IDS,extractLiveUrl,resolveLivePlayback,isVercelOrSitePlaybackUrl } from '../../../../lib/video/live-platforms';
 import { revalidatePath } from 'next/cache';
 
 export const dynamic='force-dynamic';
@@ -18,11 +18,12 @@ const schema=z.object({
   starts_at:date.default(null),ends_at:date.default(null),
 }).superRefine((v,ctx)=>{
   const playback=resolveLivePlayback(v.player_platform,v.playback_url);
-  if(v.enabled && !playback.playbackUrl){
-    ctx.addIssue({code:'custom',path:['playback_url'],message:'Renseignez un lecteur public compatible avant d’activer.'});
-  }
-  if(v.playback_url&&!playback.playbackUrl){
-    ctx.addIssue({code:'custom',path:['playback_url'],message:'URL publique HTTPS ou iframe compatible requis. Ne collez pas de serveur d’émission.'});
+  if(v.playback_url && isVercelOrSitePlaybackUrl(v.playback_url)){
+    ctx.addIssue({code:'custom',path:['playback_url'],message:'URL refusée : utilisez un CDN vidéo ou un lecteur externe, jamais un domaine Vercel pour la vidéo.'});
+  } else if(v.playback_url && !playback.playbackUrl){
+    ctx.addIssue({code:'custom',path:['playback_url'],message:'URL HTTPS HLS ou lecteur iframe compatible requis. Ne collez pas de serveur d’émission.'});
+  } else if(v.enabled && (!playback.hlsUrl && !playback.embedUrl)){
+    ctx.addIssue({code:'custom',path:['playback_url'],message:'Pour activer le direct, fournissez une URL HLS ou un lecteur iframe compatible.'});
   }
   if(v.starts_at&&v.ends_at&&Date.parse(v.ends_at)<=Date.parse(v.starts_at)){
     ctx.addIssue({code:'custom',path:['ends_at'],message:'La fin doit être après le début.'});
@@ -41,7 +42,13 @@ export const PATCH=handleRoute(async(request:NextRequest)=>{
   if(!parsed.success)throw new ApiError('Configuration du direct invalide.',400,'BAD_REQUEST',parsed.error.flatten());
   const v=parsed.data;
   const normalized=extractLiveUrl(v.playback_url);
-  const player=resolveLivePlayback(v.player_platform,normalized);
+  const player=resolveLivePlayback(v.player_platform,normalized,request.nextUrl.hostname);
+  if(isVercelOrSitePlaybackUrl(normalized,request.nextUrl.hostname)){
+    throw new ApiError('Le flux doit être hébergé sur un serveur vidéo externe, pas sur Vercel.',400,'BAD_REQUEST');
+  }
+  if(v.enabled && (!player.supported || (!player.hlsUrl && !player.embedUrl))){
+    throw new ApiError('Le direct exige un lecteur HLS ou iframe compatible, hébergé hors Vercel.',400,'BAD_REQUEST');
+  }
   const {data,error}=await db.from('site_live_settings')
     .update({
       ...v,playback_url:normalized,

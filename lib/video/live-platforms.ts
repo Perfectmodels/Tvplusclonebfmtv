@@ -88,9 +88,23 @@ function youtubeId(url:URL) {
  return '';
 }
 
+/**
+ * Un flux vidéo ne doit jamais être servi depuis le domaine du site ni
+ * une adresse Vercel : les playlists et les segments seraient alors
+ * comptabilisés dans le trafic de l'hébergement web.
+ * Le test comprend également les URLs extraites de codes iframe.
+ */
+export function isVercelOrSitePlaybackUrl(input:string,siteHostname='tvplusv2.vercel.app'):boolean {
+ const url=parsedHttps(input);
+ if(!url)return false;
+ const host=url.hostname.toLowerCase().replace(/\\.$/,'');
+ const site=siteHostname.toLowerCase().replace(/\\.$/,'');
+ return host===site || host==='vercel.app' || host.endsWith('.vercel.app');
+}
+
 export function resolveLivePlayback(platform:string,input:string,siteHostname='tvplusv2.vercel.app'):LivePlayback {
  const url=parsedHttps(input);
- if(!url)return empty();
+ if(!url || isVercelOrSitePlaybackUrl(input,siteHostname))return empty();
  const host=url.hostname.toLowerCase();
  const externalUrl=url.toString();
  const base={playbackUrl:externalUrl,hlsUrl:'',embedUrl:'',externalUrl,supported:true};
