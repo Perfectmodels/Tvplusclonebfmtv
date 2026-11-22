@@ -24,6 +24,7 @@ export default function HomeLiveDock() {
   const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState(false);
   const [muted, setMuted] = useState(true);
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -80,7 +81,9 @@ export default function HomeLiveDock() {
   const hlsUrl = config?.enabled ? config.hlsUrl : '';
   const embedUrl = config?.enabled ? config.embedUrl : '';
   const playbackUrl = config?.enabled ? config.playbackUrl : '';
-  const isBroadcasting = Boolean(config?.enabled && (hlsUrl || embedUrl || playbackUrl));
+  const playerConfigured = Boolean(config?.enabled && (hlsUrl || embedUrl || playbackUrl));
+  // Un lecteur Restream peut afficher « hors ligne » : la présence de l'iframe ne prouve pas un vrai live.
+  const isBroadcasting = Boolean(hlsUrl && videoPlaying);
 
   useEffect(() => {
     if (!showPlayer || !hlsUrl || embedUrl) return;
@@ -151,7 +154,10 @@ export default function HomeLiveDock() {
               ) : hlsUrl ? (
                 <video ref={videoRef} playsInline controls muted={muted}
                   onVolumeChange={event => setMuted(event.currentTarget.muted)}
-                  onError={() => setError(true)}
+                  onPlaying={() => setVideoPlaying(true)}
+                  onPause={() => setVideoPlaying(false)}
+                  onWaiting={() => setVideoPlaying(false)}
+                  onError={() => {setVideoPlaying(false);setError(true);}}
                   aria-label="Vidéo en direct TV+ Afrique" />
               ) : (
                 <div className="home-live-standby">
@@ -168,7 +174,7 @@ export default function HomeLiveDock() {
                 </div>
               )}
               <span className={'home-live-status' + (isBroadcasting ? ' is-on-air' : '')}>
-                <Radio size={13} aria-hidden="true" /> {isBroadcasting ? 'EN DIRECT' : 'HORS ANTENNE'}
+                <Radio size={13} aria-hidden="true" /> {isBroadcasting ? 'EN DIRECT' : playerConfigured ? 'LECTEUR DISPONIBLE' : 'HORS ANTENNE'}
               </span>
             </div>
             <div className="home-live-toolbar">
