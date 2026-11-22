@@ -4,14 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Maximize2, Minimize2, Radio, X } from 'lucide-react';
 import TvPlusLogo from '../TvPlusLogo';
-import { DEMO_CHANNEL } from '../../lib/video/demo-channel';
 import { usePublicLiveSource } from '../../hooks/use-public-live-source';
 
 export default function HomeLiveDock() {
   const anchorRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const config = usePublicLiveSource();
-  const [useYouTube, setUseYouTube] = useState(false);
   const [docked, setDocked] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -50,12 +48,12 @@ export default function HomeLiveDock() {
 
   const floating = docked && !dismissed;
   const showPlayer = !dismissed || !docked;
-  const hlsUrl = config?.hlsUrl || '';
-  const embedUrl = config?.isDemo && useYouTube ? DEMO_CHANNEL.youtubeEmbedUrl : config?.embedUrl || '';
-  const playbackUrl = config?.externalUrl || '';
-  const playerConfigured = Boolean(config && (hlsUrl || embedUrl));
-  // Une simulation ou une iframe présente ne suffit pas à prouver un vrai direct TV+.
-  const isBroadcasting = Boolean(config && !config.isDemo && hlsUrl && videoPlaying);
+  const hlsUrl = config?.enabled ? config.hlsUrl : '';
+  const embedUrl = config?.enabled ? config.embedUrl : '';
+  const playbackUrl = config?.enabled ? config.externalUrl : '';
+  const playerConfigured = Boolean(config?.enabled && (hlsUrl || embedUrl));
+  // Une URL enregistrée ne prouve pas que l'image arrive effectivement.
+  const isBroadcasting = Boolean(hlsUrl && videoPlaying);
 
   useEffect(() => {
     if (!showPlayer || !hlsUrl || embedUrl) return;
@@ -120,7 +118,7 @@ export default function HomeLiveDock() {
             aria-label={expanded ? 'Direct TV+ Afrique agrandi' : 'Lecteur TV+ Afrique'}>
             <div className="home-live-screen">
               {embedUrl ? (
-                <iframe title={config?.isDemo ? 'France 24 — démonstration' : 'Direct TV+ Afrique'} src={embedUrl}
+                <iframe title={config?.title || 'Lecteur vidéo'} src={embedUrl}
                   allow="autoplay; fullscreen; picture-in-picture"
                   allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
               ) : hlsUrl ? (
@@ -130,7 +128,7 @@ export default function HomeLiveDock() {
                   onPause={() => setVideoPlaying(false)}
                   onWaiting={() => setVideoPlaying(false)}
                   onError={() => {setVideoPlaying(false);setError(true);}}
-                  aria-label={config?.isDemo ? 'France 24 — démonstration' : 'Vidéo en direct TV+ Afrique'} />
+                  aria-label={config?.title || 'Lecteur en direct'} />
               ) : (
                 <div className="home-live-standby">
                   <TvPlusLogo />
@@ -143,20 +141,15 @@ export default function HomeLiveDock() {
               {error && hlsUrl && !embedUrl && (
                 <div className="home-live-error" role="alert">
                   Le flux ne peut pas être lu.{' '}
-                  {config?.isDemo && !useYouTube && (
-                    <button type="button" onClick={() => { setError(false); setUseYouTube(true); }}>
-                      Essayer le lecteur YouTube de France 24
-                    </button>
-                  )}{' '}
                   <Link href="/direct">Ouvrir le direct</Link>
                 </div>
               )}
               <span className={'home-live-status' + (isBroadcasting ? ' is-on-air' : '')}>
-                <Radio size={13} aria-hidden="true" /> {config?.isDemo ? 'DÉMONSTRATION · FRANCE 24' : isBroadcasting ? 'EN DIRECT' : playerConfigured ? 'LECTEUR DISPONIBLE' : 'HORS ANTENNE'}
+                <Radio size={13} aria-hidden="true" /> {isBroadcasting ? 'EN DIRECT' : playerConfigured ? 'LECTEUR DISPONIBLE' : 'HORS ANTENNE'}
               </span>
             </div>
             <div className="home-live-toolbar">
-              <span className="home-live-toolbar-title">{config?.isDemo ? 'France 24 · vidéo de démonstration' : 'TV+ Afrique'}</span>
+              <span className="home-live-toolbar-title">{config?.enabled ? config.title : 'TV+ Afrique'}</span>
               <button type="button" className="home-live-expand"
                 aria-label={expanded ? 'Réduire le direct' : 'Agrandir le direct'}
                 onClick={() => setExpanded(value => !value)}>
@@ -178,9 +171,9 @@ export default function HomeLiveDock() {
         )}
       </div>
       <div className="home-live-details">
-        <span className="home-live-details-eyebrow">{config?.isDemo ? 'DÉMONSTRATION · SOURCE EXTERNE' : 'TV+ AFRIQUE · DIFFUSION'}</span>
-        <h2>{config?.isDemo ? 'Lecteur TV+ en démonstration' : config?.title || 'Regardez TV+ Afrique en direct'}</h2>
-        <p>{config?.isDemo ? 'Test du lecteur avec France 24. Ce flux n’est pas une diffusion de TV+ Afrique.' : config?.description || 'Retrouvez nos émissions, reportages et grands rendez-vous.'}</p>
+        <span className="home-live-details-eyebrow">TV+ AFRIQUE · DIFFUSION</span>
+        <h2>{config?.enabled ? config.title : 'Regardez TV+ Afrique en direct'}</h2>
+        <p>{config?.enabled ? config.description || 'Diffusion en direct depuis notre régie.' : config?.standbyMessage || 'Retrouvez nos émissions, reportages et grands rendez-vous.'}</p>
         <Link href="/direct" className="home-live-details-link">
           Accéder à la page Direct <ArrowUpRight size={17} />
         </Link>
