@@ -19,7 +19,6 @@ import {
   VolumeX,
   X,
 } from 'lucide-react';
-import { DEMO_CHANNEL } from '../../lib/video/demo-channel';
 import { usePublicLiveSource } from '../../hooks/use-public-live-source';
 
 type LiveOverlayContextValue = {
@@ -45,7 +44,6 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
   const [attempt, setAttempt] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
-  const [isDemo, setIsDemo] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<{ destroy: () => void } | null>(null);
   const [streamUrl, setStreamUrl] = useState('');
@@ -56,7 +54,6 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
   // Même source et même rafraîchissement que le lecteur /direct et le lecteur flottant.
   useEffect(() => {
     if (!isOpen || !liveSource) return;
-    setIsDemo(liveSource.isDemo);
     setStreamUrl(liveSource.hlsUrl);
     setEmbedUrl(liveSource.embedUrl);
     setExternalUrl(liveSource.externalUrl);
@@ -80,7 +77,6 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
     setIsOpen(false);
     setEmbedUrl('');
     setExternalUrl('');
-    setIsDemo(false);
     setPlaying(false);
     setStatus('idle');
   }, []);
@@ -203,8 +199,8 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
       {isOpen && (
         <section className="live-overlay" role="region" aria-label="Lecteur direct TV Plus">
           <header className="live-overlay-head">
-            <span className="live-overlay-badge">{!isDemo && <span className="live-overlay-pulse" />} {isDemo ? 'Simulation' : 'Direct'}</span>
-            <span className="live-overlay-title">{isDemo ? 'France 24 · flux externe de démonstration' : 'TV Plus — en direct'}</span>
+            <span className="live-overlay-badge">{liveSource?.enabled ? 'Flux activé' : 'Hors antenne'}</span>
+            <span className="live-overlay-title">{liveSource?.enabled ? liveSource.title : 'TV+ Afrique — lecteur'}</span>
             <button type="button" className="live-control-btn" onClick={close} aria-label="Fermer le lecteur">
               <X size={15} />
             </button>
@@ -237,13 +233,10 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
                   <strong>Appuyez sur Lecture pour regarder le direct.</strong>
                 ) : status === 'error' ? (
                   <>
-                    <strong>Impossible de charger le flux{isDemo ? ' de démonstration' : ''}</strong>
+                    <strong>Impossible de charger le flux</strong>
                     <button type="button" className="live-retry" onClick={() => { setStatus('idle'); setAttempt((n) => n + 1); }}>
                       Réessayer
                     </button>
-                    {isDemo && <button type="button" className="live-retry" onClick={() => { setEmbedUrl(DEMO_CHANNEL.youtubeEmbedUrl); setStatus('ready'); }}>
-                      Essayer sur YouTube
-                    </button>}
                   </>
                 ) : (
                   <strong>Chargement du direct…</strong>
@@ -274,7 +267,7 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
                 Source <ExternalLink size={15} />
               </a>
             )}
-            <span className="live-overlay-watermark">{isDemo ? 'FRANCE 24' : 'TV+'}</span>
+            <span className="live-overlay-watermark">TV+</span>
           </footer>
         </section>
       )}
