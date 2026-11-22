@@ -1,0 +1,4077 @@
+{
+  "enums": [
+    {
+      "type_name": "app_role",
+      "labels": "{super_admin,admin,editor_in_chief,journalist,video_editor,community_manager}"
+    },
+    {
+      "type_name": "article_status",
+      "labels": "{draft,in_review,approved,scheduled,published,inactive,archived}"
+    },
+    {
+      "type_name": "contribution_kind",
+      "labels": "{contribution,question,contact}"
+    },
+    {
+      "type_name": "contribution_status",
+      "labels": "{pending,verified,rejected,archived}"
+    },
+    {
+      "type_name": "poll_status",
+      "labels": "{draft,open,closed}"
+    },
+    {
+      "type_name": "publication_status",
+      "labels": "{draft,published}"
+    },
+    {
+      "type_name": "video_platform",
+      "labels": "{youtube,tiktok,facebook,vimeo,dailymotion}"
+    }
+  ],
+  "columns": [
+    {
+      "table_name": "ai_generations",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 2,
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "auth.uid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 3,
+      "column_name": "article_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 4,
+      "column_name": "kind",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 5,
+      "column_name": "model",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 6,
+      "column_name": "input_hash",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 7,
+      "column_name": "input",
+      "data_type": "jsonb",
+      "not_null": true,
+      "default_expression": "'{}'::jsonb",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 8,
+      "column_name": "output",
+      "data_type": "jsonb",
+      "not_null": true,
+      "default_expression": "'{}'::jsonb",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 9,
+      "column_name": "input_tokens",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 10,
+      "column_name": "output_tokens",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 11,
+      "column_name": "cost_usd",
+      "data_type": "numeric(10,6)",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "ai_generations",
+      "position": 12,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 2,
+      "column_name": "slug",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 3,
+      "column_name": "title",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 4,
+      "column_name": "excerpt",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 5,
+      "column_name": "category_id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 6,
+      "column_name": "subcategory_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 7,
+      "column_name": "province_slug",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 8,
+      "column_name": "author_id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "auth.uid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 9,
+      "column_name": "cover_media_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 10,
+      "column_name": "content_json",
+      "data_type": "jsonb",
+      "not_null": true,
+      "default_expression": "'{\"type\": \"doc\", \"content\": []}'::jsonb",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 11,
+      "column_name": "content_html",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 12,
+      "column_name": "tags",
+      "data_type": "text[]",
+      "not_null": true,
+      "default_expression": "'{}'::text[]",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 13,
+      "column_name": "seo_title",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 14,
+      "column_name": "seo_description",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 15,
+      "column_name": "status",
+      "data_type": "article_status",
+      "not_null": true,
+      "default_expression": "'draft'::article_status",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 16,
+      "column_name": "featured",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "false",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 17,
+      "column_name": "published_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 18,
+      "column_name": "reviewed_by",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 19,
+      "column_name": "reviewed_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 20,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 21,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 22,
+      "column_name": "search",
+      "data_type": "tsvector",
+      "not_null": false,
+      "default_expression": "(setweight(to_tsvector('french'::regconfig, COALESCE(title, ''::text)), 'A'::\"char\") || setweight(to_tsvector('french'::regconfig, COALESCE(excerpt, ''::text)), 'B'::\"char\"))",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 23,
+      "column_name": "country_code",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'GA'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 24,
+      "column_name": "is_alert",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "false",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 25,
+      "column_name": "is_video_article",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "false",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 26,
+      "column_name": "video_url",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "articles",
+      "position": 27,
+      "column_name": "short_code",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "translate(encode(gen_random_bytes(6), 'base64'::text), '+/'::text, '-_'::text)",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "audit_logs",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "audit_logs",
+      "position": 2,
+      "column_name": "actor_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "audit_logs",
+      "position": 3,
+      "column_name": "action",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "audit_logs",
+      "position": 4,
+      "column_name": "entity",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "audit_logs",
+      "position": 5,
+      "column_name": "entity_id",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "audit_logs",
+      "position": 6,
+      "column_name": "details",
+      "data_type": "jsonb",
+      "not_null": true,
+      "default_expression": "'{}'::jsonb",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "audit_logs",
+      "position": 7,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "categories",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "categories",
+      "position": 2,
+      "column_name": "slug",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "categories",
+      "position": 3,
+      "column_name": "name",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "categories",
+      "position": 4,
+      "column_name": "description",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "categories",
+      "position": 5,
+      "column_name": "hue",
+      "data_type": "smallint",
+      "not_null": true,
+      "default_expression": "216",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "categories",
+      "position": 6,
+      "column_name": "parent_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "categories",
+      "position": 7,
+      "column_name": "position",
+      "data_type": "smallint",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "categories",
+      "position": 8,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "categories",
+      "position": 9,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 2,
+      "column_name": "kind",
+      "data_type": "contribution_kind",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 3,
+      "column_name": "name",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 4,
+      "column_name": "contact",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 5,
+      "column_name": "subject",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 6,
+      "column_name": "message",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 7,
+      "column_name": "province_slug",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 8,
+      "column_name": "locality",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 9,
+      "column_name": "show_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 10,
+      "column_name": "status",
+      "data_type": "contribution_status",
+      "not_null": true,
+      "default_expression": "'pending'::contribution_status",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 11,
+      "column_name": "moderated_by",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 12,
+      "column_name": "moderated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 13,
+      "column_name": "moderation_note",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 14,
+      "column_name": "sender_hash",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "contributions",
+      "position": 15,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_runs",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_runs",
+      "position": 2,
+      "column_name": "started_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_runs",
+      "position": 3,
+      "column_name": "finished_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_runs",
+      "position": 4,
+      "column_name": "candidates_seen",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_runs",
+      "position": 5,
+      "column_name": "new_topics",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_runs",
+      "position": 6,
+      "column_name": "drafts_created",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_runs",
+      "position": 7,
+      "column_name": "alert_candidates",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_runs",
+      "position": 8,
+      "column_name": "error",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 2,
+      "column_name": "headline",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 3,
+      "column_name": "category_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 4,
+      "column_name": "importance",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'normal'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 5,
+      "column_name": "status",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'review'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 6,
+      "column_name": "summary",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 7,
+      "column_name": "editorial_angle",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 8,
+      "column_name": "to_confirm",
+      "data_type": "jsonb",
+      "not_null": true,
+      "default_expression": "'[]'::jsonb",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 9,
+      "column_name": "sources",
+      "data_type": "jsonb",
+      "not_null": true,
+      "default_expression": "'[]'::jsonb",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 10,
+      "column_name": "source_item_ids",
+      "data_type": "uuid[]",
+      "not_null": true,
+      "default_expression": "'{}'::uuid[]",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 11,
+      "column_name": "draft_article_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 12,
+      "column_name": "first_seen_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 13,
+      "column_name": "last_seen_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 14,
+      "column_name": "verified_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "position": 15,
+      "column_name": "reviewed_by",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 2,
+      "column_name": "show_id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 3,
+      "column_name": "title",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 4,
+      "column_name": "description",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 5,
+      "column_name": "aired_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 6,
+      "column_name": "duration_seconds",
+      "data_type": "integer",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 7,
+      "column_name": "platform",
+      "data_type": "video_platform",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 8,
+      "column_name": "external_id",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 9,
+      "column_name": "status",
+      "data_type": "publication_status",
+      "not_null": true,
+      "default_expression": "'draft'::publication_status",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 10,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 11,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 12,
+      "column_name": "source_url",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 13,
+      "column_name": "publish_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "episodes",
+      "position": 14,
+      "column_name": "thumbnail_url",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "position": 1,
+      "column_name": "banner",
+      "data_type": "smallint",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "position": 2,
+      "column_name": "slot",
+      "data_type": "smallint",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "position": 3,
+      "column_name": "advertiser",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "position": 4,
+      "column_name": "image_url",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "position": 5,
+      "column_name": "target_url",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "position": 6,
+      "column_name": "alt",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "position": 7,
+      "column_name": "active",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "false",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "position": 8,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "position": 9,
+      "column_name": "starts_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "position": 10,
+      "column_name": "ends_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 1,
+      "column_name": "legacy_id",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 2,
+      "column_name": "state",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'pending'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 3,
+      "column_name": "attempts",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 4,
+      "column_name": "next_attempt_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 5,
+      "column_name": "last_attempt_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 6,
+      "column_name": "last_error",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 7,
+      "column_name": "original_published_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 8,
+      "column_name": "imported_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 9,
+      "column_name": "article_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 10,
+      "column_name": "imgbb_url",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "position": 11,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "position": 2,
+      "column_name": "name",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "position": 3,
+      "column_name": "platform",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "position": 4,
+      "column_name": "watch_url",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "position": 5,
+      "column_name": "enabled",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "false",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "position": 6,
+      "column_name": "position",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "position": 7,
+      "column_name": "notes",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "position": 8,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "position": 9,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 2,
+      "column_name": "name",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 3,
+      "column_name": "provider",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'custom'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 4,
+      "column_name": "direction",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'source'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 5,
+      "column_name": "protocol",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'rtmps'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 6,
+      "column_name": "endpoint_secret_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 7,
+      "column_name": "stream_key_secret_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 8,
+      "column_name": "watch_url",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 9,
+      "column_name": "enabled",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "false",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 10,
+      "column_name": "position",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 11,
+      "column_name": "notes",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 12,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_stream_targets",
+      "position": 13,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_streams",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_streams",
+      "position": 2,
+      "column_name": "title",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_streams",
+      "position": 3,
+      "column_name": "platform",
+      "data_type": "video_platform",
+      "not_null": true,
+      "default_expression": "'youtube'::video_platform",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_streams",
+      "position": 4,
+      "column_name": "external_id",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_streams",
+      "position": 5,
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "false",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_streams",
+      "position": 6,
+      "column_name": "starts_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_streams",
+      "position": 7,
+      "column_name": "ends_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_streams",
+      "position": 8,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "live_streams",
+      "position": 9,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 2,
+      "column_name": "bucket",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'media'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 3,
+      "column_name": "path",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 4,
+      "column_name": "mime_type",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 5,
+      "column_name": "size_bytes",
+      "data_type": "integer",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 6,
+      "column_name": "width",
+      "data_type": "integer",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 7,
+      "column_name": "height",
+      "data_type": "integer",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 8,
+      "column_name": "alt",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 9,
+      "column_name": "caption",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 10,
+      "column_name": "credit",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 11,
+      "column_name": "uploaded_by",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": "auth.uid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 12,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "media",
+      "position": 13,
+      "column_name": "imgbb_url",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 2,
+      "column_name": "source_id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 3,
+      "column_name": "guid_hash",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 4,
+      "column_name": "title",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 5,
+      "column_name": "summary",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 6,
+      "column_name": "original_url",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 7,
+      "column_name": "source_name",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 8,
+      "column_name": "category_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 9,
+      "column_name": "status",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'published'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 10,
+      "column_name": "published_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "news24_items",
+      "position": 11,
+      "column_name": "imported_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "poll_votes",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "poll_votes",
+      "position": 2,
+      "column_name": "poll_id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "poll_votes",
+      "position": 3,
+      "column_name": "option_id",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "poll_votes",
+      "position": 4,
+      "column_name": "voter_hash",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "poll_votes",
+      "position": 5,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "polls",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "polls",
+      "position": 2,
+      "column_name": "question",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "polls",
+      "position": 3,
+      "column_name": "options",
+      "data_type": "jsonb",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "polls",
+      "position": 4,
+      "column_name": "status",
+      "data_type": "poll_status",
+      "not_null": true,
+      "default_expression": "'draft'::poll_status",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "polls",
+      "position": 5,
+      "column_name": "opens_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "polls",
+      "position": 6,
+      "column_name": "closes_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "polls",
+      "position": 7,
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": "auth.uid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "polls",
+      "position": 8,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "polls",
+      "position": 9,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "profiles",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "profiles",
+      "position": 2,
+      "column_name": "full_name",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "profiles",
+      "position": 3,
+      "column_name": "role",
+      "data_type": "app_role",
+      "not_null": true,
+      "default_expression": "'journalist'::app_role",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "profiles",
+      "position": 4,
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "false",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "profiles",
+      "position": 5,
+      "column_name": "avatar_url",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "profiles",
+      "position": 6,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "profiles",
+      "position": 7,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "program_slots",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "program_slots",
+      "position": 2,
+      "column_name": "weekday",
+      "data_type": "smallint",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "program_slots",
+      "position": 3,
+      "column_name": "start_time",
+      "data_type": "time without time zone",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "program_slots",
+      "position": 4,
+      "column_name": "title",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "program_slots",
+      "position": 5,
+      "column_name": "kind",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "program_slots",
+      "position": 6,
+      "column_name": "show_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "program_slots",
+      "position": 7,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "provinces",
+      "position": 1,
+      "column_name": "slug",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "provinces",
+      "position": 2,
+      "column_name": "name",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "provinces",
+      "position": 3,
+      "column_name": "capital",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "provinces",
+      "position": 4,
+      "column_name": "position",
+      "data_type": "smallint",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "roles",
+      "position": 1,
+      "column_name": "key",
+      "data_type": "app_role",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "roles",
+      "position": 2,
+      "column_name": "label",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "roles",
+      "position": 3,
+      "column_name": "description",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "roles",
+      "position": 4,
+      "column_name": "permissions",
+      "data_type": "text[]",
+      "not_null": true,
+      "default_expression": "'{}'::text[]",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "roles",
+      "position": 5,
+      "column_name": "position",
+      "data_type": "smallint",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "rss_sources",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "rss_sources",
+      "position": 2,
+      "column_name": "name",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "rss_sources",
+      "position": 3,
+      "column_name": "feed_url",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "rss_sources",
+      "position": 4,
+      "column_name": "category_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "rss_sources",
+      "position": 5,
+      "column_name": "enabled",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "true",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "rss_sources",
+      "position": 6,
+      "column_name": "auto_publish",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "true",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "rss_sources",
+      "position": 7,
+      "column_name": "last_fetched_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "rss_sources",
+      "position": 8,
+      "column_name": "last_error",
+      "data_type": "text",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "rss_sources",
+      "position": 9,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "rss_sources",
+      "position": 10,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 2,
+      "column_name": "slug",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 3,
+      "column_name": "title",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 4,
+      "column_name": "tagline",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 5,
+      "column_name": "description",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 6,
+      "column_name": "category_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 7,
+      "column_name": "schedule_label",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 8,
+      "column_name": "cover_media_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 9,
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "true",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 10,
+      "column_name": "position",
+      "data_type": "smallint",
+      "not_null": true,
+      "default_expression": "0",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 11,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 12,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 13,
+      "column_name": "host_name",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "shows",
+      "position": 14,
+      "column_name": "frequency",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "smallint",
+      "not_null": true,
+      "default_expression": "1",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 2,
+      "column_name": "title",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'TV+ Afrique en direct'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 3,
+      "column_name": "hls_url",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 4,
+      "column_name": "enabled",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "false",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 5,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 6,
+      "column_name": "player_platform",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'hls'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 7,
+      "column_name": "playback_url",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 8,
+      "column_name": "description",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 9,
+      "column_name": "starts_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 10,
+      "column_name": "ends_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "site_live_settings",
+      "position": 11,
+      "column_name": "standby_message",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "'Le direct reprendra prochainement.'::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "not_null": true,
+      "default_expression": "gen_random_uuid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 2,
+      "column_name": "title",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 3,
+      "column_name": "description",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": "''::text",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 4,
+      "column_name": "category_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 5,
+      "column_name": "platform",
+      "data_type": "video_platform",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 6,
+      "column_name": "external_id",
+      "data_type": "text",
+      "not_null": true,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 7,
+      "column_name": "duration_seconds",
+      "data_type": "integer",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 8,
+      "column_name": "featured",
+      "data_type": "boolean",
+      "not_null": true,
+      "default_expression": "false",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 9,
+      "column_name": "article_id",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 10,
+      "column_name": "status",
+      "data_type": "publication_status",
+      "not_null": true,
+      "default_expression": "'draft'::publication_status",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 11,
+      "column_name": "published_at",
+      "data_type": "timestamp with time zone",
+      "not_null": false,
+      "default_expression": null,
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 12,
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "not_null": false,
+      "default_expression": "auth.uid()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 13,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    },
+    {
+      "table_name": "videos",
+      "position": 14,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "not_null": true,
+      "default_expression": "now()",
+      "rls_enabled": true
+    }
+  ],
+  "constraints": [
+    {
+      "table_name": "ai_generations",
+      "name": "ai_generations_article_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "ai_generations",
+      "name": "ai_generations_cost_usd_check",
+      "kind": "c",
+      "definition": "CHECK (cost_usd >= 0::numeric)"
+    },
+    {
+      "table_name": "ai_generations",
+      "name": "ai_generations_input_tokens_check",
+      "kind": "c",
+      "definition": "CHECK (input_tokens >= 0)"
+    },
+    {
+      "table_name": "ai_generations",
+      "name": "ai_generations_output_tokens_check",
+      "kind": "c",
+      "definition": "CHECK (output_tokens >= 0)"
+    },
+    {
+      "table_name": "ai_generations",
+      "name": "ai_generations_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "ai_generations",
+      "name": "ai_generations_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_author_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_category_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_country_code_format_check",
+      "kind": "c",
+      "definition": "CHECK (country_code ~ '^[A-Z]{2}$'::text)"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_cover_media_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (cover_media_id) REFERENCES media(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_excerpt_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(excerpt) <= 400)"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_province_slug_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (province_slug) REFERENCES provinces(slug) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_publication_date",
+      "kind": "c",
+      "definition": "CHECK ((status <> ALL (ARRAY['scheduled'::article_status, 'published'::article_status])) OR published_at IS NOT NULL)"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_reviewed_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (reviewed_by) REFERENCES profiles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_seo_description_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(seo_description) <= 400)"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_seo_title_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(seo_title) <= 200)"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_short_code_format",
+      "kind": "c",
+      "definition": "CHECK (short_code ~ '^[A-Za-z0-9_-]{8}$'::text)"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_slug_check",
+      "kind": "c",
+      "definition": "CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text AND char_length(slug) <= 140)"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_slug_key",
+      "kind": "u",
+      "definition": "UNIQUE (slug)"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_subcategory_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (subcategory_id) REFERENCES categories(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_title_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(title) >= 1 AND char_length(title) <= 200)"
+    },
+    {
+      "table_name": "articles",
+      "name": "articles_video_url_format_check",
+      "kind": "c",
+      "definition": "CHECK (video_url IS NULL OR char_length(video_url) <= 2000 AND video_url ~ '^https://'::text)"
+    },
+    {
+      "table_name": "audit_logs",
+      "name": "audit_logs_actor_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "audit_logs",
+      "name": "audit_logs_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "categories",
+      "name": "categories_check",
+      "kind": "c",
+      "definition": "CHECK (parent_id IS DISTINCT FROM id)"
+    },
+    {
+      "table_name": "categories",
+      "name": "categories_hue_check",
+      "kind": "c",
+      "definition": "CHECK (hue >= 0 AND hue <= 360)"
+    },
+    {
+      "table_name": "categories",
+      "name": "categories_name_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(name) >= 1 AND char_length(name) <= 80)"
+    },
+    {
+      "table_name": "categories",
+      "name": "categories_parent_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "categories",
+      "name": "categories_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "categories",
+      "name": "categories_slug_check",
+      "kind": "c",
+      "definition": "CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text)"
+    },
+    {
+      "table_name": "categories",
+      "name": "categories_slug_key",
+      "kind": "u",
+      "definition": "UNIQUE (slug)"
+    },
+    {
+      "table_name": "contributions",
+      "name": "contributions_contact_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(contact) <= 160)"
+    },
+    {
+      "table_name": "contributions",
+      "name": "contributions_locality_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(locality) <= 80)"
+    },
+    {
+      "table_name": "contributions",
+      "name": "contributions_message_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(message) >= 10 AND char_length(message) <= 2000)"
+    },
+    {
+      "table_name": "contributions",
+      "name": "contributions_moderated_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (moderated_by) REFERENCES profiles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "contributions",
+      "name": "contributions_name_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(name) >= 2 AND char_length(name) <= 80)"
+    },
+    {
+      "table_name": "contributions",
+      "name": "contributions_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "contributions",
+      "name": "contributions_province_slug_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (province_slug) REFERENCES provinces(slug) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "contributions",
+      "name": "contributions_show_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (show_id) REFERENCES shows(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "contributions",
+      "name": "contributions_subject_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(subject) <= 160)"
+    },
+    {
+      "table_name": "editorial_watch_runs",
+      "name": "editorial_watch_runs_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "name": "editorial_watch_topics_category_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "name": "editorial_watch_topics_draft_article_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (draft_article_id) REFERENCES articles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "name": "editorial_watch_topics_draft_article_id_key",
+      "kind": "u",
+      "definition": "UNIQUE (draft_article_id)"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "name": "editorial_watch_topics_headline_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(headline) >= 5 AND char_length(headline) <= 300)"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "name": "editorial_watch_topics_importance_check",
+      "kind": "c",
+      "definition": "CHECK (importance = ANY (ARRAY['normal'::text, 'major'::text]))"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "name": "editorial_watch_topics_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "name": "editorial_watch_topics_reviewed_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (reviewed_by) REFERENCES profiles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "name": "editorial_watch_topics_status_check",
+      "kind": "c",
+      "definition": "CHECK (status = ANY (ARRAY['review'::text, 'alert_candidate'::text, 'verified'::text, 'dismissed'::text]))"
+    },
+    {
+      "table_name": "episodes",
+      "name": "episodes_check",
+      "kind": "c",
+      "definition": "CHECK ((platform IS NULL) = (external_id IS NULL))"
+    },
+    {
+      "table_name": "episodes",
+      "name": "episodes_duration_seconds_check",
+      "kind": "c",
+      "definition": "CHECK (duration_seconds >= 0)"
+    },
+    {
+      "table_name": "episodes",
+      "name": "episodes_external_id_check",
+      "kind": "c",
+      "definition": "CHECK (external_id ~ '^[A-Za-z0-9_-]{6,40}$'::text)"
+    },
+    {
+      "table_name": "episodes",
+      "name": "episodes_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "episodes",
+      "name": "episodes_show_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (show_id) REFERENCES shows(id) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "episodes",
+      "name": "episodes_title_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(title) >= 1 AND char_length(title) <= 200)"
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "name": "homepage_ad_slots_advertiser_check",
+      "kind": "c",
+      "definition": "CHECK (length(advertiser) <= 120)"
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "name": "homepage_ad_slots_alt_check",
+      "kind": "c",
+      "definition": "CHECK (length(alt) <= 300)"
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "name": "homepage_ad_slots_banner_check",
+      "kind": "c",
+      "definition": "CHECK (banner >= 1 AND banner <= 5)"
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "name": "homepage_ad_slots_image_url_check",
+      "kind": "c",
+      "definition": "CHECK (length(image_url) <= 700 AND (image_url = ''::text OR image_url ~ '^https?://'::text OR image_url ~ '^/[^/]'::text))"
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "name": "homepage_ad_slots_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (banner, slot)"
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "name": "homepage_ad_slots_slot_check",
+      "kind": "c",
+      "definition": "CHECK (slot >= 1 AND slot <= 5)"
+    },
+    {
+      "table_name": "homepage_ad_slots",
+      "name": "homepage_ad_slots_target_url_check",
+      "kind": "c",
+      "definition": "CHECK (length(target_url) <= 700 AND (target_url = ''::text OR target_url ~ '^https?://'::text))"
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "name": "legacy_article_import_queue_article_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "name": "legacy_article_import_queue_attempts_check",
+      "kind": "c",
+      "definition": "CHECK (attempts >= 0)"
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "name": "legacy_article_import_queue_legacy_id_check",
+      "kind": "c",
+      "definition": "CHECK (legacy_id >= 1000 AND legacy_id <= 250000)"
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "name": "legacy_article_import_queue_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (legacy_id)"
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "name": "legacy_article_import_queue_state_check",
+      "kind": "c",
+      "definition": "CHECK (state = ANY (ARRAY['pending'::text, 'retry'::text, 'imported'::text, 'skipped'::text, 'needs_imgbb'::text]))"
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "name": "live_distribution_channels_name_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(name) >= 2 AND char_length(name) <= 120)"
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "name": "live_distribution_channels_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "name": "live_distribution_channels_platform_check",
+      "kind": "c",
+      "definition": "CHECK (platform = ANY (ARRAY['youtube'::text, 'facebook'::text, 'tiktok'::text, 'twitch'::text, 'dailymotion'::text, 'vimeo'::text, 'restream'::text, 'mux'::text, 'cloudflare'::text, 'wowza'::text, 'castr'::text, 'custom'::text]))"
+    },
+    {
+      "table_name": "live_stream_targets",
+      "name": "live_stream_targets_direction_check",
+      "kind": "c",
+      "definition": "CHECK (direction = ANY (ARRAY['source'::text, 'destination'::text]))"
+    },
+    {
+      "table_name": "live_stream_targets",
+      "name": "live_stream_targets_name_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(name) >= 2 AND char_length(name) <= 120)"
+    },
+    {
+      "table_name": "live_stream_targets",
+      "name": "live_stream_targets_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "live_stream_targets",
+      "name": "live_stream_targets_position_check",
+      "kind": "c",
+      "definition": "CHECK (\"position\" >= 0 AND \"position\" <= 999)"
+    },
+    {
+      "table_name": "live_stream_targets",
+      "name": "live_stream_targets_protocol_check",
+      "kind": "c",
+      "definition": "CHECK (protocol = ANY (ARRAY['rtmps'::text, 'rtmp'::text, 'srt'::text, 'whip'::text, 'platform'::text]))"
+    },
+    {
+      "table_name": "live_streams",
+      "name": "live_streams_check",
+      "kind": "c",
+      "definition": "CHECK (ends_at IS NULL OR starts_at IS NULL OR ends_at > starts_at)"
+    },
+    {
+      "table_name": "live_streams",
+      "name": "live_streams_external_id_check",
+      "kind": "c",
+      "definition": "CHECK (external_id ~ '^[A-Za-z0-9_-]{6,40}$'::text)"
+    },
+    {
+      "table_name": "live_streams",
+      "name": "live_streams_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "media",
+      "name": "media_alt_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(alt) <= 300)"
+    },
+    {
+      "table_name": "media",
+      "name": "media_bucket_path_key",
+      "kind": "u",
+      "definition": "UNIQUE (bucket, path)"
+    },
+    {
+      "table_name": "media",
+      "name": "media_height_check",
+      "kind": "c",
+      "definition": "CHECK (height > 0)"
+    },
+    {
+      "table_name": "media",
+      "name": "media_imgbb_url_host_check",
+      "kind": "c",
+      "definition": "CHECK (imgbb_url IS NULL OR imgbb_url ~ '^https://i[.]ibb[.]co/[A-Za-z0-9/_+.%-]+$'::text)"
+    },
+    {
+      "table_name": "media",
+      "name": "media_mime_type_check",
+      "kind": "c",
+      "definition": "CHECK (mime_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text, 'image/webp'::text, 'image/avif'::text]))"
+    },
+    {
+      "table_name": "media",
+      "name": "media_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "media",
+      "name": "media_size_bytes_check",
+      "kind": "c",
+      "definition": "CHECK (size_bytes > 0 AND size_bytes <= 5242880)"
+    },
+    {
+      "table_name": "media",
+      "name": "media_uploaded_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (uploaded_by) REFERENCES profiles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "media",
+      "name": "media_width_check",
+      "kind": "c",
+      "definition": "CHECK (width > 0)"
+    },
+    {
+      "table_name": "news24_items",
+      "name": "news24_items_category_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "news24_items",
+      "name": "news24_items_guid_hash_check",
+      "kind": "c",
+      "definition": "CHECK (length(guid_hash) = 64)"
+    },
+    {
+      "table_name": "news24_items",
+      "name": "news24_items_original_url_check",
+      "kind": "c",
+      "definition": "CHECK (original_url ~ '^https://[^[:space:]]+$'::text)"
+    },
+    {
+      "table_name": "news24_items",
+      "name": "news24_items_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "news24_items",
+      "name": "news24_items_source_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (source_id) REFERENCES rss_sources(id) ON DELETE RESTRICT"
+    },
+    {
+      "table_name": "news24_items",
+      "name": "news24_items_source_id_guid_hash_key",
+      "kind": "u",
+      "definition": "UNIQUE (source_id, guid_hash)"
+    },
+    {
+      "table_name": "news24_items",
+      "name": "news24_items_source_name_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(source_name) >= 2 AND char_length(source_name) <= 130)"
+    },
+    {
+      "table_name": "news24_items",
+      "name": "news24_items_status_check",
+      "kind": "c",
+      "definition": "CHECK (status = ANY (ARRAY['published'::text, 'hidden'::text]))"
+    },
+    {
+      "table_name": "news24_items",
+      "name": "news24_items_summary_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(summary) <= 480)"
+    },
+    {
+      "table_name": "news24_items",
+      "name": "news24_items_title_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(title) >= 5 AND char_length(title) <= 300)"
+    },
+    {
+      "table_name": "poll_votes",
+      "name": "poll_votes_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "poll_votes",
+      "name": "poll_votes_poll_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "poll_votes",
+      "name": "poll_votes_poll_id_voter_hash_key",
+      "kind": "u",
+      "definition": "UNIQUE (poll_id, voter_hash)"
+    },
+    {
+      "table_name": "polls",
+      "name": "polls_created_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "polls",
+      "name": "polls_options_check",
+      "kind": "c",
+      "definition": "CHECK (jsonb_typeof(options) = 'array'::text AND jsonb_array_length(options) >= 2 AND jsonb_array_length(options) <= 8)"
+    },
+    {
+      "table_name": "polls",
+      "name": "polls_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "polls",
+      "name": "polls_question_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(question) >= 5 AND char_length(question) <= 300)"
+    },
+    {
+      "table_name": "profiles",
+      "name": "profiles_full_name_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(full_name) <= 120)"
+    },
+    {
+      "table_name": "profiles",
+      "name": "profiles_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "profiles",
+      "name": "profiles_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "profiles",
+      "name": "profiles_role_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (role) REFERENCES roles(key)"
+    },
+    {
+      "table_name": "program_slots",
+      "name": "program_slots_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "program_slots",
+      "name": "program_slots_show_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (show_id) REFERENCES shows(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "program_slots",
+      "name": "program_slots_title_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(title) >= 1 AND char_length(title) <= 160)"
+    },
+    {
+      "table_name": "program_slots",
+      "name": "program_slots_weekday_check",
+      "kind": "c",
+      "definition": "CHECK (weekday >= 1 AND weekday <= 7)"
+    },
+    {
+      "table_name": "provinces",
+      "name": "provinces_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (slug)"
+    },
+    {
+      "table_name": "provinces",
+      "name": "provinces_slug_check",
+      "kind": "c",
+      "definition": "CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text)"
+    },
+    {
+      "table_name": "roles",
+      "name": "roles_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (key)"
+    },
+    {
+      "table_name": "rss_sources",
+      "name": "rss_sources_category_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "rss_sources",
+      "name": "rss_sources_feed_url_check",
+      "kind": "c",
+      "definition": "CHECK (feed_url ~ '^https://[^[:space:]]+$'::text)"
+    },
+    {
+      "table_name": "rss_sources",
+      "name": "rss_sources_feed_url_key",
+      "kind": "u",
+      "definition": "UNIQUE (feed_url)"
+    },
+    {
+      "table_name": "rss_sources",
+      "name": "rss_sources_name_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(name) >= 2 AND char_length(name) <= 100)"
+    },
+    {
+      "table_name": "rss_sources",
+      "name": "rss_sources_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "shows",
+      "name": "shows_category_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "shows",
+      "name": "shows_cover_media_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (cover_media_id) REFERENCES media(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "shows",
+      "name": "shows_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "shows",
+      "name": "shows_slug_check",
+      "kind": "c",
+      "definition": "CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text)"
+    },
+    {
+      "table_name": "shows",
+      "name": "shows_slug_key",
+      "kind": "u",
+      "definition": "UNIQUE (slug)"
+    },
+    {
+      "table_name": "shows",
+      "name": "shows_title_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(title) >= 1 AND char_length(title) <= 120)"
+    },
+    {
+      "table_name": "site_live_settings",
+      "name": "site_live_settings_hls_url_check",
+      "kind": "c",
+      "definition": "CHECK (length(hls_url) <= 1400 AND (hls_url = ''::text OR hls_url ~ '^https://'::text))"
+    },
+    {
+      "table_name": "site_live_settings",
+      "name": "site_live_settings_id_check",
+      "kind": "c",
+      "definition": "CHECK (id = 1)"
+    },
+    {
+      "table_name": "site_live_settings",
+      "name": "site_live_settings_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "site_live_settings",
+      "name": "site_live_settings_title_check",
+      "kind": "c",
+      "definition": "CHECK (length(title) <= 120)"
+    },
+    {
+      "table_name": "videos",
+      "name": "videos_article_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "videos",
+      "name": "videos_category_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "videos",
+      "name": "videos_check",
+      "kind": "c",
+      "definition": "CHECK (status <> 'published'::publication_status OR published_at IS NOT NULL)"
+    },
+    {
+      "table_name": "videos",
+      "name": "videos_created_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "videos",
+      "name": "videos_duration_seconds_check",
+      "kind": "c",
+      "definition": "CHECK (duration_seconds >= 0)"
+    },
+    {
+      "table_name": "videos",
+      "name": "videos_external_id_check",
+      "kind": "c",
+      "definition": "CHECK (external_id ~ '^[A-Za-z0-9_-]{6,40}$'::text)"
+    },
+    {
+      "table_name": "videos",
+      "name": "videos_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "videos",
+      "name": "videos_platform_external_id_key",
+      "kind": "u",
+      "definition": "UNIQUE (platform, external_id)"
+    },
+    {
+      "table_name": "videos",
+      "name": "videos_title_check",
+      "kind": "c",
+      "definition": "CHECK (char_length(title) >= 1 AND char_length(title) <= 200)"
+    }
+  ],
+  "indexes": [
+    {
+      "table_name": "ai_generations",
+      "index_name": "ai_generations_article_idx",
+      "definition": "CREATE INDEX ai_generations_article_idx ON public.ai_generations USING btree (article_id) WHERE (article_id IS NOT NULL)"
+    },
+    {
+      "table_name": "ai_generations",
+      "index_name": "ai_generations_cache_idx",
+      "definition": "CREATE INDEX ai_generations_cache_idx ON public.ai_generations USING btree (kind, input_hash)"
+    },
+    {
+      "table_name": "ai_generations",
+      "index_name": "ai_generations_user_idx",
+      "definition": "CREATE INDEX ai_generations_user_idx ON public.ai_generations USING btree (user_id, created_at DESC)"
+    },
+    {
+      "table_name": "articles",
+      "index_name": "articles_author_idx",
+      "definition": "CREATE INDEX articles_author_idx ON public.articles USING btree (author_id)"
+    },
+    {
+      "table_name": "articles",
+      "index_name": "articles_category_idx",
+      "definition": "CREATE INDEX articles_category_idx ON public.articles USING btree (category_id, published_at DESC)"
+    },
+    {
+      "table_name": "articles",
+      "index_name": "articles_province_idx",
+      "definition": "CREATE INDEX articles_province_idx ON public.articles USING btree (province_slug) WHERE (province_slug IS NOT NULL)"
+    },
+    {
+      "table_name": "articles",
+      "index_name": "articles_public_idx",
+      "definition": "CREATE INDEX articles_public_idx ON public.articles USING btree (published_at DESC) WHERE (status = ANY (ARRAY['published'::article_status, 'scheduled'::article_status]))"
+    },
+    {
+      "table_name": "articles",
+      "index_name": "articles_search_idx",
+      "definition": "CREATE INDEX articles_search_idx ON public.articles USING gin (search)"
+    },
+    {
+      "table_name": "articles",
+      "index_name": "articles_short_code_unique_idx",
+      "definition": "CREATE UNIQUE INDEX articles_short_code_unique_idx ON public.articles USING btree (short_code)"
+    },
+    {
+      "table_name": "articles",
+      "index_name": "articles_status_idx",
+      "definition": "CREATE INDEX articles_status_idx ON public.articles USING btree (status, updated_at DESC)"
+    },
+    {
+      "table_name": "articles",
+      "index_name": "articles_tags_idx",
+      "definition": "CREATE INDEX articles_tags_idx ON public.articles USING gin (tags)"
+    },
+    {
+      "table_name": "audit_logs",
+      "index_name": "audit_logs_actor_idx",
+      "definition": "CREATE INDEX audit_logs_actor_idx ON public.audit_logs USING btree (actor_id)"
+    },
+    {
+      "table_name": "audit_logs",
+      "index_name": "audit_logs_created_at_idx",
+      "definition": "CREATE INDEX audit_logs_created_at_idx ON public.audit_logs USING btree (created_at DESC)"
+    },
+    {
+      "table_name": "audit_logs",
+      "index_name": "audit_logs_entity_idx",
+      "definition": "CREATE INDEX audit_logs_entity_idx ON public.audit_logs USING btree (entity, entity_id)"
+    },
+    {
+      "table_name": "categories",
+      "index_name": "categories_parent_idx",
+      "definition": "CREATE INDEX categories_parent_idx ON public.categories USING btree (parent_id)"
+    },
+    {
+      "table_name": "contributions",
+      "index_name": "contributions_queue_idx",
+      "definition": "CREATE INDEX contributions_queue_idx ON public.contributions USING btree (status, created_at DESC)"
+    },
+    {
+      "table_name": "contributions",
+      "index_name": "contributions_sender_idx",
+      "definition": "CREATE INDEX contributions_sender_idx ON public.contributions USING btree (sender_hash, created_at DESC) WHERE (sender_hash IS NOT NULL)"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "index_name": "editorial_watch_recent_idx",
+      "definition": "CREATE INDEX editorial_watch_recent_idx ON public.editorial_watch_topics USING btree (first_seen_at DESC)"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "index_name": "editorial_watch_source_items_idx",
+      "definition": "CREATE INDEX editorial_watch_source_items_idx ON public.editorial_watch_topics USING gin (source_item_ids)"
+    },
+    {
+      "table_name": "editorial_watch_topics",
+      "index_name": "editorial_watch_status_idx",
+      "definition": "CREATE INDEX editorial_watch_status_idx ON public.editorial_watch_topics USING btree (status, first_seen_at DESC)"
+    },
+    {
+      "table_name": "episodes",
+      "index_name": "episodes_public_idx",
+      "definition": "CREATE INDEX episodes_public_idx ON public.episodes USING btree (aired_at DESC) WHERE (status = 'published'::publication_status)"
+    },
+    {
+      "table_name": "episodes",
+      "index_name": "episodes_publish_queue_idx",
+      "definition": "CREATE INDEX episodes_publish_queue_idx ON public.episodes USING btree (publish_at) WHERE ((status = 'draft'::publication_status) AND (publish_at IS NOT NULL))"
+    },
+    {
+      "table_name": "episodes",
+      "index_name": "episodes_show_idx",
+      "definition": "CREATE INDEX episodes_show_idx ON public.episodes USING btree (show_id, aired_at DESC)"
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "index_name": "legacy_article_queue_imported_idx",
+      "definition": "CREATE INDEX legacy_article_queue_imported_idx ON public.legacy_article_import_queue USING btree (imported_at) WHERE (state = 'imported'::text)"
+    },
+    {
+      "table_name": "legacy_article_import_queue",
+      "index_name": "legacy_article_queue_pending_idx",
+      "definition": "CREATE INDEX legacy_article_queue_pending_idx ON public.legacy_article_import_queue USING btree (state, next_attempt_at, legacy_id)"
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "index_name": "live_distribution_channels_position_idx",
+      "definition": "CREATE INDEX live_distribution_channels_position_idx ON public.live_distribution_channels USING btree (\"position\", name)"
+    },
+    {
+      "table_name": "live_stream_targets",
+      "index_name": "idx_live_stream_targets_position",
+      "definition": "CREATE INDEX idx_live_stream_targets_position ON public.live_stream_targets USING btree (\"position\", created_at)"
+    },
+    {
+      "table_name": "live_streams",
+      "index_name": "live_streams_single_active_idx",
+      "definition": "CREATE UNIQUE INDEX live_streams_single_active_idx ON public.live_streams USING btree (is_active) WHERE is_active"
+    },
+    {
+      "table_name": "media",
+      "index_name": "media_created_at_idx",
+      "definition": "CREATE INDEX media_created_at_idx ON public.media USING btree (created_at DESC)"
+    },
+    {
+      "table_name": "media",
+      "index_name": "media_uploaded_by_idx",
+      "definition": "CREATE INDEX media_uploaded_by_idx ON public.media USING btree (uploaded_by)"
+    },
+    {
+      "table_name": "news24_items",
+      "index_name": "news24_category_pub_idx",
+      "definition": "CREATE INDEX news24_category_pub_idx ON public.news24_items USING btree (category_id, published_at DESC) WHERE (status = 'published'::text)"
+    },
+    {
+      "table_name": "news24_items",
+      "index_name": "news24_guid_global_unique",
+      "definition": "CREATE UNIQUE INDEX news24_guid_global_unique ON public.news24_items USING btree (guid_hash)"
+    },
+    {
+      "table_name": "news24_items",
+      "index_name": "news24_published_idx",
+      "definition": "CREATE INDEX news24_published_idx ON public.news24_items USING btree (published_at DESC) WHERE (status = 'published'::text)"
+    },
+    {
+      "table_name": "news24_items",
+      "index_name": "news24_source_idx",
+      "definition": "CREATE INDEX news24_source_idx ON public.news24_items USING btree (source_id, imported_at DESC)"
+    },
+    {
+      "table_name": "poll_votes",
+      "index_name": "poll_votes_poll_idx",
+      "definition": "CREATE INDEX poll_votes_poll_idx ON public.poll_votes USING btree (poll_id, option_id)"
+    },
+    {
+      "table_name": "profiles",
+      "index_name": "profiles_role_idx",
+      "definition": "CREATE INDEX profiles_role_idx ON public.profiles USING btree (role)"
+    },
+    {
+      "table_name": "program_slots",
+      "index_name": "program_slots_time_idx",
+      "definition": "CREATE INDEX program_slots_time_idx ON public.program_slots USING btree (weekday, start_time)"
+    },
+    {
+      "table_name": "rss_sources",
+      "index_name": "rss_sources_enabled_idx",
+      "definition": "CREATE INDEX rss_sources_enabled_idx ON public.rss_sources USING btree (enabled) WHERE enabled"
+    },
+    {
+      "table_name": "videos",
+      "index_name": "videos_article_idx",
+      "definition": "CREATE INDEX videos_article_idx ON public.videos USING btree (article_id) WHERE (article_id IS NOT NULL)"
+    },
+    {
+      "table_name": "videos",
+      "index_name": "videos_public_idx",
+      "definition": "CREATE INDEX videos_public_idx ON public.videos USING btree (published_at DESC) WHERE (status = 'published'::publication_status)"
+    }
+  ],
+  "triggers": [
+    {
+      "table_name": "articles",
+      "trigger_name": "articles_audit",
+      "definition": "CREATE TRIGGER articles_audit AFTER INSERT OR DELETE OR UPDATE ON articles FOR EACH ROW EXECUTE FUNCTION audit_row('id', 'title', 'slug', 'status', 'published_at', 'author_id')"
+    },
+    {
+      "table_name": "articles",
+      "trigger_name": "articles_before_write",
+      "definition": "CREATE TRIGGER articles_before_write BEFORE INSERT OR UPDATE ON articles FOR EACH ROW EXECUTE FUNCTION articles_before_write()"
+    },
+    {
+      "table_name": "articles",
+      "trigger_name": "articles_preserve_short_code",
+      "definition": "CREATE TRIGGER articles_preserve_short_code BEFORE UPDATE OF short_code ON articles FOR EACH ROW EXECUTE FUNCTION preserve_article_short_code()"
+    },
+    {
+      "table_name": "categories",
+      "trigger_name": "categories_audit",
+      "definition": "CREATE TRIGGER categories_audit AFTER INSERT OR DELETE OR UPDATE ON categories FOR EACH ROW EXECUTE FUNCTION audit_row('id', 'slug', 'name', 'parent_id')"
+    },
+    {
+      "table_name": "categories",
+      "trigger_name": "categories_set_updated_at",
+      "definition": "CREATE TRIGGER categories_set_updated_at BEFORE UPDATE ON categories FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table_name": "contributions",
+      "trigger_name": "contributions_audit",
+      "definition": "CREATE TRIGGER contributions_audit AFTER DELETE OR UPDATE ON contributions FOR EACH ROW EXECUTE FUNCTION audit_row('id', 'status', 'kind')"
+    },
+    {
+      "table_name": "episodes",
+      "trigger_name": "episodes_set_updated_at",
+      "definition": "CREATE TRIGGER episodes_set_updated_at BEFORE UPDATE ON episodes FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table_name": "live_distribution_channels",
+      "trigger_name": "live_distribution_channels_updated",
+      "definition": "CREATE TRIGGER live_distribution_channels_updated BEFORE UPDATE ON live_distribution_channels FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table_name": "live_streams",
+      "trigger_name": "live_streams_set_updated_at",
+      "definition": "CREATE TRIGGER live_streams_set_updated_at BEFORE UPDATE ON live_streams FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table_name": "polls",
+      "trigger_name": "polls_set_updated_at",
+      "definition": "CREATE TRIGGER polls_set_updated_at BEFORE UPDATE ON polls FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table_name": "profiles",
+      "trigger_name": "profiles_audit",
+      "definition": "CREATE TRIGGER profiles_audit AFTER UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION audit_row('id', 'role', 'is_active')"
+    },
+    {
+      "table_name": "profiles",
+      "trigger_name": "profiles_protect_privileges",
+      "definition": "CREATE TRIGGER profiles_protect_privileges BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION protect_profile_privileges()"
+    },
+    {
+      "table_name": "roles",
+      "trigger_name": "roles_audit",
+      "definition": "CREATE TRIGGER roles_audit AFTER UPDATE ON roles FOR EACH ROW EXECUTE FUNCTION audit_row('key', 'permissions', 'label')"
+    },
+    {
+      "table_name": "rss_sources",
+      "trigger_name": "rss_sources_set_updated_at",
+      "definition": "CREATE TRIGGER rss_sources_set_updated_at BEFORE UPDATE ON rss_sources FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table_name": "shows",
+      "trigger_name": "shows_set_updated_at",
+      "definition": "CREATE TRIGGER shows_set_updated_at BEFORE UPDATE ON shows FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+      "table_name": "videos",
+      "trigger_name": "videos_set_updated_at",
+      "definition": "CREATE TRIGGER videos_set_updated_at BEFORE UPDATE ON videos FOR EACH ROW EXECUTE FUNCTION set_updated_at()"
+    }
+  ],
+  "policies": [
+    {
+      "tablename": "ai_generations",
+      "policyname": "ai_generations_insert",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "((user_id = ( SELECT auth.uid() AS uid)) AND ( SELECT has_permission('ai.use'::text) AS has_permission))"
+    },
+    {
+      "tablename": "ai_generations",
+      "policyname": "ai_generations_select",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((user_id = ( SELECT auth.uid() AS uid)) OR ( SELECT has_permission('ai.read_all'::text) AS has_permission))",
+      "with_check": null
+    },
+    {
+      "tablename": "articles",
+      "policyname": "articles_delete",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "qual": "(( SELECT has_permission('articles.review'::text) AS has_permission) OR (( SELECT has_permission('articles.edit_own'::text) AS has_permission) AND (author_id = ( SELECT auth.uid() AS uid)) AND (status = 'draft'::article_status)))",
+      "with_check": null
+    },
+    {
+      "tablename": "articles",
+      "policyname": "articles_insert",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "(( SELECT has_permission('articles.review'::text) AS has_permission) OR (( SELECT has_permission('articles.create'::text) AS has_permission) AND (author_id = ( SELECT auth.uid() AS uid)) AND (status = ANY (ARRAY['draft'::article_status, 'in_review'::article_status]))))"
+    },
+    {
+      "tablename": "articles",
+      "policyname": "articles_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "(((status = ANY (ARRAY['published'::article_status, 'scheduled'::article_status])) AND (published_at <= now())) OR ( SELECT has_permission('articles.read_all'::text) AS has_permission))",
+      "with_check": null
+    },
+    {
+      "tablename": "articles",
+      "policyname": "articles_update",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "(( SELECT has_permission('articles.review'::text) AS has_permission) OR (( SELECT has_permission('articles.edit_own'::text) AS has_permission) AND (author_id = ( SELECT auth.uid() AS uid)) AND (status = ANY (ARRAY['draft'::article_status, 'in_review'::article_status]))))",
+      "with_check": "(( SELECT has_permission('articles.review'::text) AS has_permission) OR (( SELECT has_permission('articles.edit_own'::text) AS has_permission) AND (author_id = ( SELECT auth.uid() AS uid)) AND (status = ANY (ARRAY['draft'::article_status, 'in_review'::article_status]))))"
+    },
+    {
+      "tablename": "audit_logs",
+      "policyname": "audit_logs_select",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('audit.read'::text) AS has_permission)",
+      "with_check": null
+    },
+    {
+      "tablename": "categories",
+      "policyname": "categories_delete",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('categories.manage'::text) AS has_permission)",
+      "with_check": null
+    },
+    {
+      "tablename": "categories",
+      "policyname": "categories_insert",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "( SELECT has_permission('categories.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "categories",
+      "policyname": "categories_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "categories",
+      "policyname": "categories_update",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('categories.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('categories.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "contributions",
+      "policyname": "contributions_delete",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('contributions.moderate'::text) AS has_permission)",
+      "with_check": null
+    },
+    {
+      "tablename": "contributions",
+      "policyname": "contributions_select",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('contributions.moderate'::text) AS has_permission)",
+      "with_check": null
+    },
+    {
+      "tablename": "contributions",
+      "policyname": "contributions_update",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('contributions.moderate'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('contributions.moderate'::text) AS has_permission)"
+    },
+    {
+      "tablename": "editorial_watch_runs",
+      "policyname": "editorial_watch_runs_editor_read",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('articles.review'::text) AS has_permission)",
+      "with_check": null
+    },
+    {
+      "tablename": "editorial_watch_topics",
+      "policyname": "editorial_watch_editor_read",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('articles.review'::text) AS has_permission)",
+      "with_check": null
+    },
+    {
+      "tablename": "editorial_watch_topics",
+      "policyname": "editorial_watch_editor_update",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('articles.review'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('articles.review'::text) AS has_permission)"
+    },
+    {
+      "tablename": "episodes",
+      "policyname": "episodes_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "((status = 'published'::publication_status) OR (( SELECT current_app_role() AS current_app_role) IS NOT NULL))",
+      "with_check": null
+    },
+    {
+      "tablename": "episodes",
+      "policyname": "episodes_write",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('shows.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('shows.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "homepage_ad_slots",
+      "policyname": "homepage_ad_admin_read",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((active AND (image_url <> ''::text)) OR ( SELECT has_permission('settings.manage'::text) AS has_permission))",
+      "with_check": null
+    },
+    {
+      "tablename": "homepage_ad_slots",
+      "policyname": "homepage_ad_admin_update",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('settings.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('settings.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "homepage_ad_slots",
+      "policyname": "homepage_ad_public",
+      "cmd": "SELECT",
+      "roles": "{anon}",
+      "qual": "(active AND (image_url <> ''::text))",
+      "with_check": null
+    },
+    {
+      "tablename": "live_distribution_channels",
+      "policyname": "live_distribution_manage",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('schedule.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('schedule.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "live_streams",
+      "policyname": "live_streams_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "(is_active OR (( SELECT current_app_role() AS current_app_role) IS NOT NULL))",
+      "with_check": null
+    },
+    {
+      "tablename": "live_streams",
+      "policyname": "live_streams_write",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('schedule.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('schedule.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "media",
+      "policyname": "media_delete",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "qual": "(( SELECT has_permission('media.manage'::text) AS has_permission) OR ((uploaded_by = ( SELECT auth.uid() AS uid)) AND ( SELECT has_permission('media.upload'::text) AS has_permission)))",
+      "with_check": null
+    },
+    {
+      "tablename": "media",
+      "policyname": "media_insert",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "qual": null,
+      "with_check": "(( SELECT has_permission('media.upload'::text) AS has_permission) AND (uploaded_by = ( SELECT auth.uid() AS uid)))"
+    },
+    {
+      "tablename": "media",
+      "policyname": "media_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "media",
+      "policyname": "media_update",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "(( SELECT has_permission('media.manage'::text) AS has_permission) OR ((uploaded_by = ( SELECT auth.uid() AS uid)) AND ( SELECT has_permission('media.upload'::text) AS has_permission)))",
+      "with_check": "(( SELECT has_permission('media.manage'::text) AS has_permission) OR ((uploaded_by = ( SELECT auth.uid() AS uid)) AND ( SELECT has_permission('media.upload'::text) AS has_permission)))"
+    },
+    {
+      "tablename": "news24_items",
+      "policyname": "news24_editor_read",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('articles.review'::text) AS has_permission)",
+      "with_check": null
+    },
+    {
+      "tablename": "news24_items",
+      "policyname": "news24_editor_update",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('articles.review'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('articles.review'::text) AS has_permission)"
+    },
+    {
+      "tablename": "news24_items",
+      "policyname": "news24_public_read",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "(status = 'published'::text)",
+      "with_check": null
+    },
+    {
+      "tablename": "poll_votes",
+      "policyname": "poll_votes_select",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('polls.manage'::text) AS has_permission)",
+      "with_check": null
+    },
+    {
+      "tablename": "polls",
+      "policyname": "polls_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "((status = ANY (ARRAY['open'::poll_status, 'closed'::poll_status])) OR (( SELECT current_app_role() AS current_app_role) IS NOT NULL))",
+      "with_check": null
+    },
+    {
+      "tablename": "polls",
+      "policyname": "polls_write",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('polls.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('polls.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "profiles_published_author_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "(EXISTS ( SELECT 1\n   FROM articles a\n  WHERE ((a.author_id = profiles.id) AND (a.status = ANY (ARRAY['published'::article_status, 'scheduled'::article_status])) AND (a.published_at <= now()))))",
+      "with_check": null
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "profiles_select",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "((id = ( SELECT auth.uid() AS uid)) OR (( SELECT current_app_role() AS current_app_role) IS NOT NULL))",
+      "with_check": null
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "profiles_update",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "((id = ( SELECT auth.uid() AS uid)) OR ( SELECT has_permission('users.manage'::text) AS has_permission))",
+      "with_check": "((id = ( SELECT auth.uid() AS uid)) OR ( SELECT has_permission('users.manage'::text) AS has_permission))"
+    },
+    {
+      "tablename": "program_slots",
+      "policyname": "program_slots_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "program_slots",
+      "policyname": "program_slots_write",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('schedule.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('schedule.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "provinces",
+      "policyname": "provinces_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "provinces",
+      "policyname": "provinces_write",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('settings.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('settings.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "roles",
+      "policyname": "roles_select",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "roles",
+      "policyname": "roles_update",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('roles.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('roles.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "rss_sources",
+      "policyname": "rss_sources_manage",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('articles.review'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('articles.review'::text) AS has_permission)"
+    },
+    {
+      "tablename": "shows",
+      "policyname": "shows_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "(is_active OR (( SELECT current_app_role() AS current_app_role) IS NOT NULL))",
+      "with_check": null
+    },
+    {
+      "tablename": "shows",
+      "policyname": "shows_write",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('shows.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('shows.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "site_live_settings",
+      "policyname": "site_live_admin_read",
+      "cmd": "SELECT",
+      "roles": "{authenticated}",
+      "qual": "(enabled OR ( SELECT has_permission('schedule.manage'::text) AS has_permission))",
+      "with_check": null
+    },
+    {
+      "tablename": "site_live_settings",
+      "policyname": "site_live_admin_update",
+      "cmd": "UPDATE",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('schedule.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('schedule.manage'::text) AS has_permission)"
+    },
+    {
+      "tablename": "site_live_settings",
+      "policyname": "site_live_public",
+      "cmd": "SELECT",
+      "roles": "{anon}",
+      "qual": "enabled",
+      "with_check": null
+    },
+    {
+      "tablename": "videos",
+      "policyname": "videos_select",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "qual": "((status = 'published'::publication_status) OR (( SELECT current_app_role() AS current_app_role) IS NOT NULL))",
+      "with_check": null
+    },
+    {
+      "tablename": "videos",
+      "policyname": "videos_write",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "( SELECT has_permission('videos.manage'::text) AS has_permission)",
+      "with_check": "( SELECT has_permission('videos.manage'::text) AS has_permission)"
+    }
+  ],
+  "functions": [
+    {
+      "name": "articles_before_write",
+      "arguments": "",
+      "security_definer": false
+    },
+    {
+      "name": "audit_row",
+      "arguments": "",
+      "security_definer": true
+    },
+    {
+      "name": "current_app_role",
+      "arguments": "",
+      "security_definer": true
+    },
+    {
+      "name": "handle_new_user",
+      "arguments": "",
+      "security_definer": true
+    },
+    {
+      "name": "has_permission",
+      "arguments": "permission text",
+      "security_definer": true
+    },
+    {
+      "name": "poll_results",
+      "arguments": "target_poll uuid",
+      "security_definer": true
+    },
+    {
+      "name": "preserve_article_short_code",
+      "arguments": "",
+      "security_definer": false
+    },
+    {
+      "name": "protect_profile_privileges",
+      "arguments": "",
+      "security_definer": true
+    },
+    {
+      "name": "rls_auto_enable",
+      "arguments": "",
+      "security_definer": true
+    },
+    {
+      "name": "set_updated_at",
+      "arguments": "",
+      "security_definer": false
+    },
+    {
+      "name": "tvplus_delete_live_target",
+      "arguments": "p_id uuid",
+      "security_definer": true
+    },
+    {
+      "name": "tvplus_legacy_imgbb_key",
+      "arguments": "",
+      "security_definer": true
+    },
+    {
+      "name": "tvplus_save_live_target",
+      "arguments": "p_id uuid, p_name text, p_provider text, p_direction text, p_protocol text, p_watch_url text, p_enabled boolean, p_position integer, p_notes text, p_endpoint text, p_stream_key text, p_clear_endpoint boolean, p_clear_key boolean",
+      "security_definer": true
+    },
+    {
+      "name": "tvplus_verify_news24_scheduler",
+      "arguments": "candidate text",
+      "security_definer": true
+    }
+  ],
+  "views": [
+    {
+      "table_name": "authors",
+      "view_definition": " SELECT id,\n    full_name,\n    avatar_url\n   FROM profiles p\n  WHERE (EXISTS ( SELECT 1\n           FROM articles a\n          WHERE ((a.author_id = p.id) AND (a.status = ANY (ARRAY['published'::article_status, 'scheduled'::article_status])) AND (a.published_at <= now()))));"
+    }
+  ]
+}
