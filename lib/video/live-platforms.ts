@@ -63,8 +63,9 @@ export function extractLiveUrl(input:string):string {
 
 function parsedHttps(input:string):URL|null {
  try {
-  const url = new URL(extractLiveUrl(input));
-  if(url.protocol!=='https:' || url.username || url.password || !url.hostname || /\s/.test(input))return null;
+  const source=extractLiveUrl(input);
+  const url = new URL(source);
+  if(url.protocol!=='https:' || url.username || url.password || !url.hostname || /\s/.test(source))return null;
   return url;
  } catch {return null;}
 }
