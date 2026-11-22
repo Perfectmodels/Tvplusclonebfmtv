@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
 import AlertBar from '../components/AlertBar';
-import LivePlayer from '../components/LivePlayer';
+import HomeLiveDock from '../components/video/HomeLiveDock';
 import Newsletter from '../components/Newsletter';
 import QuestionSection from '../components/QuestionSection';
 import FilActuFeed from '../components/FilActuFeed';
@@ -11,7 +10,8 @@ import { getHomepageAds } from '../lib/ads/v2';
 import SectionHeading from '../components/SectionHeading';
 import StoryCard from '../components/StoryCard';
 import CategoryNewsCarousel from '../components/CategoryNewsCarousel';
-import { listArticles, getFilActu, getCategories } from '../lib/db/repository';
+import { listArticles, getCategories } from '../lib/db/repository';
+import { distributeHomepageStories } from '../lib/editorial/home-distribution';
 import { articlePath } from '../lib/articles/urls';
 import { categoryHref, categorySlug } from '../lib/categories';
 import { getNewsFeed } from '../lib/rss/news';
@@ -28,37 +28,17 @@ export default async function Home({
   // La recherche n'a pas besoin des flux RSS ni de charger la navigation des rubriques.
   const results = await Promise.allSettled([
     listArticles({ search: q, pageSize: q ? 30 : 200 }),
-    q ? Promise.resolve({ data: [] }) : getFilActu(8),
     q ? Promise.resolve({ items: [] }) : getNewsFeed(20),
     q ? Promise.resolve({ data: [] }) : getCategories(),
     q ? Promise.resolve(null) : getHomepageAds(),
   ]);
   const filtered = results[0].status === 'fulfilled' ? results[0].value.items : [];
-  const feed = results[1].status === 'fulfilled' ? results[1].value.data : [];
-  const wire = results[2].status === 'fulfilled' ? results[2].value.items : [];
-  const categories = results[3].status === 'fulfilled' ? results[3].value.data : [];
-  const ads = results[4].status === 'fulfilled' ? results[4].value : null;
+  const wire = results[1].status === 'fulfilled' ? results[1].value.items : [];
+  const categories = results[2].status === 'fulfilled' ? results[2].value.data : [];
+  const ads = results[3].status === 'fulfilled' ? results[3].value : null;
 
-  const alert = filtered.find((story) => story.kind === 'alert');
-  const hero = filtered.find((story) => story.featured) ?? filtered[0];
-  const remainder = filtered.filter((story) => story.slug !== hero?.slug);
-  const rail = remainder.slice(0, 3);
-  // La sélection rassemble une actualité de chaque rubrique, au lieu d'empiler des sujets similaires.
-  const selectedByCategory = categories
-    .map(name => remainder.find(story => categorySlug(story.category) === categorySlug(name)))
-    .filter((story): story is (typeof filtered)[number] => Boolean(story));
-  const selection = Array.from(new Map(
-    [remainder.find(story => story.featured) ?? remainder[0], ...selectedByCategory]
-      .filter((story): story is (typeof filtered)[number] => Boolean(story))
-      .map(story => [story.slug, story] as const),
-  ).values());
-  // Une seule liste mise en cache alimente toutes les rubriques : pas de requête par carrousel.
-  const blocks = categories
-    .map(name => ({
-      name,
-      items: filtered.filter(story => categorySlug(story.category) === categorySlug(name)).slice(0, 10),
-    }))
-    .filter(block => block.items.length > 0);
+  // Allocation exclusive : un article n'apparaît qu'une fois sur l'accueil.
+  const { alert, hero, rail, selection, feed, blocks } = distributeHomepageStories(filtered, categories);
 
   return (
     <>
@@ -80,6 +60,16 @@ export default async function Home({
           </section>
         ) : (
           <>
+            <section className="home-live-first" aria-labelledby="home-live-title">
+              <div className="home-live-first-heading">
+                <span className="home-live-first-mark">TV+ AFRIQUE · LE DIRECT</span>
+                <h1 id="home-live-title">Regardez TV+ Afrique</h1>
+              </div>
+              <HomeLiveDock />
+            </section>
+
+            <AdvertisingCarousel placement="after-live" ads={ads?.["after-live"] ?? []} />
+
             <section className="hero-layout" aria-label="À la une">
               <div className="hero-main">
                 {hero ? <StoryCard story={hero} variant="hero" /> : (
@@ -92,7 +82,7 @@ export default async function Home({
               </div>
             </section>
 
-            <AdvertisingCarousel placement="after-hero" ads={ads?.["after-hero"] ?? undefined} />
+            <AdvertisingCarousel placement="after-hero" ads={ads?.["after-hero"] ?? []} />
 
             {selection.length > 0 && (
               <CategoryNewsCarousel
@@ -104,7 +94,7 @@ export default async function Home({
               />
             )}
 
-            <AdvertisingCarousel placement="after-selection" ads={ads?.["after-selection"] ?? undefined} />
+            <AdvertisingCarousel placement="after-selection" ads={ads?.["after-selection"] ?? []} />
 
             <section id="fil-info" className="home-news-feed" aria-labelledby="fil-title">
               <SectionHeading
@@ -116,14 +106,11 @@ export default async function Home({
               <FilActuFeed items={feed} categories={categories} />
             </section>
 
-            <AdvertisingCarousel placement="after-feed" ads={ads?.["after-feed"] ?? undefined} />
+            <AdvertisingCarousel placement="after-feed" ads={ads?.["after-feed"] ?? []} />
 
-            <section className="home-duo" aria-label="Direct et questions du public">
-              <LivePlayer />
+            <section className="home-question-section" aria-label="Questions du public">
               <QuestionSection />
             </section>
-
-            <AdvertisingCarousel placement="after-live" ads={ads?.["after-live"] ?? undefined} />
 
             <div className="home-category-stack">
               {blocks.map(block => (
@@ -146,7 +133,7 @@ export default async function Home({
               </section>
             </div>
 
-            <AdvertisingCarousel placement="before-newsletter" ads={ads?.["before-newsletter"] ?? undefined} />
+            <AdvertisingCarousel placement="before-newsletter" ads={ads?.["before-newsletter"] ?? []} />
 
             <Newsletter />
           </>
