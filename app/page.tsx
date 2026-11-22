@@ -70,7 +70,9 @@ export default async function Home({
 
             <AdvertisingCarousel placement="after-live" ads={ads?.["after-live"] ?? []} />
 
-            <section className="hero-layout" aria-label="À la une">
+            <div className="home-top-stories" aria-labelledby="home-top-stories-title">
+              <SectionHeading id="home-top-stories-title" title="À la une" />
+              <section className="hero-layout" aria-label="Les titres à la une">
               <div className="hero-main">
                 {hero ? <StoryCard story={hero} variant="hero" /> : (
                   <p className="empty-state">Les actualités à la une seront bientôt disponibles.</p>
@@ -80,7 +82,8 @@ export default async function Home({
                 <NewsTicker items={wire} variant="rail" limit={20} />
                 {rail.map((story) => <StoryCard key={story.slug} story={story} variant="rail" />)}
               </div>
-            </section>
+              </section>
+            </div>
 
             <AdvertisingCarousel placement="after-hero" ads={ads?.["after-hero"] ?? []} />
 
