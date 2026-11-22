@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { DEMO_CHANNEL } from '../../lib/video/demo-channel';
+import { usePublicLiveSource } from '../../hooks/use-public-live-source';
 
 type LiveOverlayContextValue = {
   isOpen: boolean;
@@ -39,6 +40,7 @@ type Status = 'idle' | 'loading' | 'ready' | 'playing' | 'error' | 'no-stream';
 
 export default function LiveOverlayProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const liveSource = usePublicLiveSource(isOpen);
   const [status, setStatus] = useState<Status>('idle');
   const [attempt, setAttempt] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -51,26 +53,15 @@ export default function LiveOverlayProvider({ children }: { children: ReactNode 
   const [externalUrl, setExternalUrl] = useState('');
   const [standbyMessage, setStandbyMessage] = useState('Le direct reprendra prochainement.');
 
-  // Le direct est configuré depuis l'admin, sans redéploiement ni stockage vidéo.
-  // Le endpoint public est mis en cache côté CDN pendant 30 secondes.
+  // Même source et même rafraîchissement que le lecteur /direct et le lecteur flottant.
   useEffect(() => {
-    if (!isOpen) return;
-    let active = true;
-    fetch('/api/live-stream')
-      .then((response) => response.json())
-      .then((body) => {
-        if (!active) return;
-        const config = body?.data;
-        const officialActive = Boolean(config?.enabled && (config?.hlsUrl || config?.embedUrl));
-        setIsDemo(!officialActive);
-        setStreamUrl(officialActive ? config.hlsUrl || '' : DEMO_CHANNEL.hlsUrl);
-        setEmbedUrl(officialActive ? config.embedUrl || '' : '');
-        setExternalUrl(officialActive ? config.playbackUrl || '' : DEMO_CHANNEL.watchUrl);
-        setStandbyMessage(config?.standbyMessage || 'Le direct reprendra prochainement.');
-      })
-      .catch(() => { if (active) {setStreamUrl(DEMO_CHANNEL.hlsUrl);setEmbedUrl('');setExternalUrl(DEMO_CHANNEL.watchUrl);setIsDemo(true);} });
-    return () => { active = false; };
-  }, [isOpen]);
+    if (!isOpen || !liveSource) return;
+    setIsDemo(liveSource.isDemo);
+    setStreamUrl(liveSource.hlsUrl);
+    setEmbedUrl(liveSource.embedUrl);
+    setExternalUrl(liveSource.externalUrl);
+    setStandbyMessage(liveSource.standbyMessage || 'Le direct reprendra prochainement.');
+  }, [isOpen, liveSource]);
 
   const open = useCallback(() => {
     setIsOpen(true);
