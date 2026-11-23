@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import sharp from 'sharp';
+import { del, put } from '@vercel/blob';
+import { BLOB_MEDIA_BUCKET, getExternalMediaUrl } from '../../../../lib/media-url';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { ApiError, handleRoute, ok, created } from '../../../../lib/api/response';
 export const dynamic='force-dynamic';
@@ -10,7 +12,7 @@ function asPublic(db:Awaited<ReturnType<typeof requireV2Api>>['db'], item:{
   alt:string;caption:string;credit:string;mime_type:string;size_bytes:number;
   width:number|null;height:number|null;created_at:string;
 }) {
-  return {...item,url:item.imgbb_url||db.storage.from(item.bucket).getPublicUrl(item.path).data.publicUrl};
+  return {...item,url:getExternalMediaUrl(item)||db.storage.from(item.bucket).getPublicUrl(item.path).data.publicUrl};
 }
 export const GET=handleRoute(async(request:NextRequest)=>{
   const {db}=await requireV2Api('articles.read_all');
@@ -64,15 +66,45 @@ export const POST=handleRoute(async(request:NextRequest)=>{
     }
   } catch { throw new ApiError('Image illisible ou format non compatible.',400); }
   if (!processed) throw new ApiError('Image trop volumineuse après optimisation (1 Mo maximum).',400);
-  const path='article-covers/'+actor.id+'/'+randomUUID()+'.webp';
-  const {error:uploadError}=await db.storage.from('media').upload(path,processed,{contentType:'image/webp',upsert:false,cacheControl:'31536000'});
-  if(uploadError)throw new ApiError('Envoi du fichier refusé.',403,'UNAUTHORIZED');
+  const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+  if (process.env.VERCEL && !blobToken) {
+    throw new ApiError('Stockage des médias indisponible.', 503, 'UNAVAILABLE');
+  }
+
+  const filename = randomUUID() + '.webp';
+  const bucket = blobToken ? BLOB_MEDIA_BUCKET : 'media';
+  let path = 'article-covers/' + actor.id + '/' + filename;
+  if (blobToken) {
+    try {
+      const blob = await put('article-covers/' + filename, processed, {
+        access: 'public',
+        token: blobToken,
+        contentType: 'image/webp',
+        cacheControlMaxAge: 31_536_000,
+      });
+      path = blob.url;
+    } catch {
+      throw new ApiError('Envoi vers le stockage des médias impossible.', 503, 'UNAVAILABLE');
+    }
+  } else {
+    const { error: uploadError } = await db.storage.from(bucket).upload(path, processed, {
+      contentType: 'image/webp',
+      upsert: false,
+      cacheControl: '31536000',
+    });
+    if (uploadError) throw new ApiError('Envoi du fichier refusé.', 403, 'UNAUTHORIZED');
+  }
   const {data,error}=await db.from('media').insert({
-    bucket:'media',path,mime_type:'image/webp',size_bytes:processed.length,
+    bucket,path,mime_type:'image/webp',size_bytes:processed.length,
     width:1200,height:630,alt,uploaded_by:actor.id,
   }).select('id,bucket,path,imgbb_url,alt,caption,credit,mime_type,size_bytes,width,height,created_at').single();
   if(error){
-    await db.storage.from('media').remove([path]);
+    try {
+      if (blobToken) await del(path, { token: blobToken });
+      else await db.storage.from(bucket).remove([path]);
+    } catch {
+      console.error('Impossible de nettoyer un média après un échec d’enregistrement.');
+    }
     throw new ApiError('Image envoyée mais impossible à enregistrer dans la médiathèque.',403,'UNAUTHORIZED');
   }
   return created(asPublic(db,data));

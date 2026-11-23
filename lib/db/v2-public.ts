@@ -1,4 +1,5 @@
 import 'server-only';
+import { getExternalMediaUrl } from '../media-url';
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import type { Story } from '../data';
@@ -40,7 +41,8 @@ const SELECT_ARTICLE_DETAIL = 'id,slug,short_code,title,excerpt,category_id,cove
 
 function imageUrl(media: V2Media | undefined) {
   if (!media) return '';
-  if (media.imgbb_url) return media.imgbb_url;
+  const externalUrl = getExternalMediaUrl(media);
+  if (externalUrl) return externalUrl;
   if (!media.bucket || !media.path) return '';
   return client().storage.from(media.bucket).getPublicUrl(media.path).data.publicUrl;
 }

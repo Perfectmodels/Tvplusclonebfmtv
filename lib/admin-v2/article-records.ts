@@ -1,4 +1,5 @@
 import 'server-only';
+import { getExternalMediaUrl } from '../media-url';
 import type { createAuthClient } from '../auth/server';
 
 export type ArticleAdminRow = {
@@ -36,7 +37,7 @@ export async function enrichArticleRows(db: AuthDb, rows: ArticleAdminRow[]): Pr
   return rows.map(row => {
     const cover = row.cover_media_id ? mediaMap.get(row.cover_media_id) : null;
     const coverUrl = cover
-      ? (cover.imgbb_url || (cover.bucket && cover.path
+      ? (getExternalMediaUrl(cover) || (cover.bucket && cover.path
           ? db.storage.from(cover.bucket).getPublicUrl(cover.path).data.publicUrl
           : null))
       : null;

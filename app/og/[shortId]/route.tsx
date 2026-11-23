@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { isPublicBlobHost } from '../../../lib/media-url';
 import { getArticleByShortId } from '../../../lib/db/repository';
 
 export const runtime = 'nodejs';
@@ -13,7 +14,7 @@ async function getCoverImage(url: string): Promise<string | undefined> {
     const target = new URL(url);
     const host = target.hostname.toLowerCase();
     const allowed = host === 'i.ibb.co' || host.endsWith('.supabase.co')
-      || host.endsWith('.supabase.in') || host === 'images.unsplash.com';
+      || host.endsWith('.supabase.in') || host === 'images.unsplash.com' || isPublicBlobHost(host);
     if (target.protocol !== 'https:' || !allowed) return;
     const response = await fetch(target.toString(), {
       signal: AbortSignal.timeout(4500),
