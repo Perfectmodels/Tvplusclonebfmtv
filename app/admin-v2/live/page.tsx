@@ -234,7 +234,7 @@ export default function RegieDirect() {
       <small>Avec le forfait Business, copie ici une seule fois le code du canal « Embed Player » de Restream. Ce code reste le même pour chaque direct où le canal est activé. En attendant, tu peux garder YouTube.</small>
      </label>
      {playerCode && <p className={validPlayer?'restream-valid':'restream-invalid'}>
-      {validPlayer?'Lien du direct reconnu.':'Adresse non reconnue : utilise le code iframe de player.restream.io ou l'adresse d'une vidéo YouTube Live.'}
+      {validPlayer?'Lien du direct reconnu.':"Adresse non reconnue : utilise le code iframe de player.restream.io ou l’adresse d’une vidéo YouTube Live."}
      </p>}
      <label className="restream-toggle">
       <input type="checkbox" checked={playerEnabled} onChange={e=>setPlayerEnabled(e.target.checked)}/>
