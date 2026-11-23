@@ -192,3 +192,76 @@
  .live-regie-step,.live-regie-player-choice button {transition:none}
  .live-regie-step:hover {transform:none}
 }
+
+/* Restream simple : une connexion, les chaînes et le lecteur public. */
+.restream-simple {max-width:1100px;gap:20px}
+.restream-simple .v2-head {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px}
+.restream-simple .v2-lede {max-width:690px}
+.restream-simple .v2-card {padding:clamp(18px,3vw,28px)}
+.restream-account-head {display:flex;align-items:center;gap:15px}
+.restream-brand-icon {flex:0 0 51px;height:51px;border-radius:14px;background:#ecf3ff;color:#133c86;display:grid;place-items:center}
+.restream-account-heading {flex:1;min-width:0}
+.restream-simple h2 {margin:0;font-size:clamp(18px,2vw,22px);font-weight:850;color:#102b53}
+.restream-account-heading p,.restream-section-heading p {font-size:13px;color:#657994;margin:7px 0 0;line-height:1.5}
+.restream-connected {display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:#08704c;background:#e4f7ef;padding:7px 11px;border-radius:999px;white-space:nowrap}
+.restream-profile {display:flex;gap:12px;align-items:center;background:#f5f8ff;padding:17px;border-radius:12px;margin:21px 0 16px}
+.restream-profile-avatar {width:42px;height:42px;background:#dce9ff;color:#173f81;border-radius:50%;display:grid;place-items:center}
+.restream-profile>div {display:grid;gap:5px;min-width:0}
+.restream-profile strong {color:#123157;font-size:16px}
+.restream-profile small {font-size:12px;color:#6a7b92}
+.restream-actions {display:flex;gap:9px;flex-wrap:wrap}
+.restream-account-panel {display:grid;gap:12px}
+.restream-connection-intro {display:grid;gap:13px;margin-top:18px}
+.restream-connection-intro>p {color:#516784;max-width:720px;line-height:1.65;font-size:14px;margin:0}
+.restream-connect {width:fit-content;min-height:48px;font-size:14px!important}
+.restream-setup {display:grid;gap:12px;padding:16px;border-radius:11px;background:#f3f7fd;border:1px solid #d7e4f5}
+.restream-setup p {font-size:13px;color:#405a77;line-height:1.6;margin:0}
+.restream-setup a {display:inline-flex;gap:6px;align-items:center;color:#134790;font-size:13px;font-weight:800;text-decoration:underline}
+.restream-setup-callback {overflow-wrap:anywhere}
+.restream-setup code {padding:2px 4px;font-size:11px;background:#e9eff9;border-radius:4px}
+.restream-section-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:17px}
+.restream-section-heading>a,.restream-site-preview>a {display:inline-flex;gap:6px;align-items:center;color:#17498f;font-size:13px;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.restream-channel-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.restream-channel {display:flex;align-items:center;gap:12px;padding:15px;border-radius:11px;border:1px solid #dfe7f3;background:#fafdff;min-width:0}
+.restream-channel>span {width:40px;height:40px;flex-shrink:0;display:grid;place-items:center;border-radius:10px;background:#eaf1ff;color:#1a4b9b}
+.restream-channel>div {display:grid;gap:5px;flex:1;min-width:0}
+.restream-channel strong {font-size:13px;color:#152f55;overflow-wrap:anywhere}
+.restream-channel small {font-size:11px;color:#697e9b}
+.restream-channel>a {color:#204c88;flex-shrink:0}
+.restream-empty {color:#637994;font-size:13px;line-height:1.6;background:#f6f8fc;border:1px dashed #d0dcf0;border-radius:9px;padding:17px;margin:0}
+.restream-current-source {padding:13px 16px;background:#fff8e9;border:1px solid #f1dfb5;border-radius:9px;font-size:12px;color:#725329;margin-bottom:17px}
+.restream-site-grid {display:grid;grid-template-columns:minmax(0,1.05fr) minmax(260px,.95fr);gap:23px;align-items:start}
+.restream-site-form {display:grid;gap:17px;min-width:0}
+.restream-site-form textarea {font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.restream-valid,.restream-invalid {margin:0;font-size:12px;padding:10px 12px;border-radius:7px}
+.restream-valid {background:#ebf8f1;color:#086742}
+.restream-invalid {background:#fff0ef;color:#9c2c3a}
+.restream-toggle {display:flex;align-items:center;gap:12px;padding:15px;border:1px solid #dbe6f7;background:#f2f7ff;border-radius:11px;cursor:pointer}
+.restream-toggle input {width:19px;height:19px;flex-shrink:0;accent-color:#164c9b}
+.restream-toggle span {display:grid;gap:5px}
+.restream-toggle strong {font-size:14px;color:#1b427b}
+.restream-toggle small {font-size:11px;color:#566f91}
+.restream-site-form .admin-btn {width:fit-content}
+.restream-site-preview {display:grid;gap:12px}
+.restream-site-preview iframe,.restream-no-preview {width:100%;aspect-ratio:16/9;border:0;border-radius:11px;background:#081d3b}
+.restream-no-preview {display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;color:#fff;text-align:center;padding:14px}
+.restream-no-preview strong {font-size:15px}
+.restream-no-preview span {font-size:12px;color:#afc1df}
+.restream-help-warning {display:flex;align-items:start;gap:8px;color:#915817;background:#fff5e5;padding:10px;border-radius:9px;font-size:12px}
+.restream-center {display:flex;align-items:center;gap:8px;color:#697d98;font-size:13px;padding:18px}
+.restream-spin {animation:restreamRotate 1.1s linear infinite}
+@keyframes restreamRotate {to {transform:rotate(360deg)}}
+.restream-bottom-note {display:flex;align-items:center;gap:8px;color:#687d94;font-size:12px;line-height:1.5}
+.restream-bottom-note svg {flex-shrink:0}
+.restream-simple a:focus-visible,.restream-simple button:focus-visible,.restream-simple textarea:focus-visible {outline:3px solid #86b2fc;outline-offset:3px}
+@media(max-width:850px) {.restream-site-grid {grid-template-columns:1fr}.restream-channel-grid {grid-template-columns:1fr}}
+@media(max-width:620px) {
+ .restream-simple {gap:14px}
+ .restream-account-head {align-items:flex-start;flex-wrap:wrap}
+ .restream-connected {margin-left:65px}
+ .restream-actions .admin-btn {width:100%}
+ .restream-connect,.restream-site-form .admin-btn {width:100%!important}
+ .restream-simple .v2-card {padding:16px}
+ .restream-site-preview {min-width:0}
+}
+@media(prefers-reduced-motion:reduce) {.restream-spin {animation:none}}
