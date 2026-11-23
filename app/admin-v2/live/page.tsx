@@ -199,11 +199,14 @@ export default function RegieDirect() {
 
   <section className="v2-card restream-site-panel" aria-labelledby="restream-site-title">
    <div className="restream-section-heading">
-    <div><h2 id="restream-site-title">Lecteur Restream de TV+ Afrique</h2><p>Restream produit le direct. Avec ton abonnement, YouTube Live permet de l’afficher sur le site.</p></div>
+    <div><h2 id="restream-site-title">Lecteur permanent TV+ Afrique</h2><p>Un lecteur Restream installé une seule fois : dès que le direct commence sur Restream, il apparaît sur le site sans actualisation manuelle.</p></div>
     <MonitorPlay size={22}/>
    </div>
    {settings?.enabled && !['youtube','restream'].includes(settings.player_platform) &&
     <div className="restream-current-source">Une ancienne source de diffusion est encore enregistrée. Elle ne sera plus affichée sur le site. Publiez le lecteur Restream pour remplacer son paramétrage.</div>}
+   {settings?.enabled && settings.player_platform === 'restream' && <div className="v2-success" role="status">
+    <CheckCircle2 size={16}/> Le lecteur permanent Restream est installé : il diffusera automatiquement les directs dans lesquels tu actives ce canal.
+   </div>}
    {account?.connected ? <>
     <div className="restream-auto-panel">
      {account.inProgressCount ? <p className="restream-live-found"><Radio size={15}/> {account.liveEventTitle ? 'Direct Restream détecté : ' + account.liveEventTitle : 'Une diffusion Restream est en cours'}</p>
@@ -217,25 +220,25 @@ export default function RegieDirect() {
      </> : <>
       <p><strong>Relie YouTube à ton direct dans Restream.</strong> Active la chaîne YouTube comme destination, puis clique sur « Actualiser » lorsque le live démarre.</p>
       <a href="https://support.restream.io/en/articles/3703373-stream-to-youtube" target="_blank" rel="noopener noreferrer">Comment connecter YouTube à Restream <ExternalLink size={14}/></a>
-      <small>Si Restream ne renvoie pas de lien vidéo public, ajoute-le manuellement ci-dessous.</small>
+      <small>Le lecteur officiel Restream pourra être installé une fois ton abonnement Business actif. YouTube reste utilisable en attendant.</small>
      </>}
     </div>
     <details className="restream-manual">
-     <summary>Ajouter le lien du live (si détection automatique indisponible)</summary>
+     <summary>Installer le lecteur Restream permanent (ou garder YouTube temporairement)</summary>
      <div className="restream-site-grid">
       <form onSubmit={savePlayer} className="restream-site-form">
-     <label className="v2-field"><span>Lien du direct YouTube Live transmis par Restream</span>
+     <label className="v2-field"><span>Code iframe du lecteur Restream ou lien YouTube Live temporaire</span>
       <textarea rows={3} maxLength={3500} spellCheck={false}
-       placeholder="https://www.youtube.com/live/XXXXXXXXXXX"
+       placeholder={'<iframe src="https://player.restream.io/..."></iframe>'}
        value={playerCode} onChange={e=>setPlayerCode(e.target.value)}/>
-      <small>Copie le lien de la vidéo YouTube qui est en direct depuis Restream. Aucune clé de diffusion n'est nécessaire.</small>
+      <small>Avec le forfait Business, copie ici une seule fois le code du canal « Embed Player » de Restream. Ce code reste le même pour chaque direct où le canal est activé. En attendant, tu peux garder YouTube.</small>
      </label>
      {playerCode && <p className={validPlayer?'restream-valid':'restream-invalid'}>
-      {validPlayer?'Lien du direct reconnu.':'Adresse non reconnue : fournis le lien de la vidéo YouTube Live (pas l’adresse de la chaîne).'}
+      {validPlayer?'Lien du direct reconnu.':'Adresse non reconnue : utilise le code iframe de player.restream.io ou l'adresse d'une vidéo YouTube Live.'}
      </p>}
      <label className="restream-toggle">
       <input type="checkbox" checked={playerEnabled} onChange={e=>setPlayerEnabled(e.target.checked)}/>
-      <span><strong>Afficher le direct sur le site</strong><small>Restream assure la diffusion ; Vercel ne transporte pas la vidéo.</small></span>
+      <span><strong>Installer ce lecteur sur le site</strong><small>Après configuration du canal Restream, le passage hors ligne / en direct est automatique, sans actualiser le site.</small></span>
      </label>
      <button type="submit" className="admin-btn admin-btn-primary" disabled={saving || !settings || (playerEnabled && !validPlayer)}>
       {saving ? <LoaderCircle className="restream-spin" size={16}/> : <CheckCircle2 size={16}/>}
@@ -244,7 +247,7 @@ export default function RegieDirect() {
     </form>
     <aside className="restream-site-preview">
      {validPlayer ? <iframe title="Aperçu du direct TV+ Afrique" src={preview.embedUrl} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin"/> :
-      <div className="restream-no-preview"><MonitorPlay size={30}/><strong>Aperçu du direct</strong><span>Ajoute le lien du direct YouTube Live envoyé depuis Restream.</span></div>}
+      <div className="restream-no-preview"><MonitorPlay size={30}/><strong>Aperçu du direct</strong><span>Ajoute le code permanent Restream ou le lien temporaire de ton YouTube Live.</span></div>}
      <Link href="/direct" target="_blank">Ouvrir la page Direct <ExternalLink size={14}/></Link>
     </aside>
      </div>
