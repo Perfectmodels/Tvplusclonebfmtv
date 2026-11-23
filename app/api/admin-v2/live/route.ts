@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { handleRoute,ok,ApiError } from '../../../../lib/api/response';
-import { LIVE_PLAYER_IDS,extractLiveUrl,resolveLivePlayback,isVercelOrSitePlaybackUrl } from '../../../../lib/video/live-platforms';
+import { extractLiveUrl,resolveLivePlayback,isVercelOrSitePlaybackUrl } from '../../../../lib/video/live-platforms';
 import { revalidatePath } from 'next/cache';
 
 export const dynamic='force-dynamic';
@@ -12,7 +12,7 @@ const schema=z.object({
   title:z.string().trim().min(3).max(120),
   description:z.string().trim().max(1200).default(''),
   standby_message:z.string().trim().max(350).default('Le direct reprendra prochainement.'),
-  player_platform:z.enum(LIVE_PLAYER_IDS).default('hls'),
+  player_platform:z.literal('restream'),
   playback_url:z.string().trim().max(3500),
   enabled:z.boolean(),
   starts_at:date.default(null),ends_at:date.default(null),
@@ -21,9 +21,9 @@ const schema=z.object({
   if(v.playback_url && isVercelOrSitePlaybackUrl(v.playback_url)){
     ctx.addIssue({code:'custom',path:['playback_url'],message:'URL refusée : utilisez un CDN vidéo ou un lecteur externe, jamais un domaine Vercel pour la vidéo.'});
   } else if(v.playback_url && !playback.playbackUrl){
-    ctx.addIssue({code:'custom',path:['playback_url'],message:'URL HTTPS HLS ou lecteur iframe compatible requis. Ne collez pas de serveur d’émission.'});
+    ctx.addIssue({code:'custom',path:['playback_url'],message:'Seul le lecteur iframe Restream est autorisé. Collez son code « Embed Player ».'});
   } else if(v.enabled && (!playback.hlsUrl && !playback.embedUrl)){
-    ctx.addIssue({code:'custom',path:['playback_url'],message:'Pour activer le direct, fournissez une URL HLS ou un lecteur iframe compatible.'});
+    ctx.addIssue({code:'custom',path:['playback_url'],message:'Pour activer le direct, fournissez le code « Embed Player » de Restream.'});
   }
   if(v.starts_at&&v.ends_at&&Date.parse(v.ends_at)<=Date.parse(v.starts_at)){
     ctx.addIssue({code:'custom',path:['ends_at'],message:'La fin doit être après le début.'});
@@ -47,7 +47,7 @@ export const PATCH=handleRoute(async(request:NextRequest)=>{
     throw new ApiError('Le flux doit être hébergé sur un serveur vidéo externe, pas sur Vercel.',400,'BAD_REQUEST');
   }
   if(v.enabled && (!player.supported || (!player.hlsUrl && !player.embedUrl))){
-    throw new ApiError('Le direct exige un lecteur HLS ou iframe compatible, hébergé hors Vercel.',400,'BAD_REQUEST');
+    throw new ApiError('Le direct exige un code « Embed Player » Restream valide.',400,'BAD_REQUEST');
   }
   const {data,error}=await db.from('site_live_settings')
     .update({

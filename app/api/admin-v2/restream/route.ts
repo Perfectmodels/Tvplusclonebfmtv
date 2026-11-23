@@ -18,7 +18,6 @@ export const GET = handleRoute(async () => {
       configured:true, connected:true, account:connection.account_name,
       channels:discovery.channels,embedPlayerUrl:discovery.embedPlayerUrl,
       hasEmbedChannel:discovery.hasEmbedChannel,
-      youtubeLiveUrl:discovery.youtubeLiveUrl,
       liveEventTitle:discovery.liveEventTitle,
       inProgressCount:discovery.inProgressCount,
       warning:discovery.warnings.join(' '),

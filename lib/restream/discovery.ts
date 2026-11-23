@@ -16,7 +16,7 @@ type RestreamEvent = {
 };
 export type RestreamDiscovery = {
  channels: {id:number;name:string;url:string;platformId:number;isEmbedPlayer:boolean}[];
- embedPlayerUrl:string; hasEmbedChannel:boolean; youtubeLiveUrl:string;
+ embedPlayerUrl:string; hasEmbedChannel:boolean;
  liveEventTitle:string; inProgressCount:number;
  warnings:string[];
 };
@@ -69,15 +69,12 @@ export async function discoverRestreamSources(token:string):Promise<RestreamDisc
   ? (Array.isArray(events.value)?events.value:events.value.events||[])
   : [];
  const current=active.find(e=>e.status==='in-progress'&&!e.isRecordOnly) || null;
- const youtubeLiveUrl=current?.destinations?.filter(d=>d.streamingPlatformId===5)
-  .map(d=>getHttpsLink(d.externalUrl))
-  .find(url=>resolveLivePlayback('youtube',url).embedUrl) || '';
  const warnings:string[]=[];
  if (modern.status==='rejected') warnings.push('Lecture des chaînes sur la nouvelle API Restream indisponible.');
  if (events.status==='rejected') warnings.push('Statut du direct non disponible. Vérifiez l’autorisation stream.read.');
  return {
   channels:channels.map(({embedCandidate,...c})=>c),
-  embedPlayerUrl,hasEmbedChannel:embed.length>0,youtubeLiveUrl,
+  embedPlayerUrl,hasEmbedChannel:embed.length>0,
   liveEventTitle:current?.title||'',inProgressCount:active.length,warnings,
  };
 }

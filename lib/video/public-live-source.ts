@@ -12,11 +12,11 @@ export type PublicLiveSource = {
 /** L'absence de diffusion configurée ne déclenche jamais un flux de secours. */
 export const offlineLiveSource: PublicLiveSource = {
   enabled: false,
-  mode: 'hls',
+  mode: 'iframe',
   hlsUrl: '',
   embedUrl: '',
   externalUrl: '',
-  title: 'TV+ Afrique',
+  title: 'TV+ Afrique en direct',
   description: '',
   standbyMessage: 'Aucun flux n’est actuellement diffusé.',
 };

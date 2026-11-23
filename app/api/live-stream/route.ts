@@ -4,9 +4,9 @@ import { getPublicServerSupabase } from '../../../lib/supabase/server';
 import { resolveLivePlayback } from '../../../lib/video/live-platforms';
 
 export const dynamic='force-dynamic';
-const empty={enabled:false,title:'TV+ Afrique',description:'',hlsUrl:'',platform:'hls',embedUrl:'',playbackUrl:'',standbyMessage:'Le direct reprendra prochainement.'};
+const empty={enabled:false,title:'TV+ Afrique en direct',description:'',hlsUrl:'',platform:'restream',embedUrl:'',playbackUrl:'',standbyMessage:'TV+ Afrique — le direct sera disponible prochainement.'};
 // Courte mise en cache CDN : moins de calculs et requêtes Supabase, régie reste la source unique.
-const headers={'Cache-Control':'public, s-maxage=60, stale-while-revalidate=30'};
+const headers={'Cache-Control':'public, s-maxage=15, stale-while-revalidate=15'};
 export async function GET(request:NextRequest){
  try{
   const {data,error}=await getPublicServerSupabase().from('site_live_settings')
@@ -15,12 +15,13 @@ export async function GET(request:NextRequest){
   if(error)throw error;
   const now=Date.now();
   const enabled=Boolean(data?.enabled&&(!data?.starts_at||Date.parse(data.starts_at)<=now)&&(!data?.ends_at||Date.parse(data.ends_at)>now));
-  const platform=data?.player_platform||'hls';
-  const player=resolveLivePlayback(platform,data?.playback_url||data?.hls_url||'',request.nextUrl.hostname);
-  const onAir=enabled&&player.supported&&Boolean(player.hlsUrl||player.embedUrl);
+  // La chaîne TV+ utilise uniquement Restream : aucune ancienne URL HLS ne peut être servie en secours.
+  const platform='restream';
+  const player=resolveLivePlayback(platform,data?.player_platform==='restream' ? (data?.playback_url||'') : '',request.nextUrl.hostname);
+  const onAir=enabled&&player.supported&&Boolean(player.embedUrl);
   return NextResponse.json({success:true,data:{
    enabled:onAir,title:data?.title||empty.title,description:data?.description||'',
-   hlsUrl:onAir?player.hlsUrl:'',platform,
+   hlsUrl:'',platform,
    embedUrl:onAir?player.embedUrl:'',playbackUrl:onAir?player.externalUrl:'',
    standbyMessage:data?.standby_message||empty.standbyMessage
   }},{headers});
