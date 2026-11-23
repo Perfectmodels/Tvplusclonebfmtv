@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { usePublicLiveSource } from '../../hooks/use-public-live-source';
+import { useLiveOverlay } from './LiveOverlayProvider';
 
 /** Lecteur intégré alimenté exclusivement par la régie du direct. */
 export default function DirectLiveStage() {
   const source = usePublicLiveSource();
+  const { isOpen: overlayOpen } = useLiveOverlay();
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -58,7 +60,7 @@ export default function DirectLiveStage() {
   return (
     <div className="direct-live-stage">
       <div style={{ position: 'relative', aspectRatio: '16 / 9', background: '#020617', overflow: 'hidden' }}>
-        {source?.enabled && source.mode === 'iframe' ? (
+        {source?.enabled && source.mode === 'iframe' && !overlayOpen ? (
           <iframe
             title={source.title}
             src={source.embedUrl}

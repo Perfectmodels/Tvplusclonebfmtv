@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { requireV2Api } from '../../../../../lib/auth/v2-admin';
 import { ApiError, handleRoute, ok } from '../../../../../lib/api/response';
@@ -45,6 +45,7 @@ export const POST=handleRoute(async(request:NextRequest)=>{
   updated_at:new Date().toISOString(),
  }).eq('id',1).select('id,title,player_platform,playback_url,enabled').maybeSingle();
  if(error||!data)throw new ApiError('Impossible de publier le lecteur sur le site. Vérifiez les autorisations de la régie.',503,'UNAVAILABLE');
+ revalidateTag('tvplus-public-live-settings');
  revalidatePath('/');
  revalidatePath('/direct');
  return ok({player_platform:platform,enabled:true,description:'Diffusion produite dans Restream et affichée via un lecteur externe autorisé.'});

@@ -49,13 +49,29 @@ export function resolvePublicLiveSource(config: unknown): PublicLiveSource {
   };
 }
 
+// Les lecteurs sur une même page se partagent une seule requête de configuration.
+const CLIENT_CACHE_MS = 2 * 60 * 1000;
+let cachedSource: { value: PublicLiveSource; at: number } | null = null;
+let inFlight: Promise<PublicLiveSource> | null = null;
+
 export async function fetchPublicLiveSource(): Promise<PublicLiveSource> {
-  try {
-    const response = await fetch('/api/live-stream', { cache: 'no-store' });
-    if (!response.ok) return offlineLiveSource;
-    const body = await response.json();
-    return resolvePublicLiveSource(body?.data);
-  } catch {
-    return offlineLiveSource;
-  }
+  if (cachedSource && Date.now() - cachedSource.at < CLIENT_CACHE_MS) return cachedSource.value;
+  if (inFlight) return inFlight;
+
+  inFlight = (async () => {
+    try {
+      // Le navigateur peut conserver la petite configuration selon les en-têtes du CDN.
+      // Aucun flux vidéo ni jeton Restream ne passe par cette requête.
+      const response = await fetch('/api/live-stream');
+      if (!response.ok) return offlineLiveSource;
+      const body = await response.json();
+      const result = resolvePublicLiveSource(body?.data);
+      cachedSource = { value: result, at: Date.now() };
+      return result;
+    } catch {
+      return offlineLiveSource;
+    }
+  })().finally(() => { inFlight = null; });
+
+  return inFlight;
 }

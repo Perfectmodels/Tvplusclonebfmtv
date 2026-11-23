@@ -5,11 +5,15 @@ import Link from 'next/link';
 import { ArrowUpRight, Maximize2, Minimize2, Radio, X } from 'lucide-react';
 import TvPlusLogo from '../TvPlusLogo';
 import { usePublicLiveSource } from '../../hooks/use-public-live-source';
+import { useLiveOverlay } from './LiveOverlayProvider';
 
 export default function HomeLiveDock() {
   const anchorRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const config = usePublicLiveSource();
+  // Une seule instance vidéo par visiteur : le lecteur flottant se met en pause
+  // quand la modale de direct prend le relais.
+  const { isOpen: overlayOpen } = useLiveOverlay();
   const [docked, setDocked] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -122,8 +126,8 @@ export default function HomeLiveDock() {
             aria-modal={expanded ? true : undefined}
             aria-label={expanded ? 'Direct TV+ Afrique agrandi' : 'Lecteur TV+ Afrique'}>
             <div className="home-live-screen">
-              {embedUrl ? (
-                <iframe title={config?.title || 'Lecteur vidéo'} src={embedUrl}
+              {embedUrl && !overlayOpen ? (
+                <iframe loading="lazy" title={config?.title || 'Lecteur vidéo'} src={embedUrl}
                   allow="autoplay; fullscreen; picture-in-picture"
                   allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
               ) : hlsUrl ? (

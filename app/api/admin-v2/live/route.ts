@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { handleRoute,ok,ApiError } from '../../../../lib/api/response';
 import { extractLiveUrl,resolveLivePlayback,isVercelOrSitePlaybackUrl } from '../../../../lib/video/live-platforms';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 export const dynamic='force-dynamic';
 const date=z.string().datetime({offset:true}).nullable();
@@ -56,6 +56,7 @@ export const PATCH=handleRoute(async(request:NextRequest)=>{
       updated_at:new Date().toISOString()
     }).eq('id',1).select(fields).maybeSingle();
   if(error||!data)throw new ApiError('Modification du direct refusée.',403,'UNAUTHORIZED');
+  revalidateTag('tvplus-public-live-settings');
   revalidatePath('/direct');
   revalidatePath('/');
   return ok(data);
