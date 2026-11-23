@@ -21,7 +21,12 @@ export default function HomeLiveDock() {
   useEffect(() => {
     const update = () => {
       const rect = anchorRef.current?.getBoundingClientRect();
-      setDocked(Boolean(rect && rect.bottom < 122));
+      const nextDocked = Boolean(rect && rect.bottom < 122);
+      setDocked(nextDocked);
+      // La croix masque le lecteur uniquement pour cette excursion dans la page.
+      // Lorsque l'utilisateur revient à la vidéo principale, autoriser
+      // un nouveau mini-lecteur à son prochain défilement.
+      if (!nextDocked) setDismissed(false);
     };
     update();
     window.addEventListener('scroll', update, { passive: true });
