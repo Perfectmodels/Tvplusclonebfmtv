@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest } from 'next/server';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { decryptTokens, getRestreamApp, getSavedConnection, getValidToken, restreamGet, type RestreamChannel } from '../../../../lib/restream/oauth';
 import { handleRoute, ok, ApiError } from '../../../../lib/api/response';
@@ -35,11 +35,12 @@ export const DELETE = handleRoute(async (request: NextRequest) => {
   if (getRestreamApp()) {
     try {
       const tokens = decryptTokens(connection.token_ciphertext);
-      await fetch('https://api.restream.io/oauth/revoke',{
+      const revoked = await fetch('https://api.restream.io/oauth/revoke',{
         method:'POST', cache:'no-store', signal:AbortSignal.timeout(10000),
         headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
         body:new URLSearchParams({token:tokens.refresh_token,token_type_hint:'refresh_token'}),
       });
+      if (!revoked.ok) throw new Error('Restream n’a pas confirmé la révocation.');
     } catch {
       throw new ApiError('Impossible de révoquer le jeton Restream. Réessayez.',502,'UNAVAILABLE');
     }

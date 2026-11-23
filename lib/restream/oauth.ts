@@ -18,9 +18,14 @@ export function getRestreamApp() {
   const redirectUri = process.env.RESTREAM_REDIRECT_URI?.trim() || '';
   // Never use request Host to invent a redirect: prevent redirect-URI confusion.
   if (!clientId || !clientSecret || !redirectUri) return null;
-  const uri = new URL(redirectUri);
-  if (uri.protocol !== 'https:' || uri.pathname !== '/api/admin-v2/restream/callback') return null;
-  return { clientId, clientSecret, redirectUri };
+  try {
+    const uri = new URL(redirectUri);
+    if (uri.protocol !== 'https:' || uri.pathname !== '/api/admin-v2/restream/callback' ||
+        uri.username || uri.password || uri.search || uri.hash) return null;
+    return { clientId, clientSecret, redirectUri };
+  } catch {
+    return null;
+  }
 }
 
 function tokenKey() {
