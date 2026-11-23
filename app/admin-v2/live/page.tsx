@@ -11,6 +11,8 @@ import { resolveLivePlayback } from '../../../lib/video/live-platforms';
 type Channel = { id: number; name: string; url: string };
 type Account = {
  configured: boolean; connected: boolean; account?: string; warning?: string; channels: Channel[];
+ embedPlayerUrl?: string; hasEmbedChannel?: boolean; youtubeLiveUrl?: string;
+ liveEventTitle?: string; inProgressCount?: number;
 };
 type Settings = {
  title: string; description: string; standby_message: string;
@@ -91,6 +93,23 @@ export default function RegieDirect() {
    setSettings(body.data); setSuccess('Lecteur TV+ enregistré. La source du direct est maintenant Restream.');
   } catch(e) { setError(e instanceof Error ? e.message : 'Erreur de réseau.'); }
   finally { setSaving(false); }
+ }
+
+ async function activateLive(mode:'restream'|'youtube') {
+  setSaving(true);setError('');setSuccess('');
+  try {
+   const response=await fetch('/api/admin-v2/restream/activate',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mode}),
+   });
+   const body=await response.json() as ApiResponse<{enabled:boolean}>;
+   if(!response.ok)throw new Error(body.error?.message || 'Impossible d’activer le lecteur.');
+   await reload();
+   setSuccess(mode==='restream'
+    ? 'Le lecteur Restream est maintenant publié sur TV+ Afrique. Le direct s’y affichera dès que le canal Embed Player sera activé dans Restream.'
+    : 'Le direct YouTube transmis par Restream est maintenant affiché sur TV+ Afrique.');
+  } catch(e) {setError(e instanceof Error?e.message:'Erreur de réseau.');}
+  finally {setSaving(false);}
  }
 
  async function disconnect() {
@@ -187,8 +206,35 @@ export default function RegieDirect() {
    </div>
    {settings?.enabled && settings.player_platform !== 'restream' &&
     <div className="restream-current-source">Source publique actuelle : <strong>{settings.title}</strong>. Elle restera inchangée tant que vous n'enregistrez pas le lecteur Restream.</div>}
-   {account?.connected ? <div className="restream-site-grid">
-    <form onSubmit={savePlayer} className="restream-site-form">
+   {account?.connected ? <>
+    <div className="restream-auto-panel">
+     {account.inProgressCount ? <p className="restream-live-found"><Radio size={15}/> {account.liveEventTitle ? 'Direct Restream détecté : ' + account.liveEventTitle : 'Une diffusion Restream est en cours'}</p>
+      : <p className="restream-live-warning">Aucun événement en direct n’a été confirmé par l’API Restream. Le lecteur Embed Player reste utilisable pour les prochains lives.</p>}
+     {account.embedPlayerUrl ? <>
+      <p>Le lecteur officiel Restream a été détecté. Un clic suffit pour l’utiliser sur le site, aujourd’hui et pour les prochains directs.</p>
+      <button type="button" className="admin-btn admin-btn-primary" disabled={saving}
+       onClick={()=>void activateLive('restream')}>
+       <MonitorPlay size={17}/> {saving?'Activation…':'Afficher le direct Restream sur TV+'}
+      </button>
+     </> : account.youtubeLiveUrl ? <>
+      <p>Le compte ne fournit pas de lecteur Restream intégrable, mais un live YouTube diffusé par Restream est disponible.</p>
+      <button type="button" className="admin-btn admin-btn-primary" disabled={saving}
+       onClick={()=>void activateLive('youtube')}>
+       <MonitorPlay size={17}/> {saving?'Activation…':'Afficher ce live YouTube sur TV+'}
+      </button>
+      <small>Ce lien est propre à l’événement YouTube en cours ; pour les prochains directs, privilégiez le canal Restream Embed Player.</small>
+     </> : <>
+      <p><strong>Le signal Restream n’est pas encore relié à un lecteur pour le site.</strong> Pour le faire automatiquement, dans Restream ajoutez le canal <strong>Embed Player</strong>, puis activez-le pour votre émission.</p>
+      <a href="https://support.restream.io/en/articles/4996608-stream-to-your-website" target="_blank" rel="noopener noreferrer">
+       Configurer le canal Embed Player <ExternalLink size={14}/>
+      </a>
+      <small>Le lecteur officiel Restream nécessite une offre Business ou Enterprise. Si votre live sort vers YouTube, assurez-vous que la diffusion YouTube est publique, puis cliquez sur « Actualiser » plus haut.</small>
+     </>}
+    </div>
+    <details className="restream-manual">
+     <summary>Configurer le lecteur manuellement (optionnel)</summary>
+     <div className="restream-site-grid">
+      <form onSubmit={savePlayer} className="restream-site-form">
      <label className="v2-field"><span>Code du lecteur Restream</span>
       <textarea rows={3} maxLength={3500} spellCheck={false}
        placeholder={'<iframe src="https://player.restream.io/..."></iframe>'}
@@ -212,7 +258,9 @@ export default function RegieDirect() {
       <div className="restream-no-preview"><MonitorPlay size={30}/><strong>Aperçu du direct</strong><span>Collez le code Restream pour afficher le lecteur.</span></div>}
      <Link href="/direct" target="_blank">Ouvrir la page Direct <ExternalLink size={14}/></Link>
     </aside>
-   </div> : <p className="restream-empty">Connectez d'abord votre compte Restream pour configurer son lecteur public.</p>}
+     </div>
+    </details>
+   </> : <p className="restream-empty">Connectez d'abord votre compte Restream pour configurer son lecteur public.</p>}
   </section>
   <div className="restream-bottom-note"><ShieldCheck size={16}/> Les jetons d'accès Restream sont chiffrés côté serveur. Les chaînes sont consultées via l'API officielle, sans recopier de clés privées.</div>
  </div>;

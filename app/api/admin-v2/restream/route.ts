@@ -1,6 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
-import { decryptTokens, getRestreamApp, getSavedConnection, getValidToken, restreamGet, type RestreamChannel } from '../../../../lib/restream/oauth';
+import { decryptTokens, getRestreamApp, getSavedConnection, getValidToken } from '../../../../lib/restream/oauth';
+import { discoverRestreamSources } from '../../../../lib/restream/discovery';
 import { handleRoute, ok, ApiError } from '../../../../lib/api/response';
 
 export const dynamic = 'force-dynamic';
@@ -12,13 +13,15 @@ export const GET = handleRoute(async () => {
   if (!connection) return ok({ configured: true, connected: false, channels: [] });
   try {
     const accessToken = await getValidToken(db, connection);
-    const result = await restreamGet<{ channels?: RestreamChannel[] } | RestreamChannel[]>('/v2/user/channels',accessToken);
-    const channels = Array.isArray(result) ? result : (result.channels || []);
-    return ok({ configured:true, connected:true, account: connection.account_name,
-      channels: channels.map(c => ({
-        id: c.id, name: c.displayName || 'Chaîne Restream',
-        url: c.channelUrl?.startsWith('https://') ? c.channelUrl : '',
-      })),
+    const discovery = await discoverRestreamSources(accessToken);
+    return ok({
+      configured:true, connected:true, account:connection.account_name,
+      channels:discovery.channels,embedPlayerUrl:discovery.embedPlayerUrl,
+      hasEmbedChannel:discovery.hasEmbedChannel,
+      youtubeLiveUrl:discovery.youtubeLiveUrl,
+      liveEventTitle:discovery.liveEventTitle,
+      inProgressCount:discovery.inProgressCount,
+      warning:discovery.warnings.join(' '),
     });
   } catch {
     return ok({ configured:true, connected:true, account:connection.account_name,

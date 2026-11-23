@@ -265,3 +265,16 @@
  .restream-site-preview {min-width:0}
 }
 @media(prefers-reduced-motion:reduce) {.restream-spin {animation:none}}
+
+/* Restream: publication du direct depuis le compte connecté, sans clé RTMP à saisir. */
+.restream-auto-panel {display:grid;gap:13px;padding:19px;background:linear-gradient(135deg,#eef5ff,#f7faff);border:1px solid #d7e6fa;border-radius:12px;margin:4px 0 6px}
+.restream-auto-panel p {font-size:13px;line-height:1.65;color:#2f4f76;margin:0}
+.restream-auto-panel a {display:inline-flex;align-items:center;gap:6px;color:#174990;font-size:13px;font-weight:750;text-decoration:underline}
+.restream-auto-panel button {width:fit-content;max-width:100%;min-height:45px}
+.restream-auto-panel small {font-size:12px;line-height:1.55;color:#657c99}
+.restream-live-found {color:#0b734b!important;font-weight:750;display:flex;align-items:center;gap:7px}
+.restream-live-warning {color:#775e32!important}
+.restream-manual {padding:13px 17px;border:1px solid #dfe8f4;border-radius:10px}
+.restream-manual summary {color:#1d487f;font-weight:750;cursor:pointer;font-size:13px}
+.restream-manual[open] summary {margin-bottom:18px}
+@media(max-width:620px) {.restream-auto-panel button {width:100%}.restream-auto-panel {padding:15px}}
