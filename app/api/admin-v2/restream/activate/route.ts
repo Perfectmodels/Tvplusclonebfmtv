@@ -8,7 +8,7 @@ import { getSavedConnection, getValidToken } from '../../../../../lib/restream/o
 import { resolveLivePlayback } from '../../../../../lib/video/live-platforms';
 
 export const dynamic='force-dynamic';
-const bodySchema=z.object({mode:z.literal('restream')});
+const bodySchema=z.object({mode:z.enum(['restream','youtube'])});
 
 /** Bind public TV+ playback to an actual, verified external player from the
  * authenticated Restream account. No ingest keys or private video URLs. */
@@ -26,18 +26,20 @@ export const POST=handleRoute(async(request:NextRequest)=>{
  if(!connected)throw new ApiError('Connectez d’abord votre compte Restream.',409,'CONFLICT');
  const accessToken=await getValidToken(db,connected);
  const discovery=await discoverRestreamSources(accessToken);
- const playbackUrl=discovery.embedPlayerUrl;
- const platform='restream';
+ const platform=parsed.data.mode;
+ const playbackUrl=platform==='restream'?discovery.embedPlayerUrl:discovery.youtubeLiveUrl;
  const player=resolveLivePlayback(platform,playbackUrl,request.nextUrl.hostname);
  if(!player.embedUrl) {
   throw new ApiError(
-   'Aucun lecteur Restream intégrable valide n’a été détecté. Ajoutez et activez « Embed Player » dans les chaînes de votre compte Restream, ou copiez son code d’intégration depuis Restream.',
+   platform==='youtube'
+    ? 'Aucun YouTube Live public n’a été détecté dans Restream. Activez YouTube comme destination, actualisez, ou renseignez le lien du live.'
+    : 'Aucun lecteur Restream Embed Player n’a été détecté dans le compte.',
    409,'CONFLICT'
   );
  }
  const title='TV+ Afrique en direct';
  const {data,error}=await db.from('site_live_settings').update({
-  title,description:'Le direct de TV+ Afrique',
+  title,description:'Direct TV+ Afrique diffusé via Restream',
   player_platform:platform,playback_url:playbackUrl,
   hls_url:'',enabled:true,starts_at:null,ends_at:null,
   updated_at:new Date().toISOString(),
@@ -45,5 +47,5 @@ export const POST=handleRoute(async(request:NextRequest)=>{
  if(error||!data)throw new ApiError('Impossible de publier le lecteur sur le site. Vérifiez les autorisations de la régie.',503,'UNAVAILABLE');
  revalidatePath('/');
  revalidatePath('/direct');
- return ok({player_platform:platform,enabled:true,description:'La diffusion publique utilise le lecteur externe de Restream.'});
+ return ok({player_platform:platform,enabled:true,description:'Diffusion produite dans Restream et affichée via un lecteur externe autorisé.'});
 });

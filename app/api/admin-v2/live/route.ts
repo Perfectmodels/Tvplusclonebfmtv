@@ -12,7 +12,7 @@ const schema=z.object({
   title:z.string().trim().min(3).max(120),
   description:z.string().trim().max(1200).default(''),
   standby_message:z.string().trim().max(350).default('Le direct reprendra prochainement.'),
-  player_platform:z.literal('restream'),
+  player_platform:z.enum(['restream','youtube']),
   playback_url:z.string().trim().max(3500),
   enabled:z.boolean(),
   starts_at:date.default(null),ends_at:date.default(null),
@@ -20,10 +20,10 @@ const schema=z.object({
   const playback=resolveLivePlayback(v.player_platform,v.playback_url);
   if(v.playback_url && isVercelOrSitePlaybackUrl(v.playback_url)){
     ctx.addIssue({code:'custom',path:['playback_url'],message:'URL refusée : utilisez un CDN vidéo ou un lecteur externe, jamais un domaine Vercel pour la vidéo.'});
-  } else if(v.playback_url && !playback.playbackUrl){
-    ctx.addIssue({code:'custom',path:['playback_url'],message:'Seul le lecteur iframe Restream est autorisé. Collez son code « Embed Player ».'});
+  } else if(v.playback_url && !playback.embedUrl){
+    ctx.addIssue({code:'custom',path:['playback_url'],message:'Utilisez le lecteur Restream ou le lien YouTube Live transmis par Restream.'});
   } else if(v.enabled && (!playback.hlsUrl && !playback.embedUrl)){
-    ctx.addIssue({code:'custom',path:['playback_url'],message:'Pour activer le direct, fournissez le code « Embed Player » de Restream.'});
+    ctx.addIssue({code:'custom',path:['playback_url'],message:'Pour activer le direct, fournissez un lien de lecture Restream ou YouTube Live valide.'});
   }
   if(v.starts_at&&v.ends_at&&Date.parse(v.ends_at)<=Date.parse(v.starts_at)){
     ctx.addIssue({code:'custom',path:['ends_at'],message:'La fin doit être après le début.'});
@@ -47,12 +47,12 @@ export const PATCH=handleRoute(async(request:NextRequest)=>{
     throw new ApiError('Le flux doit être hébergé sur un serveur vidéo externe, pas sur Vercel.',400,'BAD_REQUEST');
   }
   if(v.enabled && (!player.supported || (!player.hlsUrl && !player.embedUrl))){
-    throw new ApiError('Le direct exige un code « Embed Player » Restream valide.',400,'BAD_REQUEST');
+    throw new ApiError('Le direct exige un lecteur Restream ou YouTube Live compatible.',400,'BAD_REQUEST');
   }
   const {data,error}=await db.from('site_live_settings')
     .update({
       ...v,playback_url:normalized,
-      hls_url:player.hlsUrl,
+      hls_url:'',
       updated_at:new Date().toISOString()
     }).eq('id',1).select(fields).maybeSingle();
   if(error||!data)throw new ApiError('Modification du direct refusée.',403,'UNAUTHORIZED');

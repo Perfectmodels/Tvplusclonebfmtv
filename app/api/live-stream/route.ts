@@ -15,9 +15,10 @@ export async function GET(request:NextRequest){
   if(error)throw error;
   const now=Date.now();
   const enabled=Boolean(data?.enabled&&(!data?.starts_at||Date.parse(data.starts_at)<=now)&&(!data?.ends_at||Date.parse(data.ends_at)>now));
-  // La chaîne TV+ utilise uniquement Restream : aucune ancienne URL HLS ne peut être servie en secours.
-  const platform='restream';
-  const player=resolveLivePlayback(platform,data?.player_platform==='restream' ? (data?.playback_url||'') : '',request.nextUrl.hostname);
+  // Restream produit le signal, et le site n'affiche que Restream Embed ou le YouTube Live diffusé par Restream.
+  // Aucune source HLS historique n'est autorisée.
+  const platform=(data?.player_platform==='youtube'||data?.player_platform==='restream')?data.player_platform:'restream';
+  const player=resolveLivePlayback(platform,data?.playback_url||'',request.nextUrl.hostname);
   const onAir=enabled&&player.supported&&Boolean(player.embedUrl);
   return NextResponse.json({success:true,data:{
    enabled:onAir,title:data?.title||empty.title,description:data?.description||'',
