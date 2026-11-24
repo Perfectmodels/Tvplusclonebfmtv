@@ -10,18 +10,20 @@ import {
 } from 'lucide-react';
 import TiptapEditor, { type EditorValue } from '../editor/TiptapEditor';
 import { COUNTRIES, GABON_PROVINCES } from '../../lib/editor/countries';
+import { parseVideoUrl } from '../../lib/video/providers';
+import ReplayEmbed from '../video/ReplayEmbed';
 
 type Category = { id: string; name: string; slug: string };
 type Media = { id: string; url: string; alt: string; mime_type: string };
 type ArticleForm = {
   title: string; slug: string; excerpt: string; category_id: string;
   cover_media_id: string | null; seo_title: string; seo_description: string;
-  country_code: string; province_slug: string; featured: boolean; is_alert: boolean;
+  country_code: string; province_slug: string; featured: boolean; is_alert: boolean; video_url: string;
 };
 const initialForm: ArticleForm = {
   title: '', slug: '', excerpt: '', category_id: '', cover_media_id: null,
   seo_title: '', seo_description: '', country_code: 'GA', province_slug: '',
-  featured: false, is_alert: false,
+  featured: false, is_alert: false, video_url: '',
 };
 const emptyDoc = { type: 'doc', content: [{ type: 'paragraph' }] };
 const statuses: Record<string, string> = {
@@ -74,6 +76,8 @@ export default function V2ArticleEditor({
   const cover = useMemo(() => media.find(item => item.id === form.cover_media_id), [media, form.cover_media_id]);
   const chosenMedia = useMemo(() => media.slice(0, mediaPage * 18), [media, mediaPage]);
   const tagCount = parseKeywords(keywords).length;
+  const detectedVideo = parseVideoUrl(form.video_url);
+  const validVideo = detectedVideo && ['youtube','facebook'].includes(detectedVideo.platform) ? detectedVideo : null;
   const categoryName = categories.find(category => category.id === form.category_id)?.name ?? 'Rubrique non définie';
   const countryName = COUNTRIES.find(country => country.code === form.country_code)?.name ?? form.country_code;
   const articleLink = shortCode ? '/a/' + shortCode : null;
@@ -123,6 +127,7 @@ export default function V2ArticleEditor({
           seo_title: article.seo_title ?? '', seo_description: article.seo_description ?? '',
           country_code: article.country_code ?? 'GA', province_slug: article.province_slug ?? '',
           featured: Boolean(article.featured), is_alert: Boolean(article.is_alert),
+          video_url: typeof article.content_json?.tvplusVideoUrl === 'string' ? article.content_json.tvplusVideoUrl : '',
         });
         setKeywords((article.tags ?? []).join(', '));
         // La couverture existante peut ne plus figurer parmi les 60 médias récents.
@@ -157,6 +162,8 @@ export default function V2ArticleEditor({
     if (!form.title.trim() || !form.excerpt.trim() || !form.slug.trim() || !form.category_id || !form.country_code) {
       setError('Le titre, le chapeau, la rubrique et le pays sont obligatoires.'); return null;
     }
+    const detected = parseVideoUrl(form.video_url);
+    if (form.video_url.trim() && (!detected || !['youtube','facebook'].includes(detected.platform))) { setError('Collez une URL publique de reportage YouTube ou Facebook valide.'); return null; }
     const tags = parseKeywords(keywords);
     if (tags.length > 20 || tags.some(tag => tag.length > 65)) {
       setError('Indiquez au maximum 20 mots-clés de 65 caractères chacun.'); return null;
@@ -369,6 +376,15 @@ export default function V2ArticleEditor({
                   <h2 id="article-contenu-title">Rédiger le contenu</h2>
                   <p>Un véritable espace de travail pour construire et mettre en forme votre article.</p></div>
                 <div className="v2-compose-wordcount"><strong>{content.words}</strong><span>mots</span></div>
+              </div>
+              <div className="v2-field" style={{marginBottom:16}}>
+                <label className="v2-field"><span>Reportage vidéo (facultatif)</span>
+                  <input type="url" maxLength={1300} value={form.video_url} disabled={!canEdit} placeholder="https://www.youtube.com/watch?v=… ou lien Facebook" onChange={event=>setField('video_url',event.target.value)} />
+                </label>
+                <small className="v2-editor-help">Ajoutez un lien public pour transformer cet article en article vidéo. Le texte, la couverture et le référencement restent inchangés.</small>
+                {form.video_url.trim() && !validVideo && <p className="v2-error" role="alert">Lien YouTube ou Facebook non reconnu.</p>}
+                {validVideo && <div style={{maxWidth:'100%',marginTop:12}}><p>Plateforme : {validVideo.platform === 'youtube' ? 'YouTube' : 'Facebook'}</p><ReplayEmbed key={validVideo.url} title={form.title || 'Reportage vidéo'} url={validVideo.url} thumbnail={cover?.url}/></div>}
+                {form.video_url && canEdit && <button type="button" className="v2-compose-button secondary" onClick={()=>setField('video_url','')}>Retirer la vidéo</button>}
               </div>
               <TiptapEditor initialJson={initialJson} editable={canEdit}
                 onChange={value => { setContent(value); setDirty(true); }}
@@ -619,6 +635,7 @@ export default function V2ArticleEditor({
             </div>
             <div className="v2-compose-preview-article">
               <span>{countryName} {form.province_slug && '· ' + (GABON_PROVINCES.find(p => p.value === form.province_slug)?.label ?? '')}</span>
+              {validVideo && <ReplayEmbed key={validVideo.url} title={form.title || 'Reportage vidéo'} url={validVideo.url} thumbnail={cover?.url}/>}
               <p>{content.text.trim() || 'Le corps du texte pourra être consulté après sa rédaction.'}</p>
             </div>
           </div>

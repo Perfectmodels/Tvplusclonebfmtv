@@ -79,6 +79,7 @@ function newsroom(PDO $pdo, array $config): void {
         $values['content_json']=json_encode($data['content_json'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE);
         $values['tags_json']=json_encode($data['tags'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE);
         $values['is_alert']=(int)$data['is_alert']; $values['featured']=(int)$data['featured'];
+        if (array_key_exists('is_video_article',$data)) $values['is_video_article']=(int)(bool)$data['is_video_article'];
         $refs=$request['references'] ?? [];
         foreach (['category'=>['tvp_categories','category_id',['id','slug','name','description','position','parent_id']],
                   'media'=>['tvp_media','cover_media_id',['id','original_path','media_url','alt_text','caption','credit','mime_type','width_px','height_px']]] as $name=>[$table,$field,$columns]) {

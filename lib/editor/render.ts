@@ -4,6 +4,8 @@
  * Aucun HTML arbitraire provenant du client n'est jamais inséré tel quel.
  */
 
+import { parseVideoUrl, videoEmbedUrl } from '../video/providers';
+
 type Node = { type?: string; text?: string; attrs?: Record<string, any>; content?: Node[]; marks?: { type?: string; attrs?: Record<string, any> }[] };
 
 function escapeHtml(value: string): string {
@@ -100,9 +102,12 @@ function renderNode(node: Node): string {
       return caption ? `<figure>${figure}<figcaption>${escapeHtml(caption)}</figcaption></figure>` : figure;
     }
     case 'youtube': {
-      const src = safeUrl(node.attrs?.src);
-      if (!src || !/youtube|youtu\.be/.test(src)) return '';
-      return `<div class="article-video"><iframe src="${escapeHtml(src)}" title="Vidéo" allowfullscreen loading="lazy"></iframe></div>`;
+      const src = typeof node.attrs?.src === 'string' ? node.attrs.src : '';
+      const normalized = src.replace(/^https:\/\/www\.youtube-nocookie\.com\/embed\//,'https://www.youtube.com/embed/');
+      const video = parseVideoUrl(normalized);
+      if (!video || video.platform !== 'youtube') return '';
+      const embed = videoEmbedUrl(video.platform,video.externalId,video.url);
+      return `<div class="article-video"><iframe src="${escapeHtml(embed)}" title="Vidéo" allowfullscreen loading="lazy"></iframe></div>`;
     }
     case 'doc':
     case 'root':

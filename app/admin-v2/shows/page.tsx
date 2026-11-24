@@ -56,6 +56,8 @@ export default function ShowsV2(){
       <div><strong>{s.title}</strong><span>{s.host_name||'Présentateur à préciser'} · {s.schedule_label||'Créneau non défini'}</span>
        <small>{s.is_active?'Visible':'Masquée'} · {episodeCounts[s.id]||0} replay(s) · Position {s.position}</small></div>
       <div className="v2-actions"><button type="button" className="admin-btn admin-btn-ghost" onClick={()=>edit(s)}>Configurer</button>
+       <Link className="admin-btn admin-btn-ghost" href={'/admin-v2/replays?show='+encodeURIComponent(s.id)}>Replays ({episodeCounts[s.id]||0})</Link>
+       {s.is_active && <Link className="admin-btn admin-btn-ghost" href={'/emissions/'+s.slug} target="_blank">Voir sur le site</Link>}
        <button type="button" className="admin-btn admin-btn-ghost" disabled={busy||Boolean(episodeCounts[s.id])} onClick={()=>void remove(s)} aria-label={'Supprimer '+s.title}><Trash2 size={15}/></button></div>
      </div>)}
      {!visible.length&&<p className="v2-note">Aucune émission trouvée.</p>}

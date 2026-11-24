@@ -562,6 +562,7 @@ export type PublicEpisode = {
 };
 
 export async function getEpisodes(limit = 24): Promise<Wrapped<PublicEpisode[]>> {
+  if (v2.usesTvplusV2()) return v2.getV2Episodes(limit);
   const result = await fromSupabase<EpisodeRow[]>(
     (db) => db.from('episodes').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(limit),
     [],

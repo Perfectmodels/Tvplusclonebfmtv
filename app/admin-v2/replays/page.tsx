@@ -24,10 +24,10 @@ export default function ReplaysV2(){
   if(!a.ok||!b.ok)throw Error(e.error?.message||s.error?.message||'Bibliothèque indisponible.');
   setItems(e.data.items||[]);setShows(s.data.items||[]);
  },[]);
- useEffect(()=>{load().catch(e=>setError(e.message)).finally(()=>setLoading(false))},[load]);
+ useEffect(()=>{const show=new URLSearchParams(window.location.search).get('show');if(show){setShowFilter(show);setForm(f=>({...f,show_id:show}));}load().catch(e=>setError(e.message)).finally(()=>setLoading(false))},[load]);
  function edit(item:Replay){setEditing(item.id);const {id,platform,external_id,...fields}=item;setForm(fields);setWhen(local(item.publish_at));setMode(item.status==='published'?'published':item.publish_at?'scheduled':'draft');setMessage('')}
  const change=<K extends keyof ReplayForm>(key:K,value:ReplayForm[K])=>setForm(f=>({...f,[key]:value}));
- function reset(){setForm({...empty,aired_at:new Date().toISOString()});setMode('draft');setWhen('');setEditing(null)}
+ function reset(){setForm({...empty,show_id:showFilter,aired_at:new Date().toISOString()});setMode('draft');setWhen('');setEditing(null)}
  async function save(event:React.FormEvent){
   event.preventDefault();setBusy(true);setError('');setMessage('');
   try{
@@ -48,7 +48,7 @@ export default function ReplaysV2(){
  }
  const source=parseVideoUrl(form.source_url);
  const embed=videoEmbedUrl(source?.platform||null,source?.externalId||null,form.source_url);
- const filtered=items.filter(x=>(filter==='all'||(filter==='scheduled'?x.status==='draft'&&!!x.publish_at:x.status===filter))&&(!showFilter||x.show_id===showFilter)&&(x.title+' '+x.description).toLowerCase().includes(query.toLowerCase()));
+ const filtered=items.filter(x=>(filter==='all'||(filter==='scheduled'?x.status==='draft'&&!!x.publish_at:(filter==='draft'?x.status==='draft'&&!x.publish_at:x.status===filter)))&&(!showFilter||x.show_id===showFilter)&&(x.title+' '+x.description).toLowerCase().includes(query.toLowerCase()));
  const planned=items.filter(x=>x.status==='draft'&&x.publish_at).length;
  return <div className="v2-regie">
   <header className="v2-head"><div><p className="v2-newsroom-eyebrow">DIFFUSION · VIDÉOTHÈQUE</p>
