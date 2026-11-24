@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Menu, X, Search, ChevronRight, ChevronDown, House } from 'lucide-react';
+import { Menu, X, Search, ChevronRight, ChevronDown } from 'lucide-react';
 import { EDITORIAL_COUNTRIES } from '../lib/editor/countries';
 import TvPlusLogo from './TvPlusLogo';
 import { topicLinks, topics as staticTopics } from '../lib/data';
@@ -56,13 +56,14 @@ export default function Header({
             aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={menuOpen}
             aria-controls="site-mega-menu"
-            onClick={() => setMenuOpen((v) => !v)}
+            type="button"
+            onClick={() => { setMenuOpen(v => !v); setSearchOpen(false); setCountryOpen(false); }}
           >
             {menuOpen ? <X size={26} strokeWidth={2.4} /> : <Menu size={26} strokeWidth={2.4} />}
             <span>Menu</span>
           </button>
 
-          <Link href="/" className="brand" aria-label="TV Plus, accueil">
+          <Link href="/" className="brand" aria-label="TV+ Afrique — retourner à l’accueil" title="Retour à l’accueil">
             <TvPlusLogo />
           </Link>
 
@@ -79,7 +80,8 @@ export default function Header({
               aria-label={searchOpen ? 'Fermer la recherche' : 'Rechercher'}
               aria-expanded={searchOpen}
               aria-controls="site-search-form"
-              onClick={() => setSearchOpen((v) => !v)}
+              type="button"
+              onClick={() => { setSearchOpen(v => !v); setMenuOpen(false); setCountryOpen(false); }}
             >
               {searchOpen ? <X size={19} /> : <Search size={19} />}
             </button>
@@ -101,11 +103,8 @@ export default function Header({
             ))}
           </div>
           <div className="nav-links">
-            <Link href="/" className={'nav-home-btn'+(pathname==='/'?' is-active':'')} aria-label="Accueil">
-              <House size={16} aria-hidden="true"/> Accueil
-            </Link>
             <button type="button" className="nav-country-toggle" aria-expanded={countryOpen}
-              aria-controls="country-navigation" onClick={()=>{setCountryOpen(v=>!v);setMenuOpen(false)}}>
+              aria-controls="country-navigation" onClick={()=>{setCountryOpen(v=>!v);setMenuOpen(false);setSearchOpen(false)}}>
               <GabonMark /> Gabon <ChevronDown size={14} aria-hidden="true"/>
             </button>
             {categories.map((category) => (
@@ -148,7 +147,6 @@ export default function Header({
           <div className="shell mega-inner">
             <div className="mega-col mega-lead">
               <span className="mega-label">Navigation</span>
-              <Link href="/" onClick={() => setMenuOpen(false)}>Accueil <ChevronRight size={15}/></Link>
               <Link href="/actualites" onClick={() => setMenuOpen(false)}>Toutes les actualités <ChevronRight size={15}/></Link>
               <Link href="/pays/ga" onClick={() => setMenuOpen(false)}>Gabon et pays <ChevronRight size={15}/></Link>
               {topics.map((topic) => (

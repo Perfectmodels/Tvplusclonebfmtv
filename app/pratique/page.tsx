@@ -6,7 +6,14 @@ import { getPracticalServices } from '../../lib/db/repository';
 export const revalidate = 60;
 
 export default async function PratiquePage() {
-  const { data: services } = await getPracticalServices();
+  const { data: available } = await getPracticalServices();
+  const services = available.length ? available : [
+    { name:'Programme TV', description:'Voir les horaires des émissions et rendez-vous à l’antenne.',href:'/programme-tv',icon:'TV' },
+    { name:'En direct', description:'Accéder au lecteur TV+ Afrique.',href:'/direct',icon:'TV' },
+    { name:'Émissions et replays', description:'Consulter les émissions et leurs épisodes.',href:'/replay-emissions',icon:'RE' },
+    { name:'Fil info', description:'Suivre les dernières dépêches publiées.',href:'/news-24-7',icon:'FI' },
+    { name:'Contact', description:'Contacter la rédaction de TV+ Afrique.',href:'/contacts',icon:'CO' },
+  ];
 
   return (
     <main className="shell listing-page">

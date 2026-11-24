@@ -558,3 +558,11 @@ button.direct-player, button.direct-player-large {
  .mega-inner{grid-template-columns:1fr;gap:22px;padding:22px 0;}
  .mega-col{gap:8px;}
 }
+
+/* Le logo TV+ est le seul accès Accueil du bandeau principal. */
+.header-top .brand {display:inline-flex;align-items:center;justify-content:center;min-width:64px;min-height:52px;cursor:pointer;}
+.header-top .brand:focus-visible {outline:3px solid #ffd400;outline-offset:4px;border-radius:4px;}
+@media(max-width:760px){
+  .nav-primary .nav-links .nav-country-toggle {margin-left:0;}
+  .nav-primary .nav-links {justify-content:flex-start;gap:4px;}
+}

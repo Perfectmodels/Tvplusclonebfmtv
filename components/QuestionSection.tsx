@@ -38,8 +38,8 @@ export default function QuestionSection() {
         <div>
           <h2 id="question-title">Une question sur l’actualité ?</h2>
           <p>
-            Découvrez dans l’application TV Plus notre outil conversationnel qui répond à toutes
-            vos questions sur l’actualité, la politique, l’économie, le sport…
+            Écrivez à la rédaction au sujet de l’actualité, de la politique, de l’économie
+            ou du sport. Votre demande sera transmise à notre équipe.
           </p>
         </div>
       </div>
