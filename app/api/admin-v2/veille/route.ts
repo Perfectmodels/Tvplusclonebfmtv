@@ -1,3 +1,4 @@
+import { analyzeWatchItem } from '../../../../lib/editorial/watch-angles';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
@@ -20,7 +21,7 @@ export const GET = handleRoute(async (request: NextRequest) => {
     const items = query ? snapshot.filter((item) =>
       [item.title, item.summary, item.source].some((text) => text.toLocaleLowerCase('fr').includes(query))) : snapshot;
     return ok({
-      items: items.slice((page - 1) * pageSize, page * pageSize),
+      items: items.slice((page - 1) * pageSize, page * pageSize).map((item) => ({ ...item, analysis: analyzeWatchItem(item) })),
       total: items.length,
       pageSize,
       canRemix: actor.permissions.includes('articles.create'),

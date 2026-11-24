@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation';
 import { ExternalLink, RotateCw, Sparkles } from 'lucide-react';
 import { watchDraftKey, type WatchDraft, type WatchItem, type WatchRegion } from '../../lib/editorial/veille-types';
 
-type Snapshot = { items: WatchItem[]; total: number; pageSize: number; canRemix: boolean; groqReady: boolean };
+type AnalyzedItem = WatchItem & {
+  analysis: { desk: string; brief: boolean; angles: { label: string; question: string; prompt: string }[] };
+};
+type Snapshot = { items: AnalyzedItem[]; total: number; pageSize: number; canRemix: boolean; groqReady: boolean };
 const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Libreville' });
 
 export default function EditorialWatch({ actorId }: { actorId: string }) {
@@ -18,7 +21,7 @@ export default function EditorialWatch({ actorId }: { actorId: string }) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selected, setSelected] = useState<WatchItem | null>(null);
+  const [selected, setSelected] = useState<AnalyzedItem | null>(null);
   const [angle, setAngle] = useState('');
   const [notes, setNotes] = useState('');
   const [draft, setDraft] = useState<WatchDraft | null>(null);
@@ -43,11 +46,11 @@ export default function EditorialWatch({ actorId }: { actorId: string }) {
     return () => controller.abort();
   }, [region, page, query, revision]);
 
-  function select(item: WatchItem | null) {
+  function select(item: AnalyzedItem | null) {
     generation.current?.abort();
     setGenerating(false);
     setSelected(item);
-    setAngle('');
+    setAngle(item?.analysis.angles[0]?.prompt ?? '');
     setNotes('');
     setDraft(null);
     setRemixError('');
@@ -93,7 +96,7 @@ export default function EditorialWatch({ actorId }: { actorId: string }) {
   return <div className="v2-newsroom-page">
     <header className="v2-newsroom-page-header"><div>
       <h1>Veille éditoriale</h1>
-      <p>Les dernières publications des flux RSS suivis par la rédaction.</p>
+      <p>Examinez les pistes proposées pour chaque sujet avant de préparer un article.</p>
     </div></header>
     <div className="v2-section-nav" role="group" aria-label="Zone de veille">
       {(['gabon', 'afrique'] as const).map((zone) => <button key={zone} type="button" aria-pressed={region === zone}
@@ -104,17 +107,26 @@ export default function EditorialWatch({ actorId }: { actorId: string }) {
       <button type="button" className="admin-btn admin-btn-ghost" onClick={() => select(null)}>Retour aux sujets</button>
       <h2>{selected.title}</h2>
       <p><a href={selected.href} target="_blank" rel="noopener noreferrer">Consulter la source · {selected.source}</a></p>
-      <form onSubmit={remix}>
-        <label className="v2-field"><span>Angle souhaité (facultatif)</span>
-          <input value={angle} maxLength={280} onChange={(event) => setAngle(event.target.value)} />
+      {selected.analysis.brief && <p className="v2-note">L’extrait RSS est court. Complétez la veille avec des faits vérifiés avant de rédiger.</p>}
+      <h3>Angles à discuter</h3>
+      <div className="v2-watch-angles">
+        {selected.analysis.angles.map((idea) => <div key={idea.label}>
+          <button type="button" className="admin-btn admin-btn-ghost" aria-pressed={angle === idea.prompt} disabled={generating}
+            onClick={() => { setAngle(idea.prompt); setDraft(null); }}>{idea.label}</button>
+          <p>{idea.question}</p>
+        </div>)}
+      </div>
+      {snapshot?.canRemix && snapshot.groqReady && <form onSubmit={remix}>
+        <label className="v2-field"><span>Angle retenu</span>
+          <textarea required disabled={generating} value={angle} maxLength={280} onChange={(event) => { setAngle(event.target.value); setDraft(null); }} />
         </label>
         <label className="v2-field"><span>Faits vérifiés à ajouter{selected.summary.length >= 60 && selected.summary !== selected.title ? ' (facultatif)' : ''}</span>
           <textarea value={notes} maxLength={2200} onChange={(event) => setNotes(event.target.value)} />
         </label>
-        <button type="submit" className="admin-btn admin-btn-primary" disabled={generating}>
+        <button type="submit" className="admin-btn admin-btn-primary" disabled={generating || angle.trim().length < 8}>
           <Sparkles size={16} aria-hidden="true" />{generating ? 'Réécriture en cours…' : 'Générer une proposition'}
         </button>
-      </form>
+      </form>}
       {remixError && <p className="v2-error" role="alert">{remixError}</p>}
       {draft && <article className="v2-note">
         <h3>{draft.title}</h3>
@@ -140,13 +152,14 @@ export default function EditorialWatch({ actorId }: { actorId: string }) {
             <p className="v2-lede">{item.source}{item.publishedAt && <> · <time dateTime={item.publishedAt}>{dateFormat.format(new Date(item.publishedAt))}</time></>}</p>
             <h2>{item.title}</h2>
             {item.summary && item.summary !== item.title && <p>{item.summary.length > 320 ? item.summary.slice(0, 317) + '…' : item.summary}</p>}
+            <p><strong>{item.analysis.desk} · Angle proposé</strong><br />{item.analysis.angles[0].label}</p>
             <div className="v2-actions">
               <a href={item.href} target="_blank" rel="noopener noreferrer" className="admin-btn admin-btn-ghost">
                 Lire la source <ExternalLink size={15} aria-hidden="true" />
               </a>
-              {snapshot.canRemix && snapshot.groqReady && <button className="admin-btn admin-btn-primary" type="button" onClick={() => select(item)}>
-                <Sparkles size={16} aria-hidden="true" /> Remixer avec Groq
-              </button>}
+              <button className="admin-btn admin-btn-primary" type="button" onClick={() => select(item)}>
+                <Sparkles size={16} aria-hidden="true" /> Étudier les angles
+              </button>
             </div>
           </article>)}
         </div>

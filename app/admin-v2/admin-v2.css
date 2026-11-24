@@ -1435,3 +1435,9 @@
 .v2-watch-panel > .v2-lede { margin: 0; }
 .v2-watch-panel > .v2-note { margin-top: 16px; }
 .v2-watch-panel form { margin-top: 16px; }
+
+.v2-watch-angles { display: grid; gap: 8px; }
+.v2-watch-angles > div { padding: 10px; border: 1px solid #d8e5f4; border-radius: 8px; }
+.v2-watch-angles button { white-space: normal; text-align: start; }
+.v2-watch-angles button[aria-pressed="true"] { background: #103d83; color: white; }
+.v2-watch-angles p { margin: 8px 0 0; }
