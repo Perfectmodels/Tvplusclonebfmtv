@@ -39,7 +39,7 @@ export default async function Home({
 
   // Les articles sont déjà triés du plus récent au plus ancien par published_at.
   // Les plus récents sont attribués d'abord au bloc « À la une ».
-  const { alert, hero, rail, selection, feed, blocks } = distributeHomepageStories(filtered, categories);
+  const { alert, hero, rail, feed, blocks } = distributeHomepageStories(filtered, categories);
 
   return (
     <>
@@ -87,16 +87,6 @@ export default async function Home({
             </div>
 
             <AdvertisingCarousel placement="after-hero" ads={ads?.["after-hero"] ?? []} />
-
-            {selection.length > 0 && (
-              <CategoryNewsCarousel
-                title="Sélection de la rédaction"
-                sectionId="selection-title"
-                items={selection}
-                moreHref="/plan-du-site"
-                selection
-              />
-            )}
 
             <AdvertisingCarousel placement="after-selection" ads={ads?.["after-selection"] ?? []} />
 
