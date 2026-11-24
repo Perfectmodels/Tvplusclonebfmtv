@@ -34,7 +34,10 @@ function check(href,source){
  const url=href.split(/[?#]/)[0]||'/';
  if(url.startsWith('/api/')||url.startsWith('/_next/'))return;
  links++;
- if(!routes.some(route=>route.test(url)))errors.push(source+' : route non trouvée '+url);
+ // Une URL telle que '/a/' + shortCode est un préfixe dynamique valide.
+ const matches=routes.some(route=>route.test(url));
+ const dynamicPrefix=url!=='/'&&url.endsWith('/')&&routes.some(route=>route.test(url+'__identifiant__'));
+ if(!matches&&!dynamicPrefix)errors.push(source+' : route non trouvée '+url);
 }
 for(const file of all){
  const src=fs.readFileSync(file,'utf8');
@@ -44,7 +47,12 @@ for(const file of all){
  for(const m of src.matchAll(/\[\s*['"][^'"]+['"]\s*,\s*['"](\/[^'"]+)['"]\s*\]/g))check(m[1],label);
  for(const m of src.matchAll(/<button\b([\s\S]*?)>/g)){
   buttons++;
-  if(!/\bonClick\s*=|\bonSubmit\s*=|\bformAction\s*=|\btype\s*=\s*['"]submit['"]|\bdata-open-live\b/.test(m[1])){
+  // JSX peut contenir '>' dans disabled={page > 1} : analyser aussi la
+  // fin du tag et ignorer la fermeture visuelle qui n'est pas celle du bouton.
+  const tail=src.slice(m.index,Math.min(src.length,m.index+650));
+  const tagCandidate=tail.split(/<\/(?:button|div|form)>/)[0];
+  if(!/\bonClick\s*=|\bonSubmit\s*=|\bformAction\s*=|\btype\s*=\s*['"]submit['"]|\bdata-open-live\b/.test(m[1])
+     && !/\bonClick\s*=|\bformAction\s*=/.test(tagCandidate.slice(0,380))){
    warnings.push(label+' : bouton sans action évidente : '+m[1].replace(/\s+/g,' ').slice(0,75));
   }
  }
