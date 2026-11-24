@@ -18,7 +18,7 @@ import {
   witnesses as staticWitnesses,
   videos as staticVideos,
 } from '../extra';
-import { getServerSupabase } from '../supabase/server';
+import { getServerSupabase, getPublicServerSupabase } from '../supabase/server';
 import { categoryLabel, mapArticle, mapFilActu } from './mappers';
 import { relativeTime } from './format';
 import type {
@@ -379,7 +379,10 @@ export async function getHeaderTopics(): Promise<Wrapped<TopicItem[]>> {
 }
 
 export async function getNewsletterFormats(): Promise<Wrapped<typeof staticNewsletters>> {
-  if (v2.usesTvplusV2()) return { data: [], source: 'supabase' as const };
+  if (v2.usesTvplusV2()) return { data: [{
+    id:'tvplus-recap-actu',name:'Récap Actu',frequency:'Inscription ouverte',
+    description:'Enregistrez votre adresse pour être informé lors de l’activation des envois de la rédaction.',
+  }],source:'supabase' as const };
   const result = await fromSupabase<NewsletterFormatRow[]>(
     (db) => db.from('newsletter_formats').select('id, name, frequency, description').order('id'),
     [],
@@ -491,7 +494,13 @@ export async function searchAll(query: string) {
 }
 
 export async function subscribeNewsletter(email: string, newsletter: string) {
-  if (v2.usesTvplusV2()) throw new Error('La newsletter du clone n’est pas encore adaptée à la base TV+ V2.');
+  if (v2.usesTvplusV2()) {
+    const {error} = await getPublicServerSupabase().from('tvplus_reader_inbox').insert({
+      kind:'newsletter',email:email.toLowerCase().trim(),newsletter,
+    });
+    if(error && error.code!=='23505')throw new Error('Inscription indisponible. Veuillez réessayer.');
+    return {ok:true};
+  }
   const db = getServerSupabase();
   const { data, error } = await db
     .from('newsletter_subscriptions')
@@ -508,7 +517,14 @@ export async function createContact(payload: {
   subject: string;
   message: string;
 }) {
-  if (v2.usesTvplusV2()) throw new Error('Le formulaire de contact nécessite une migration dédiée, sans toucher aux tables TV+ V2.');
+  if (v2.usesTvplusV2()) {
+    const {error} = await getPublicServerSupabase().from('tvplus_reader_inbox').insert({
+      kind:'contact',name:payload.name,email:payload.email.toLowerCase().trim(),
+      subject:payload.subject,body:payload.message,
+    });
+    if(error)throw new Error('Le message n’a pas pu être enregistré. Veuillez réessayer.');
+    return {ok:true};
+  }
   const db = getServerSupabase();
   const { data, error } = await db.from('contacts').insert(payload).select('id, created_at').single();
   if (error) throw new Error(error.message);

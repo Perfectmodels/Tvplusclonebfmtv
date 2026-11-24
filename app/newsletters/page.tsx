@@ -12,8 +12,8 @@ export default async function NewslettersPage() {
       <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Newsletters' }]} />
       <h1 className="page-title">Newsletters</h1>
       <p className="page-intro">
-        Choisissez les rendez-vous qui vous intéressent : l’essentiel de l’actualité livré
-        directement dans votre boîte mail.
+        Laissez votre adresse e-mail pour être averti dès que les newsletters TV+ Afrique
+        seront activées. Aucun envoi automatique n’est encore programmé.
       </p>
       <div className="newsletter-list">
         {newsletters.map((n) => (

@@ -31,7 +31,7 @@ export default function ContactForm() {
   if (status === 'done') {
     return (
       <p className="form-success" role="status">
-        <Check size={16} /> Votre message a bien été transmis à la rédaction.
+        <Check size={16} /> Votre message a été enregistré pour la rédaction.
       </p>
     );
   }

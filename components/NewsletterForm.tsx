@@ -32,7 +32,7 @@ export default function NewsletterForm({ name }: { name: string }) {
   if (status === 'done') {
     return (
       <p className="form-success" role="status">
-        <Check size={16} /> Merci ! Votre inscription à « {name} » est enregistrée.
+        <Check size={16} /> Votre demande d’inscription à « {name} » est enregistrée. Les envois seront disponibles après leur activation.
       </p>
     );
   }

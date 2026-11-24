@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Newsletter({
   title = 'Recevez votre Récap Actu',
-  description = 'Chaque soir, les informations essentielles de la journée dans votre boîte mail.',
+  description = 'Inscrivez-vous pour être informé lors de la mise en service des envois de notre rédaction.',
   href = '/newsletters',
   label = 'Inscrivez-vous à la newsletter',
 }: {
