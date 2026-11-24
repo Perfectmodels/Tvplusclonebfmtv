@@ -1,12 +1,44 @@
+/* Typographie unique : Barlow (corps), Barlow Bold (interface), Barlow Black (titres). */
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/inter-latin.woff2') format('woff2');
+  font-family: 'Barlow';
+  src: url('/fonts/barlow-latin-400.woff2') format('woff2');
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Barlow';
+  src: url('/fonts/barlow-latin-700.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Barlow';
+  src: url('/fonts/barlow-latin-900.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Barlow Bold';
+  src: url('/fonts/barlow-latin-700.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Barlow Black';
+  src: url('/fonts/barlow-latin-900.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 900;
   font-display: swap;
 }
 
 :root {
+  --font-barlow: 'Barlow', Arial, Helvetica, sans-serif;
+  --font-barlow-bold: 'Barlow Bold', 'Barlow', Arial, Helvetica, sans-serif;
+  --font-barlow-black: 'Barlow Black', 'Barlow', Arial, Helvetica, sans-serif;
   --navy: #00007d;
   --navy-deep: #000f32;
   --blue: #0032c8;
@@ -32,7 +64,7 @@ body {
   margin: 0;
   background: #fff;
   color: var(--ink);
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  font-family: var(--font-barlow);
   font-size: 16px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
@@ -4779,3 +4811,7 @@ main {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Hiérarchie typographique : Barlow Black pour les titres, Barlow Bold pour l'interface. */
+h1, h2, h3 { font-family: var(--font-barlow-black); font-weight: 900; }
+h4, h5, h6 { font-family: var(--font-barlow-bold); font-weight: 700; }

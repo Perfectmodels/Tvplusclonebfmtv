@@ -60,7 +60,7 @@ export default function ArticleView({
               <div className="article-feature-content">
                 <Link href={categoryPath} className="article-feature-category">{story.category}</Link>
                 <h1>{story.title}</h1>
-                <ArticleReadCounter shortCode={story.shortId} initial={initialReadCount}/>
+                <ArticleReadCounter shortCode={story.shortId} initial={story.reads ?? initialReadCount}/>
                 <p className="article-feature-intro">{story.chapter || story.summary}</p>
               </div>
             </header>

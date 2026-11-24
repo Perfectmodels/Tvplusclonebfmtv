@@ -24,7 +24,7 @@ type Article = {
   category: string | null; cover_url: string | null; published_at: string; updated_at: string | null;
   featured: number; is_alert: number; is_video_article: number; tags_json: string | null;
   seo_title: string | null; seo_description: string | null; country_code: string;
-  author_name?: string | null;
+  author_name?: string | null; article_reads?: number;
   content_html?: string; cover_alt?: string; cover_credit?: string; cover_caption?: string; province_slug?: string;
 };
 
@@ -40,7 +40,8 @@ function mapArticle(row: Article): PublicArticle {
     time: relativeTime(publishedAt), publishedAt, updatedAt: row.updated_at?.replace(' ', 'T').concat('Z'),
     countryCode: row.country_code, province: row.province_slug, tags, keywords: tags,
     seoTitle: row.seo_title, seoDescription: row.seo_description, contentHtml: row.content_html,
-    wordCount, readingTime: wordCount ? Math.ceil(wordCount / 220) : undefined, author: row.author_name || 'La rédaction TV+',
+    wordCount, readingTime: wordCount ? Math.ceil(wordCount / 220) : undefined,
+    author: row.author_name || 'La rédaction TV+', reads: Number(row.article_reads) || 0,
   };
 }
 

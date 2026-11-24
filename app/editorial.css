@@ -2,7 +2,7 @@
 
 /* TV+ Afrique — couche éditoriale, isolée des styles existants. */
 :root {
-  --editorial-font: 'Barlow', 'Inter', Arial, sans-serif;
+  --editorial-font: var(--font-barlow);
   --editorial-radius: 10px;
   --editorial-ink: #071632;
   --editorial-blue: #082772;

@@ -148,6 +148,7 @@ export type PublicArticle = Story & {
   coverCredit?: string | null;
   coverCaption?: string | null;
   readingTime?: number;
+  reads?: number;
 };
 
 function toPublicArticle(a: ArticleRow): PublicArticle {
