@@ -1,5 +1,5 @@
 import 'server-only';
-import { categorySlug } from '../categories';
+import { canonicalCategoryLabel, categorySlug } from '../categories';
 import { relativeTime } from './format';
 import { videoWatchUrl } from '../video/providers';
 import type { programs } from '../extra';
@@ -34,7 +34,7 @@ function mapArticle(row: Article): PublicArticle {
   const wordCount = row.content_html?.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
   return {
     articleId: row.id, shortId: row.short_code, slug: row.slug, title: row.title,
-    category: row.category || 'Actualité', summary: row.excerpt || '', chapter: row.excerpt,
+    category: canonicalCategoryLabel(row.category || 'Actualité'), summary: row.excerpt || '', chapter: row.excerpt,
     image: row.cover_url || '', coverAlt: row.cover_alt, coverCredit: row.cover_credit, coverCaption: row.cover_caption,
     featured: Boolean(Number(row.featured)), kind: Number(row.is_alert) ? 'alert' : Number(row.is_video_article) ? 'video' : undefined,
     time: relativeTime(publishedAt), publishedAt, updatedAt: row.updated_at?.replace(' ', 'T').concat('Z'),
@@ -62,7 +62,8 @@ export async function getLwsArticle(filters: { code: string } | { slug: string }
 
 export async function getLwsCategories() {
   const result = await read<{ items: { name: string }[] }>('categories', {}, ['public-categories']);
-  return { data: result.items.map(row => row.name), source: 'mysql' as const };
+  const names = [...new Set(result.items.map(row => canonicalCategoryLabel(row.name)))];
+  return { data: names, source: 'mysql' as const };
 }
 
 type Program = (typeof programs)[number];
