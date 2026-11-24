@@ -24,10 +24,10 @@ export async function newsroom<T>(actor: V2Actor, operation: string, params: Rec
   return await response.json() as T;
 }
 
-export async function getReferences(db: Awaited<ReturnType<typeof createAuthClient>>, categoryId: string, mediaId?: string | null) {
+export async function getReferences(db: Awaited<ReturnType<typeof createAuthClient>>, categoryId: string | null | undefined, mediaId?: string | null) {
   const [category, media] = await Promise.all([
-    db.from('categories').select('id,slug,name,description,position,parent_id').eq('id',categoryId).single(),
-    mediaId ? db.from('media').select('id,path,bucket,imgbb_url,alt,caption,credit,mime_type,width,height').eq('id',mediaId).single()
+    categoryId ? db.from('categories').select('id,slug,name,description,position,parent_id').eq('id',categoryId).maybeSingle() : Promise.resolve({data:null,error:null}),
+    mediaId ? db.from('media').select('id,path,bucket,imgbb_url,alt,caption,credit,mime_type,width,height').eq('id',mediaId).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
   if (category.error || media.error) throw new ApiError('Rubrique ou média inaccessible.', 400);

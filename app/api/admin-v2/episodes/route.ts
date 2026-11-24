@@ -4,6 +4,7 @@ import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { ApiError, handleRoute,ok,created } from '../../../../lib/api/response';
 import { parseVideoUrl } from '../../../../lib/video/providers';
 import { revalidateTag } from 'next/cache';
+import { newsroom, usesLwsCatalog } from '../../../../lib/admin-v2/lws';
 export const dynamic='force-dynamic';
 const payload=z.object({
   show_id:z.string().uuid(),title:z.string().trim().min(3).max(200),
@@ -29,33 +30,37 @@ function clean(input:unknown){
 }
 const select='id,show_id,title,description,aired_at,duration_seconds,platform,external_id,source_url,thumbnail_url,publish_at,status,updated_at';
 export const GET=handleRoute(async()=>{
- const {db}=await requireV2Api('shows.manage');
+ const {actor,db}=await requireV2Api('shows.manage');
+ if(usesLwsCatalog())return ok(await newsroom(actor,'episodes.list'));
  const {data,error}=await db.from('episodes').select(select).order('aired_at',{ascending:false}).limit(300);
  if(error)throw new ApiError('Replays indisponibles.',503,'UNAVAILABLE');
  return ok({items:data??[]});
 });
 export const POST=handleRoute(async(request:NextRequest)=>{
- const {db}=await requireV2Api('shows.manage');
+ const {actor,db}=await requireV2Api('shows.manage');
  const values=clean(await request.json());
+ if(usesLwsCatalog()){const data=await newsroom(actor,'episodes.create',{data:values});revalidateTag('public-episodes');return created(data);}
  const {data,error}=await db.from('episodes').insert(values).select('id,title').single();
  if(error)throw new ApiError('Création du replay refusée.',403,'UNAUTHORIZED');
  revalidateTag('public-episodes');return created(data);
 });
 export const PATCH=handleRoute(async(request:NextRequest)=>{
- const {db}=await requireV2Api('shows.manage');
+ const {actor,db}=await requireV2Api('shows.manage');
  const input=await request.json();
  const id=z.string().uuid().safeParse(input?.id);
  if(!id.success)throw new ApiError('Identifiant du replay invalide.',400);
  const values=clean(input);
+ if(usesLwsCatalog()){const data=await newsroom(actor,'episodes.edit',{id:id.data,data:values});revalidateTag('public-episodes');return ok(data);}
  const {data,error}=await db.from('episodes').update(values).eq('id',id.data).select('id,title').maybeSingle();
  if(error||!data)throw new ApiError('Modification du replay refusée.',403,'UNAUTHORIZED');
  revalidateTag('public-episodes');return ok(data);
 });
 
 export const DELETE=handleRoute(async(request:NextRequest)=>{
- const {db}=await requireV2Api('shows.manage');
+ const {actor,db}=await requireV2Api('shows.manage');
  const p=z.object({id:z.string().uuid()}).safeParse(await request.json());
  if(!p.success)throw new ApiError('Identifiant invalide.',400);
+ if(usesLwsCatalog()){const data=await newsroom(actor,'episodes.delete',{id:p.data.id});revalidateTag('public-episodes');return ok(data);}
  const {error}=await db.from('episodes').delete().eq('id',p.data.id);
  if(error)throw new ApiError('Suppression du replay refusée.',403,'UNAUTHORIZED');
  revalidateTag('public-episodes');return ok({deleted:true});
