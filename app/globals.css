@@ -1043,17 +1043,26 @@ main {
 }
 
 .share-btn {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   border: 1px solid var(--line);
+  border-radius: 6px;
   background: #fff;
   color: var(--navy);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
+.share-btn-labeled {
+  padding: 0 12px;
+}
+
+.share-btn-primary,
 .share-btn:hover {
   background: var(--navy);
   color: #fff;
@@ -3989,14 +3998,33 @@ main {
 
 .share-buttons-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  max-width: 100%;
 }
 
 .share-feedback {
-  margin-left: 10px;
-  color: var(--blue);
-  font-size: 13px;
-  font-weight: 600;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.share-manual {
+  display: grid;
+  flex-basis: 100%;
+  gap: 4px;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.share-manual input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
 }
 
 @media (max-width: 1000px) {

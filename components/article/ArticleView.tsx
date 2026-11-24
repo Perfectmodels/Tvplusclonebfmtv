@@ -86,7 +86,7 @@ export default function ArticleView({
                   <strong>{author}</strong>
                 </div>
               </div>
-              <ShareButtons url={shortUrl} title={story.title} />
+              <ShareButtons key={shortUrl} url={shortUrl} title={story.title} />
             </footer>
           </article>
 
