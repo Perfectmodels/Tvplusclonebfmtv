@@ -1,7 +1,5 @@
-import { requireV2Page } from '../../../lib/auth/v2-admin';
-import TvPlusAssistant from '../../../components/admin/TvPlusAssistant';
+import { redirect } from 'next/navigation';
 
-export default async function Page() {
-  await requireV2Page();
-  return <TvPlusAssistant />;
+export default function AssistantPage() {
+  redirect('/recherche?assistant=1');
 }

@@ -14,10 +14,10 @@ function limits() {
   return { user: bound(process.env.TVPLUS_AI_DAILY_USER_LIMIT, 12, 100), global: bound(process.env.TVPLUS_AI_DAILY_GLOBAL_LIMIT, 120, 1000) };
 }
 
-function names(actorId: string) {
+function names(actorId: string, scope: 'editorial' | 'public' = 'editorial') {
   const secret = process.env.AUTH_SESSION_SECRET?.trim();
   if (!process.env.BLOB_READ_WRITE_TOKEN || !secret) throw unavailable();
-  const prefix = 'editorial-ai-quota/' + gabonDate.format(new Date()) + '/';
+  const prefix = (scope === 'public' ? 'public-ai-quota/' : 'editorial-ai-quota/') + gabonDate.format(new Date()) + '/';
   const file = (id: string) => prefix + createHmac('sha256', secret).update('ai-quota:' + id).digest('hex') + '.txt';
   return { user: file('account:' + actorId), global: file('global') };
 }
@@ -74,4 +74,13 @@ export async function reserveAiRequest(actorId: string) {
   await increment(paths.global, limit.global, 'Le quota IA de TV+ Afrique est atteint pour aujourd’hui.', signal);
   const used = await increment(paths.user, limit.user, userMessage, signal);
   return { limit: limit.user, remaining: limit.user - used };
+}
+
+export async function reservePublicAiRequest(visitor: string) {
+  const paths = names(visitor, 'public');
+  const signal = AbortSignal.timeout(6500);
+  const message = 'La limite de l’assistant est atteinte pour aujourd’hui.';
+  if (((await current(paths.user, signal))?.size ?? 0) >= 6) throw new ApiError(message, 429, 'RATE_LIMITED');
+  await increment(paths.global, 60, message, signal);
+  await increment(paths.user, 6, message, signal);
 }

@@ -15,6 +15,7 @@ export default async function SearchPage({
       <p className="page-intro">
         Cherchez parmi les articles, vidéos, émissions et podcasts publiés sur TV Plus.
       </p>
+      <p><a href="/recherche?assistant=1">Demander à TV+Assistant de trouver un article</a></p>
       <SearchClient initialQuery={q ?? ''} />
     </main>
   );

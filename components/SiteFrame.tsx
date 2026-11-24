@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import PublicAssistant from './PublicAssistant';
 import BackToTop from './BackToTop';
 import LiveOverlayProvider from './video/LiveOverlayProvider';
 
@@ -29,6 +30,7 @@ export default function SiteFrame({ children, header, footer }: {
       <div id="contenu">{children}</div>
       {footer}
       <BackToTop />
+      <PublicAssistant />
     </LiveOverlayProvider>
   );
 }
