@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Newspaper, Images, ListTree, Tv, PlayCircle, MonitorPlay,
-  RectangleHorizontal, Menu, X, LogOut, ExternalLink, Plus, ChevronRight,
+  RectangleHorizontal, Menu, X, LogOut, ExternalLink, Plus, ChevronRight, UsersRound,
 } from 'lucide-react';
 import TvPlusLogo from '../TvPlusLogo';
 
@@ -15,6 +15,7 @@ const GROUPS=[
     {href:'/admin-v2/articles',label:'Articles',icon:Newspaper,permission:'articles.read_all'},
     {href:'/admin-v2/media',label:'Médiathèque',icon:Images,permission:'media.upload'},
     {href:'/admin-v2/categories',label:'Rubriques',icon:ListTree,permission:'categories.manage'},
+    {href:'/admin-v2/redacteurs',label:'Rédacteurs',icon:UsersRound,permission:'articles.read_all'},
   ] },
   { label:'Diffusion', links:[
     {href:'/admin-v2/shows',label:'Émissions',icon:Tv,permission:'shows.manage'},

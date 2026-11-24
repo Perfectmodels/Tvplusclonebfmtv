@@ -1296,3 +1296,18 @@
   .v2-newsroom-story-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
   .v2-newsroom-story-actions .v2-newsroom-action { width:100%; justify-content:center; }
 }
+
+/* Profils avancés et espace rédacteur */
+.v2-profile-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;padding:18px}
+.v2-profile-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#4b5b73;font-weight:700}
+.v2-profile-form input,.v2-profile-form select,.v2-profile-form textarea{
+  width:100%;padding:10px 12px;border:1px solid #d7dfeb;border-radius:9px;font:inherit;font-size:14px;color:#17233a;background:#fff}
+.v2-profile-form textarea{min-height:90px;resize:vertical}
+.v2-profile-form button{grid-column:1/-1;justify-self:start;padding:11px 18px;border:0;border-radius:9px;
+  background:#103d83;color:#fff;font-weight:700;cursor:pointer}
+.v2-author-cell{display:flex;align-items:center;gap:10px}
+.v2-author-cell img{border-radius:50%;object-fit:cover;background:#e8eef7}
+.v2-author-cell small{display:block;color:#6b7a90;font-size:12px;font-weight:400}
+.v2-badge-temp{display:inline-block;margin-right:10px;padding:3px 8px;border-radius:999px;
+  background:#fff3d6;color:#8a5a00;font-size:11px;font-weight:700}
+.form-info{padding:12px 16px;border-radius:9px;background:#eaf4ff;color:#103d83;font-weight:700}

@@ -69,13 +69,21 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
             if (!preg_match('/^[a-z_]{2,50}$/D', $role)) respond(400, ['error' => 'Rôle invalide.']);
             $id = (string)($data['id'] ?? '');
             if ($id !== '' && !$isUuid($id)) respond(400, ['error' => 'Identifiant invalide.']);
+            if (!empty($data['birth_date']) && !preg_match('/^\d{4}-\d{2}-\d{2}$/D', (string)$data['birth_date'])) respond(400, ['error' => 'Date de naissance invalide.']);
             $check = $pdo->prepare('SELECT id FROM tvp_profiles WHERE email=?');
             $check->execute([$email]);
             if ($check->fetchColumn()) respond(409, ['error' => 'Un compte existe déjà avec cette adresse e-mail.']);
             if ($id === '') $id = $pdo->query('SELECT UUID()')->fetchColumn();
-            $q = $pdo->prepare("INSERT INTO tvp_profiles (id,email,full_name,role,password_hash,is_active,created_at,updated_at)
-                VALUES (?,?,?,?,?,1,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))");
-            $q->execute([$id, $email, ($data['full_name'] ?? null) ?: null, $role, $data['password_hash']]);
+            $q = $pdo->prepare("INSERT INTO tvp_profiles
+                (id,email,full_name,first_name,last_name,photo_url,birth_date,phone,city,bio,role,password_hash,is_active,is_temporary,created_at,updated_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))");
+            $q->execute([
+                $id, $email, ($data['full_name'] ?? null) ?: null,
+                ($data['first_name'] ?? null) ?: null, ($data['last_name'] ?? null) ?: null,
+                ($data['photo_url'] ?? null) ?: null, ($data['birth_date'] ?? null) ?: null,
+                ($data['phone'] ?? null) ?: null, ($data['city'] ?? null) ?: null, ($data['bio'] ?? null) ?: null,
+                $role, $data['password_hash'], 1, empty($data['is_temporary']) ? 0 : 1,
+            ]);
             respond(201, ['id' => $id, 'email' => $email, 'role' => $role, 'is_active' => true]);
         }
 
@@ -132,8 +140,15 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
                 unset($row);
                 respond(200, ['items' => $rows]);
             }
-            $rows = $pdo->query("SELECT id,email,full_name,role,is_active,created_at FROM tvp_profiles ORDER BY created_at DESC,id")->fetchAll();
-            foreach ($rows as &$row) { $row['is_active'] = (bool)$row['is_active']; $row['created_at'] = lwsDate($row['created_at']); }
+            $rows = $pdo->query("SELECT p.id,p.email,p.full_name,p.first_name,p.last_name,p.photo_url,p.birth_date,p.phone,p.city,p.bio,p.role,p.is_active,p.is_temporary,p.created_at,
+                (SELECT COUNT(*) FROM tvp_articles a WHERE a.author_id=p.id) AS article_count
+                FROM tvp_profiles p ORDER BY p.created_at DESC,p.id")->fetchAll();
+            foreach ($rows as &$row) {
+                $row['is_active'] = (bool)$row['is_active'];
+                $row['is_temporary'] = (bool)$row['is_temporary'];
+                $row['article_count'] = (int)$row['article_count'];
+                $row['created_at'] = lwsDate($row['created_at']);
+            }
             unset($row);
             respond(200, ['items' => $rows, 'total' => count($rows)]);
         }
@@ -155,17 +170,57 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
             if ($id === $actorId) respond(400, ['error' => 'Vous ne pouvez pas modifier votre propre rôle.']);
             $fields = [];
             $params = [];
-            foreach (['full_name' => 'full_name', 'role' => 'role', 'is_active' => 'is_active'] as $key => $column) {
-                if (array_key_exists($key, $data)) { $fields[] = $column . '=?'; $params[] = $data[$key]; }
+            foreach (['full_name' => 'full_name', 'first_name' => 'first_name', 'last_name' => 'last_name',
+                      'photo_url' => 'photo_url', 'birth_date' => 'birth_date', 'phone' => 'phone',
+                      'city' => 'city', 'bio' => 'bio', 'role' => 'role',
+                      'is_active' => 'is_active', 'is_temporary' => 'is_temporary'] as $key => $column) {
+                if (!array_key_exists($key, $data)) continue;
+                if ($key === 'birth_date' && !empty($data[$key]) && !preg_match('/^\d{4}-\d{2}-\d{2}$/D', (string)$data[$key])) {
+                    respond(400, ['error' => 'Date de naissance invalide.']);
+                }
+                $fields[] = $column . '=?';
+                $params[] = $data[$key];
             }
             if (!$fields) respond(400, ['error' => 'Aucune modification fournie.']);
             $params[] = $id;
             $q = $pdo->prepare('UPDATE tvp_profiles SET ' . implode(',', $fields) . ',updated_at=UTC_TIMESTAMP(6) WHERE id=?');
             $q->execute($params);
             if (!$q->rowCount()) respond(404, ['error' => 'Utilisateur introuvable.']);
-            $q = $pdo->prepare('SELECT id,email,full_name,role,is_active FROM tvp_profiles WHERE id=?');
+            $q = $pdo->prepare('SELECT id,email,full_name,first_name,last_name,photo_url,birth_date,phone,city,bio,role,is_active,is_temporary FROM tvp_profiles WHERE id=?');
             $q->execute([$id]);
             respond(200, $q->fetch());
+        }
+
+        // Espace de travail d'un rédacteur : profil, articles et compteurs.
+        if ($op === 'users.workspace') {
+            $need('articles.read_all');
+            if (!$isUuid($id)) respond(400, ['error' => 'Profil inconnu.']);
+            $q = $pdo->prepare("SELECT id,email,full_name,first_name,last_name,photo_url,birth_date,phone,city,bio,role,is_active,is_temporary
+                FROM tvp_profiles WHERE id=?");
+            $q->execute([$id]);
+            $profile = $q->fetch();
+            if (!$profile) respond(404, ['error' => 'Profil introuvable.']);
+            $profile['is_active'] = (bool)$profile['is_active'];
+            $profile['is_temporary'] = (bool)$profile['is_temporary'];
+            $q = $pdo->prepare("SELECT a.id,a.slug,a.title,a.status,a.country_code,a.published_at,a.created_at,c.name AS category
+                FROM tvp_articles a LEFT JOIN tvp_categories c ON c.id=a.category_id
+                WHERE a.author_id=? ORDER BY a.published_at DESC,a.created_at DESC LIMIT 100");
+            $q->execute([$id]);
+            $articles = $q->fetchAll();
+            foreach ($articles as &$article) {
+                $article['published_at'] = lwsDate($article['published_at']);
+                $article['created_at'] = lwsDate($article['created_at']);
+            }
+            unset($article);
+            $stats = $pdo->prepare("SELECT status,COUNT(*) n,DATE_FORMAT(published_at,'%Y-%m') month FROM tvp_articles WHERE author_id=?
+                GROUP BY status,month ORDER BY month DESC");
+            $stats->execute([$id]);
+            $counts = array_fill_keys(['published','draft','in_review','approved','scheduled','inactive','archived'], 0);
+            foreach ($stats->fetchAll() as $row) $counts[$row['status']] = (int)$row['n'];
+            respond(200, [
+                'profile' => $profile, 'articles' => $articles,
+                'counts' => $counts, 'total' => array_sum($counts),
+            ]);
         }
 
         // Tableau de bord : toutes les données sont lues dans la V3.
@@ -200,6 +255,22 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
                 $row['created_at'] = lwsDate($row['created_at']);
             }
             unset($row);
+            $authorStats = $pdo->query("SELECT p.id,p.full_name,p.first_name,p.last_name,p.photo_url,p.is_temporary,
+                COUNT(a.id) total, SUM(a.status='published') published, SUM(a.status='draft') drafts
+                FROM tvp_profiles p LEFT JOIN tvp_articles a ON a.author_id=p.id
+                GROUP BY p.id ORDER BY total DESC,p.full_name")->fetchAll();
+            foreach ($authorStats as &$author) {
+                $author['total'] = (int)$author['total'];
+                $author['published'] = (int)$author['published'];
+                $author['drafts'] = (int)$author['drafts'];
+                $author['is_temporary'] = (bool)$author['is_temporary'];
+            }
+            unset($author);
+            $dailyWritten = $pdo->query("SELECT DATE(created_at) day,COUNT(*) n FROM tvp_articles
+                WHERE created_at>=DATE_SUB(UTC_DATE(),INTERVAL 30 DAY) GROUP BY DATE(created_at) ORDER BY day DESC")->fetchAll();
+            $dailyPublished = $pdo->query("SELECT DATE(published_at) day,COUNT(*) n FROM tvp_articles
+                WHERE published_at>=DATE_SUB(UTC_DATE(),INTERVAL 30 DAY) GROUP BY DATE(published_at) ORDER BY day DESC")->fetchAll();
+            $countryStats = $pdo->query('SELECT country_code,COUNT(*) n FROM tvp_articles GROUP BY country_code ORDER BY n DESC')->fetchAll();
             respond(200, [
                 'counts' => $counts, 'total' => array_sum($counts),
                 'media' => (int)$pdo->query('SELECT COUNT(*) FROM tvp_media')->fetchColumn(),
@@ -207,6 +278,8 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
                 'month' => $month, 'week' => $period('7 DAY'), 'today' => $period('24 HOUR'),
                 'categories' => $pdo->query('SELECT id,name FROM tvp_categories ORDER BY position,name')->fetchAll(),
                 'profiles' => $pdo->query('SELECT id,full_name FROM tvp_profiles WHERE is_active=1')->fetchAll(),
+                'author_stats' => $authorStats, 'daily_written' => $dailyWritten,
+                'daily_published' => $dailyPublished, 'country_stats' => $countryStats,
                 'audit' => $audit,
             ]);
         }
