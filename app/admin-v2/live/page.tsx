@@ -1,5 +1,7 @@
 'use client';
 
+import PaginatedList from '../../../components/admin/PaginatedList';
+
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import {
@@ -189,11 +191,11 @@ export default function RegieDirect() {
     <a href="https://restream.io/" target="_blank" rel="noopener noreferrer">Gérer sur Restream <ArrowUpRight size={14}/></a>
    </div>
    {account.channels.length ? <div className="restream-channel-grid">
-    {account.channels.map(ch => <div className="restream-channel" key={ch.id}>
+    <PaginatedList items={account.channels} pageSize={6}>{(entries) => entries.map(ch => <div className="restream-channel" key={ch.id}>
      <span><Video size={20}/></span>
      <div><strong>{ch.name}</strong><small>Chaîne liée au compte Restream</small></div>
      {ch.url && <a href={ch.url} target="_blank" rel="noopener noreferrer" aria-label={'Ouvrir '+ch.name}><ExternalLink size={16}/></a>}
-    </div>)}
+    </div>)}</PaginatedList>
    </div> : <p className="restream-empty">Aucune chaîne disponible. Ajoutez YouTube, Facebook ou une autre destination directement dans Restream.</p>}
   </section>}
 

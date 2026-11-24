@@ -1,4 +1,5 @@
 import 'server-only';
+import { editorialAuthorName } from '../articles/author-names';
 import { canonicalCategoryLabel, categorySlug } from '../categories';
 import { relativeTime } from './format';
 import { videoWatchUrl } from '../video/providers';
@@ -41,7 +42,7 @@ function mapArticle(row: Article): PublicArticle {
     countryCode: row.country_code, province: row.province_slug, tags, keywords: tags,
     seoTitle: row.seo_title, seoDescription: row.seo_description, contentHtml: row.content_html,
     wordCount, readingTime: wordCount ? Math.ceil(wordCount / 220) : undefined,
-    author: row.author_name || 'La rédaction TV+', reads: Number(row.article_reads) || 0,
+    author: editorialAuthorName(row.author_name) || 'La rédaction TV+', reads: Number(row.article_reads) || 0,
   };
 }
 

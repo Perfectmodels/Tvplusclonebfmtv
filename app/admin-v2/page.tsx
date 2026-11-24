@@ -1,3 +1,4 @@
+import { isPanfilEbo } from '../../lib/articles/author-names';
 import Link from 'next/link';
 import V2ArticleThumb from '../../components/admin/V2ArticleThumb';
 import {
@@ -121,10 +122,12 @@ export default async function DashboardV2() {
   const live=articleRows.slice(8,15).map(row=>articleMap.get(row.id)!).filter(Boolean);
   const scheduled=articleRows.slice(15).map(row=>articleMap.get(row.id)!).filter(Boolean);
   const authorNames=new Map((profiles??[]).map(a=>[a.id,a.full_name||'Rédaction TV+']));
+  authorNames.set('panfil-ebo', 'Panfil Ebo');
   const authorCounts=new Map<string,number>();
   const categoryCounts=new Map<string,number>();
   month.forEach(row=>{
-    authorCounts.set(row.author_id,(authorCounts.get(row.author_id)??0)+1);
+    const authorKey = isPanfilEbo(authorNames.get(row.author_id)) ? 'panfil-ebo' : row.author_id;
+    authorCounts.set(authorKey, (authorCounts.get(authorKey) ?? 0) + 1);
     categoryCounts.set(row.category_id,(categoryCounts.get(row.category_id)??0)+1);
   });
   const authors=[...authorCounts].sort((a,b)=>b[1]-a[1]).slice(0,5);

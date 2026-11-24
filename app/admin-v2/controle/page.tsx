@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import PaginatedList from '../../../components/admin/PaginatedList';
 import { ShieldCheck, ClipboardCheck, CalendarClock, ScrollText } from 'lucide-react';
 
 type Control = {
@@ -53,55 +54,55 @@ export default function ControlePage() {
       <section className="v2-dashboard-panel" aria-labelledby="validation-title">
         <header><div><h2 id="validation-title">File de validation</h2>
           <p>Articles en attente de relecture ou programmés.</p></div><ClipboardCheck size={21}/></header>
-        <table className="v2-table">
+        <PaginatedList items={data.reviewQueue}>{(rows) => <table className="v2-table">
           <thead><tr><th>Titre</th><th>Rédacteur</th><th>Statut</th><th>Modifié</th></tr></thead>
-          <tbody>{data.reviewQueue.map((item) => <tr key={item.id}>
-            <td>{item.title}</td><td>{item.author_name ?? '—'}</td>
-            <td>{item.status}</td><td>{item.updated_at ?? '—'}</td>
+          <tbody>{rows.map((item) => <tr key={item.id}>
+            <td data-label="Titre">{item.title}</td><td data-label="Rédacteur">{item.author_name ?? '—'}</td>
+            <td data-label="Statut">{item.status}</td><td data-label="Modifié">{item.updated_at ?? '—'}</td>
           </tr>)}</tbody>
-        </table>
+        </table>}</PaginatedList>
       </section>
 
       <section className="v2-dashboard-panel" aria-labelledby="production-title">
         <header><div><h2 id="production-title">Production par jour</h2><p>30 derniers jours.</p></div>
           <CalendarClock size={21}/></header>
-        <table className="v2-table">
+        <PaginatedList items={data.dailyWritten}>{(rows) => <table className="v2-table">
           <thead><tr><th>Date</th><th>Rédigés</th><th>Publiés</th></tr></thead>
-          <tbody>{data.dailyWritten.map((day) => <tr key={day.day}>
-            <td>{day.day}</td><td>{day.n}</td><td>{publishedByDay.get(day.day) ?? 0}</td>
+          <tbody>{rows.map((day) => <tr key={day.day}>
+            <td data-label="Date">{day.day}</td><td data-label="Rédigés">{day.n}</td><td data-label="Publiés">{publishedByDay.get(day.day) ?? 0}</td>
           </tr>)}</tbody>
-        </table>
+        </table>}</PaginatedList>
       </section>
     </div>
 
     <div className="v2-dashboard-figures">
       <section className="v2-dashboard-panel" aria-labelledby="authors-title">
         <header><div><h2 id="authors-title">Production par rédacteur</h2></div></header>
-        <table className="v2-table">
+        <PaginatedList items={data.authors}>{(rows) => <table className="v2-table">
           <thead><tr><th>Rédacteur</th><th>Total</th><th>Publiés</th></tr></thead>
-          <tbody>{data.authors.map((author, index) => <tr key={index}>
-            <td>{author.full_name ?? 'Sans nom'}</td><td>{author.total}</td><td>{author.published}</td>
+          <tbody>{rows.map((author, index) => <tr key={index}>
+            <td data-label="Rédacteur">{author.full_name ?? 'Sans nom'}</td><td data-label="Total">{author.total}</td><td data-label="Publiés">{author.published}</td>
           </tr>)}</tbody>
-        </table>
+        </table>}</PaginatedList>
       </section>
       <section className="v2-dashboard-panel" aria-labelledby="countries-title">
         <header><div><h2 id="countries-title">Articles par pays</h2></div></header>
-        <ul>{data.countries.map((country) => <li key={country.country_code}>
+        <PaginatedList items={data.countries}>{(countries) => <ul>{countries.map((country) => <li key={country.country_code}>
           {country.country_code} — {country.n} articles
-        </li>)}</ul>
+        </li>)}</ul>}</PaginatedList>
       </section>
     </div>
 
     <section className="v2-dashboard-panel" aria-labelledby="audit-title">
       <header><div><h2 id="audit-title">Journal d'activité</h2><p>Dernières actions éditoriales.</p></div>
         <ScrollText size={21}/></header>
-      <table className="v2-table">
+      <PaginatedList items={data.audit}>{(rows) => <table className="v2-table">
         <thead><tr><th>Action</th><th>Acteur</th><th>Date</th></tr></thead>
-        <tbody>{data.audit.map((entry) => <tr key={entry.id}>
-          <td>{entry.action}</td><td>{entry.actor_email ?? 'Automatisation'}</td>
-          <td>{entry.created_at ?? '—'}</td>
+        <tbody>{rows.map((entry) => <tr key={entry.id}>
+          <td data-label="Action">{entry.action}</td><td data-label="Acteur">{entry.actor_email ?? 'Automatisation'}</td>
+          <td data-label="Date">{entry.created_at ?? '—'}</td>
         </tr>)}</tbody>
-      </table>
+      </table>}</PaginatedList>
     </section>
   </div>;
 }

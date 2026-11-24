@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 type Media={id:string;url:string;alt:string;mime_type:string;size_bytes:number;created_at:string};
+const PAGE_SIZE = 12;
 export default function MediaV2Page(){
   const [items,setItems]=useState<Media[]>([]);const [page,setPage]=useState(1);const [total,setTotal]=useState(0);
   const [loading,setLoading]=useState(true);const [uploading,setUploading]=useState(false);
@@ -8,7 +9,7 @@ export default function MediaV2Page(){
   const [revision,setRevision]=useState(0);
   useEffect(()=>{const controller=new AbortController();
     setLoading(true);setError('');
-    fetch('/api/admin-v2/media?page='+page+'&pageSize=32',{signal:controller.signal,cache:'no-store'})
+    fetch('/api/admin-v2/media?page='+page+'&pageSize='+PAGE_SIZE,{signal:controller.signal,cache:'no-store'})
       .then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error?.message??'Médiathèque indisponible');return j.data;})
       .then(d=>{setItems(d.items??[]);setTotal(d.total??0);})
       .catch(e=>{if(!controller.signal.aborted)setError(e.message)})
@@ -41,6 +42,6 @@ export default function MediaV2Page(){
       {!loading&&items.length===0&&<p>Aucun média disponible.</p>}
       <div className="v2-toolbar" style={{justifyContent:'space-between',marginTop:18}}><span>{total} médias · page {page}</span><div className="v2-actions">
         <button type="button" className="admin-btn admin-btn-ghost" disabled={page===1||loading} onClick={()=>setPage(p=>p-1)}>Précédent</button>
-        <button type="button" className="admin-btn admin-btn-ghost" disabled={page*32>=total||loading} onClick={()=>setPage(p=>p+1)}>Suivant</button>
+        <button type="button" className="admin-btn admin-btn-ghost" disabled={page*PAGE_SIZE>=total||loading} onClick={()=>setPage(p=>p+1)}>Suivant</button>
       </div></div></section></div>;
 }

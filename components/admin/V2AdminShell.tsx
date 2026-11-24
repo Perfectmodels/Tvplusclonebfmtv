@@ -13,13 +13,12 @@ const GROUPS=[
   { label:'Pilotage', links:[
     {href:'/admin-v2',label:'Vue générale',icon:LayoutDashboard,permission:''},
     {href:'/admin-v2/controle',label:'Contrôle & rapports',icon:ShieldCheck,permission:'articles.review'},
-    {href:'/admin-v2/roles',label:'Rôles & accès',icon:Shield,permission:'roles.manage'},
+    {href:'/admin-v2/utilisateurs',label:'Utilisateurs et rôles',icon:Shield,permission:'users.manage', alternatePermission:'roles.manage'},
   ] },
   { label:'Rédaction', links:[
     {href:'/admin-v2/articles',label:'Articles',icon:Newspaper,permission:'articles.read_all'},
     {href:'/admin-v2/media',label:'Médiathèque',icon:Images,permission:'media.upload'},
     {href:'/admin-v2/categories',label:'Rubriques',icon:ListTree,permission:'categories.manage'},
-    {href:'/admin-v2/redacteurs',label:'Rédacteurs',icon:UsersRound,permission:'articles.read_all'},
   ] },
   { label:'Diffusion', links:[
     {href:'/admin-v2/shows',label:'Émissions',icon:Tv,permission:'shows.manage'},
@@ -70,7 +69,8 @@ export default function V2AdminShell({children,role,email,permissions}:{
       <p className="v2-sidebar-eyebrow">STUDIO & ADMINISTRATION</p>
       <nav aria-label="Navigation du tableau de bord" className="v2-navigation">
         {GROUPS.map(group=>{
-          const links=group.links.filter(link=>!link.permission||permissions.includes(link.permission));
+          const links=group.links.filter(link=>!link.permission||permissions.includes(link.permission) ||
+            (link.alternatePermission && permissions.includes(link.alternatePermission)));
           return links.length?<div className="v2-nav-group" key={group.label}>
             <span className="v2-nav-section-label">{group.label}</span>
             {links.map(link=>{

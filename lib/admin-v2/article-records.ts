@@ -1,4 +1,5 @@
 import 'server-only';
+import { editorialAuthorName } from '../articles/author-names';
 import { getExternalMediaUrl } from '../media-url';
 import type { createAuthClient } from '../auth/server';
 import type { V2Actor } from '../auth/v2-admin';
@@ -41,7 +42,7 @@ export async function enrichArticleRowsFromMysql(
     return {
       ...row,
       category_name: categoryMap.get(row.category_id) || 'Actualité',
-      author_name: profileMap.get(row.author_id) || 'Rédaction TV+',
+      author_name: editorialAuthorName(profileMap.get(row.author_id)) || 'Rédaction TV+',
       publisher_name: row.reviewed_by ? profileMap.get(row.reviewed_by) ?? null : null,
       cover_url: cover ? cover.media_url || cover.original_path : null,
       cover_alt: cover?.alt_text || row.title,
@@ -78,7 +79,7 @@ export async function enrichArticleRows(db: AuthDb, rows: ArticleAdminRow[]): Pr
     return {
       ...row,
       category_name: categoryMap.get(row.category_id) || 'Actualité',
-      author_name: profilesMap.get(row.author_id) || 'Rédaction TV+',
+      author_name: editorialAuthorName(profilesMap.get(row.author_id)) || 'Rédaction TV+',
       publisher_name: row.reviewed_by ? profilesMap.get(row.reviewed_by) ?? null : null,
       cover_url: coverUrl,
       cover_alt: cover?.alt || row.title,

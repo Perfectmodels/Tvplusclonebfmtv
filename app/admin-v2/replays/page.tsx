@@ -1,4 +1,6 @@
 'use client';
+
+import PaginatedList from '../../../components/admin/PaginatedList';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CalendarClock, ExternalLink, Film, Plus, Search, Trash2 } from 'lucide-react';
@@ -64,12 +66,12 @@ export default function ReplaysV2(){
      <select aria-label="Statut du replay" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">Tous</option><option value="published">En ligne</option><option value="scheduled">Programmés</option><option value="draft">Brouillons</option></select>
      <select aria-label="Émission" value={showFilter} onChange={e=>setShowFilter(e.target.value)}><option value="">Toutes les émissions</option>{shows.map(s=><option key={s.id} value={s.id}>{s.title}</option>)}</select></div>
     {loading?<p>Chargement…</p>:!filtered.length?<p className="v2-note">Aucun replay ne correspond aux filtres.</p>:<div className="v2-regie-channels">
-     {filtered.map(item=><div className="v2-regie-channel" key={item.id}><div>
+     <PaginatedList key={showFilter + filter + query} items={filtered} pageSize={6}>{(entries) => entries.map(item => <div className="v2-regie-channel" key={item.id}><div>
       <strong>{item.title}</strong><span>{shows.find(s=>s.id===item.show_id)?.title||'Émission'} · {item.platform||'Sans vidéo'} · {item.status==='published'?'En ligne':item.publish_at?'Programmé le '+display(item.publish_at):'Brouillon'}</span>
       {item.source_url&&<a href={item.source_url} target="_blank" rel="noopener noreferrer">Voir la vidéo source <ExternalLink size={13}/></a>}</div>
       <div className="v2-actions"><button type="button" className="admin-btn admin-btn-ghost" onClick={()=>edit(item)}>Modifier</button>
        <button type="button" className="admin-btn admin-btn-ghost" disabled={busy} onClick={()=>void remove(item.id)} aria-label={'Supprimer '+item.title}><Trash2 size={16}/></button></div>
-     </div>)}</div>}
+     </div>)}</PaginatedList></div>}
    </section>
    <section className="v2-card"><h2 className="v2-panel-title">{editing?'Modifier le replay':'Créer un replay'}</h2>
     <form onSubmit={save}>

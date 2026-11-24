@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import AuthorDirectory from '../../../components/admin/AuthorDirectory';
 import V2ArticleThumb from '../../../components/admin/V2ArticleThumb';
 import {
   Archive, ArrowDownUp, CalendarClock, CheckCircle2, ChevronLeft, ChevronRight,
@@ -47,6 +49,9 @@ function nextGabonHour() {
 }
 
 export default function AdminV2Articles() {
+  const params = useSearchParams();
+  const authorsView = params.get('vue') === 'redacteurs';
+  const [canManageUsers, setCanManageUsers] = useState(false);
   const [items,setItems]=useState<Article[]>([]);
   const [stats,setStats]=useState<ArticleStats>({total:0,counts:{}});
   const [categories,setCategories]=useState<Category[]>([]);
@@ -71,9 +76,11 @@ export default function AdminV2Articles() {
 
   const refresh=useCallback(()=>setVersion(v=>v+1),[]);
   useEffect(()=>{
-    const initial=new URLSearchParams(window.location.search).get('status');
-    if(initial && filters.some(tab=>tab.key===initial)) setFilter(initial);
-  },[]);
+    const initial = params.get('status');
+    setFilter(initial && filters.some(tab => tab.key === initial) ? initial : '');
+    setAuthor(params.get('auteur') ?? '');
+    setPage(1);
+  },[params]);
   useEffect(()=>{
     let live=true;
     Promise.all([
@@ -86,6 +93,7 @@ export default function AdminV2Articles() {
       if(summary.data)setStats(summary.data);
       if(cats.data?.items)setCategories(cats.data.items);
       if(me?.data?.permissions){
+        setCanManageUsers(me.data.permissions.includes('users.manage'));
         setCanReview(me.data.permissions.includes('articles.review'));
         setCanCreate(me.data.permissions.includes('articles.create'));
       }
@@ -177,6 +185,12 @@ export default function AdminV2Articles() {
         </div>
         {canCreate&&<Link className="v2-newsroom-primary" href="/admin-v2/articles/new"><Plus size={18}/> Nouvel article</Link>}
       </header>
+
+      <nav className="v2-section-nav" aria-label="Rédaction">
+        <Link href="/admin-v2/articles" aria-current={!authorsView ? 'page' : undefined}>Articles</Link>
+        <Link href="/admin-v2/articles?vue=redacteurs" aria-current={authorsView ? 'page' : undefined}>Rédacteurs</Link>
+      </nav>
+      {authorsView ? <AuthorDirectory actorId={actorId} canOpenProfiles={canReview || canManageUsers} /> : <>
 
       <div className="v2-newsroom-stats" aria-label="Indicateurs des articles">
         <button type="button" className="v2-newsroom-stat" aria-pressed={!filter}
@@ -343,6 +357,7 @@ export default function AdminV2Articles() {
           </footer>
         </div>
       </div>}
+      </>}
     </div>
   );
 }

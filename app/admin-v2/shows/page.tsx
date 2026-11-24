@@ -1,4 +1,6 @@
 'use client';
+
+import PaginatedList from '../../../components/admin/PaginatedList';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CalendarDays, ExternalLink, Images, Plus, Search, Trash2, Tv } from 'lucide-react';
@@ -52,14 +54,14 @@ export default function ShowsV2(){
     <div className="v2-regie-filter-row"><label><Search size={17}/><input type="search" aria-label="Rechercher une émission" value={query} placeholder="Rechercher…" onChange={e=>setQuery(e.target.value)}/></label>
      <select value={status} aria-label="Filtrer les émissions" onChange={e=>setStatus(e.target.value)}><option value="all">Toutes</option><option value="online">Publiées</option><option value="offline">Masquées</option></select></div>
     {loading?<p>Chargement…</p>:<div className="v2-regie-channels">
-     {visible.map(s=><div className="v2-regie-channel" key={s.id}>
+     <PaginatedList key={query + status} items={visible} pageSize={6}>{(entries) => entries.map(s => <div className="v2-regie-channel" key={s.id}>
       <div><strong>{s.title}</strong><span>{s.host_name||'Présentateur à préciser'} · {s.schedule_label||'Créneau non défini'}</span>
        <small>{s.is_active?'Visible':'Masquée'} · {episodeCounts[s.id]||0} replay(s) · Position {s.position}</small></div>
       <div className="v2-actions"><button type="button" className="admin-btn admin-btn-ghost" onClick={()=>edit(s)}>Configurer</button>
        <Link className="admin-btn admin-btn-ghost" href={'/admin-v2/replays?show='+encodeURIComponent(s.id)}>Replays ({episodeCounts[s.id]||0})</Link>
        {s.is_active && <Link className="admin-btn admin-btn-ghost" href={'/emissions/'+s.slug} target="_blank">Voir sur le site</Link>}
        <button type="button" className="admin-btn admin-btn-ghost" disabled={busy||Boolean(episodeCounts[s.id])} onClick={()=>void remove(s)} aria-label={'Supprimer '+s.title}><Trash2 size={15}/></button></div>
-     </div>)}
+     </div>)}</PaginatedList>
      {!visible.length&&<p className="v2-note">Aucune émission trouvée.</p>}
     </div>}</section>
    <section className="v2-card"><h2 className="v2-panel-title">{editing?'Configurer l’émission':'Ajouter une émission'}</h2>

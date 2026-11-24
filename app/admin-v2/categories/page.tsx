@@ -1,4 +1,6 @@
 'use client';
+
+import PaginatedList from '../../../components/admin/PaginatedList';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowDownUp, BookOpen, FolderTree, Plus, Search, Trash2 } from 'lucide-react';
@@ -49,12 +51,12 @@ export default function CategoriesV2(){
   <div className="v2-edit-grid">
    <section className="v2-card"><div className="v2-regie-section-head"><h2 className="v2-panel-title">Plan éditorial</h2><span>{visible.length} résultat(s)</span></div>
     <label className="v2-regie-search"><Search size={17}/><input type="search" placeholder="Rechercher une rubrique…" aria-label="Rechercher une rubrique" value={search} onChange={e=>setSearch(e.target.value)}/></label>
-    {loading?<p>Chargement…</p>:<div className="v2-regie-channels">{visible.map(c=><div key={c.id} className="v2-regie-category">
+    {loading?<p>Chargement…</p>:<div className="v2-regie-channels"><PaginatedList key={search} items={visible} pageSize={6}>{(entries) => entries.map(c => <div key={c.id} className="v2-regie-category">
      <span className="v2-regie-color" style={{backgroundColor:'hsl('+c.hue+' 65% 48%)'}}/>
      <div><strong>{c.name}</strong><span>/{c.slug} · {parentName(c.parent_id)} · Position {c.position}</span><small>{c.article_count} article(s) · {c.description||'Sans description'}</small></div>
      <div className="v2-actions"><button type="button" className="admin-btn admin-btn-ghost" onClick={()=>edit(c)}>Modifier</button>
       <button type="button" className="admin-btn admin-btn-ghost" disabled={busy||c.article_count>0||items.some(x=>x.parent_id===c.id)} onClick={()=>void remove(c)} aria-label={'Supprimer '+c.name} title="Suppression autorisée uniquement si la rubrique est libre"><Trash2 size={15}/></button></div>
-    </div>)}</div>}
+    </div>)}</PaginatedList></div>}
    </section>
    <section className="v2-card"><h2 className="v2-panel-title">{editing?'Modifier la rubrique':'Nouvelle rubrique'}</h2>
     <form onSubmit={save}>
