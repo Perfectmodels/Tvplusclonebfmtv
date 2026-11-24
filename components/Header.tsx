@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Menu, X, Search, ChevronRight, ChevronDown, House } from 'lucide-react';
+import { Menu, X, Search, ChevronRight, ChevronDown } from 'lucide-react';
 import { EDITORIAL_COUNTRIES } from '../lib/editor/countries';
 import TvPlusLogo from './TvPlusLogo';
 import { topicLinks, topics as staticTopics } from '../lib/data';
@@ -101,9 +101,6 @@ export default function Header({
             ))}
           </div>
           <div className="nav-links">
-            <Link href="/" className={'nav-home-btn'+(pathname==='/'?' is-active':'')} aria-label="Accueil">
-              <House size={16} aria-hidden="true"/> Accueil
-            </Link>
             <button type="button" className="nav-country-toggle" aria-expanded={countryOpen}
               aria-controls="country-navigation" onClick={()=>{setCountryOpen(v=>!v);setMenuOpen(false)}}>
               <GabonMark /> Gabon <ChevronDown size={14} aria-hidden="true"/>
@@ -148,7 +145,6 @@ export default function Header({
           <div className="shell mega-inner">
             <div className="mega-col mega-lead">
               <span className="mega-label">Navigation</span>
-              <Link href="/" onClick={() => setMenuOpen(false)}>Accueil <ChevronRight size={15}/></Link>
               <Link href="/actualites" onClick={() => setMenuOpen(false)}>Toutes les actualités <ChevronRight size={15}/></Link>
               <Link href="/pays/ga" onClick={() => setMenuOpen(false)}>Gabon et pays <ChevronRight size={15}/></Link>
               {topics.map((topic) => (

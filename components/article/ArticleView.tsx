@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { UserRound } from 'lucide-react';
 import Breadcrumb from '../Breadcrumb';
 import ShareButtons from '../ShareButtons';
 import StoryCard from '../StoryCard';
@@ -19,6 +19,7 @@ export default function ArticleView({
   initialReadCount?:number;
 }) {
   const categoryPath = categoryHref(story.category);
+  const author = story.author?.trim() || 'La rédaction TV+ Afrique';
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -28,7 +29,7 @@ export default function ArticleView({
     image: story.image ? [story.image] : [],
     datePublished: story.publishedAt ?? undefined,
     dateModified: story.updatedAt ?? story.publishedAt ?? undefined,
-    author: { '@type': 'Person', name: story.author || 'La rédaction' },
+    author: { '@type': 'Person', name: author },
     publisher: {
       '@type': 'Organization', name: 'TV+ Afrique',
       logo: { '@type': 'ImageObject', url: new URL('/logo.png', shortUrl).toString() },
@@ -51,46 +52,50 @@ export default function ArticleView({
 
         <div className="article-layout">
           <article className="article-main">
-            <header className={'article-feature' + (story.image ? ' has-image' : '')}>
-              {story.image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={story.image} alt="" className="article-feature-image" decoding="async" fetchPriority="high"/>
-              )}
-              <span className="article-feature-gradient" aria-hidden="true" />
-              <div className="article-feature-content">
-                <Link href={categoryPath} className="article-feature-category">{story.category}</Link>
-                <h1>{story.title}</h1>
-                <ArticleReadCounter shortCode={story.shortId} initial={story.reads ?? initialReadCount}/>
-                <p className="article-feature-intro">{story.chapter || story.summary}</p>
+            <header className="article-heading">
+              <h1>{story.title}</h1>
+              <div className="article-meta">
+                {story.time && <time dateTime={story.publishedAt}>{story.time}</time>}
+                {story.readingTime && <span>{story.readingTime} min de lecture</span>}
+                <ArticleReadCounter key={story.slug} shortCode={story.shortId} initial={story.reads ?? initialReadCount} />
               </div>
             </header>
-            {(story.coverCaption || story.coverCredit) && story.image && (
-              <p className="article-photo-credit">
-                {story.coverCaption} {story.coverCredit && `· ${story.coverCredit}`}
-              </p>
-            )}
 
-            <div className="article-tools">
-              <span>{story.author || 'La rédaction'} · {story.time} · Lecture {story.readingTime ?? 3} min</span>
-              <ShareButtons url={shortUrl} title={story.title} />
-            </div>
+            {story.image && (
+              <figure className="article-cover">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={story.image} alt={story.coverAlt || ''} decoding="async" fetchPriority="high" />
+                {(story.coverCaption || story.coverCredit) && (
+                  <figcaption>{[story.coverCaption, story.coverCredit].filter(Boolean).join(' · ')}</figcaption>
+                )}
+              </figure>
+            )}
 
             <div className="article-body">
               {story.contentHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: story.contentHtml }} />
               ) : (
-                <p>{story.summary}</p>
+                story.body?.split(/\r?\n+/).filter(Boolean).map((paragraph, index) => <p key={index}>{paragraph}</p>)
               )}
             </div>
+            <footer className="article-signature">
+              <div className="article-byline">
+                <span className="article-byline-icon"><UserRound size={20} aria-hidden="true" /></span>
+                <div>
+                  <span className="article-byline-label">Écrit par</span>
+                  <strong>{author}</strong>
+                </div>
+              </div>
+              <ShareButtons url={shortUrl} title={story.title} />
+            </footer>
           </article>
 
-          <aside className="article-rail" aria-label="À lire aussi">
-            <h2 className="article-rail-title">À lire aussi</h2>
-            <p className="article-rail-hint">Articles sélectionnés selon le sujet, les mots-clés et les informations SEO.</p>
-            {(related.length ? related : []).map((item) => (
-              <StoryCard key={item.slug} story={item} variant="rail" />
-            ))}
-          </aside>
+          {related.length > 0 && (
+            <aside className="article-rail" aria-labelledby="related-articles-title">
+              <h2 id="related-articles-title" className="article-rail-title">À lire aussi</h2>
+              {related.map((item) => <StoryCard key={item.slug} story={item} variant="rail" />)}
+            </aside>
+          )}
         </div>
       </main>
     </>

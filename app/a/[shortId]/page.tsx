@@ -65,6 +65,6 @@ export default async function ShortArticlePage({ params }: Params) {
   const siteUrl = await getSiteUrl();
 
   const related=relatedBySeo(item,items,4);
-  const initialReadCount=item.articleId?await getV2ArticleReadCount(item.articleId):0;
+  const initialReadCount=item.reads ?? (item.articleId ? await getV2ArticleReadCount(item.articleId) : 0);
   return <ArticleView story={item} related={related} initialReadCount={initialReadCount} shortUrl={`${siteUrl}/a/${shortId}`} />;
 }
