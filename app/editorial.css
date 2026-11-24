@@ -546,3 +546,15 @@ button.direct-player, button.direct-player-large {
 .editorial-category-error{color:#b41b32;}
 .editorial-side-actions button:disabled {opacity:.35;cursor:not-allowed;}
 .editorial-side-viewport .editorial-side-track {transform:none!important;}
+
+/* Mobile : hamburger pour toutes les rubriques, pas de défilement horizontal de navigation. */
+@media(max-width:760px){
+ .nav-primary-inner{overflow:visible;}
+ .nav-links{overflow:visible;gap:0;}
+ .nav-links>a:not(.nav-home-btn){display:none;}
+ .nav-links .nav-home-btn{padding:0 15px;}
+ .nav-country-toggle{margin-left:3px;}
+ .mega-menu{max-height:calc(100dvh - 105px);overflow-y:auto;overscroll-behavior:contain;}
+ .mega-inner{grid-template-columns:1fr;gap:22px;padding:22px 0;}
+ .mega-col{gap:8px;}
+}
