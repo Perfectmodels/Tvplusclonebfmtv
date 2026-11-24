@@ -4,6 +4,7 @@ import { createAuthClient } from '../../../../lib/auth/server';
 import { rateLimit } from '../../../../lib/api/rate-limit';
 import { handleRoute, ok, ApiError } from '../../../../lib/api/response';
 import { parseJson, emailSchema } from '../../../../lib/api/validate';
+import { newsroom, usesLwsCatalog } from '../../../../lib/admin-v2/lws';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,5 +24,11 @@ export const POST = handleRoute(async (request: NextRequest) => {
     options: { data: { full_name: fullName ?? '' } },
   });
   if (error) throw new ApiError(error.message, 400, 'BAD_REQUEST');
+  if (usesLwsCatalog() && data.user) {
+    // Supabase reste le fournisseur d'identité ; la fiche profil est créée dans la V3.
+    await newsroom({ id: data.user.id, permissions: [] }, 'profile.ensure', {
+      data: { id: data.user.id, email, full_name: fullName ?? null },
+    });
+  }
   return ok({ id: data.user?.id ?? null, needsConfirmation: !data.session });
 });

@@ -55,6 +55,19 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
             ]);
         }
 
+        // Création automatique du profil V3 lors d'une inscription Supabase.
+        // Aucune permission requise : seul le service_key de l'API est vérifié.
+        if ($op === 'profile.ensure') {
+            $id = (string)($data['id'] ?? '');
+            $email = (string)($data['email'] ?? '');
+            if (!$isUuid($id) || !filter_var($email, FILTER_VALIDATE_EMAIL)) respond(400, ['error' => 'Profil invalide.']);
+            $q = $pdo->prepare("INSERT INTO tvp_profiles (id,email,full_name,role,is_active,created_at,updated_at)
+                VALUES (?,?,?,'reader',1,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))
+                ON DUPLICATE KEY UPDATE email=VALUES(email),full_name=VALUES(full_name),is_active=1,updated_at=UTC_TIMESTAMP(6)");
+            $q->execute([$id, $email, ($data['full_name'] ?? null) ?: null]);
+            respond(200, ['id' => $id, 'email' => $email, 'role' => 'reader']);
+        }
+
         if ($op === 'users.authors') {
             $need('articles.read_all');
             $rows = $pdo->query("SELECT id,full_name FROM tvp_profiles WHERE is_active=1 ORDER BY full_name,id")->fetchAll();
