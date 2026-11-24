@@ -37,8 +37,14 @@ export default async function Home({
   const categories = results[2].status === 'fulfilled' ? results[2].value.data : [];
   const ads = results[3].status === 'fulfilled' ? results[3].value : null;
 
-  // Allocation exclusive : un article n'apparaît qu'une fois sur l'accueil.
-  const { alert, hero, rail, selection, feed, blocks } = distributeHomepageStories(filtered, categories);
+  // Les publications récentes sont visibles juste après le direct.
+  // Elles sont retirées des autres sections pour éviter les doublons sur l'accueil.
+  const latestStories = q ? [] : filtered
+    .filter(story => story.kind !== 'alert' && !story.featured)
+    .slice(0, 6);
+  const latestKeys = new Set(latestStories.map(story => story.shortId || story.slug));
+  const distributedStories = filtered.filter(story => !latestKeys.has(story.shortId || story.slug));
+  const { alert, hero, rail, selection, feed, blocks } = distributeHomepageStories(distributedStories, categories);
 
   return (
     <>
@@ -69,6 +75,22 @@ export default async function Home({
             </section>
 
             <AdvertisingCarousel placement="after-live" ads={ads?.["after-live"] ?? []} />
+
+            {latestStories.length > 0 && (
+              <section className="home-latest-publications" aria-labelledby="latest-publications-title">
+                <SectionHeading
+                  id="latest-publications-title"
+                  title="Dernières publications"
+                  moreHref="/actualites"
+                  moreLabel="Toutes les actualités"
+                />
+                <div className="selection-grid">
+                  {latestStories.map(story => (
+                    <StoryCard key={story.shortId || story.slug} story={story} />
+                  ))}
+                </div>
+              </section>
+            )}
 
             <div className="home-top-stories" aria-labelledby="home-top-stories-title">
               <SectionHeading id="home-top-stories-title" title="À la une" />
