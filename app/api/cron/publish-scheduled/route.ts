@@ -5,10 +5,11 @@ import { usesTvplusV2 } from '../../../../lib/db/v2-public';
 import { invalidatePublicArticle } from '../../../../lib/admin-v2/article-write';
 import { handleRoute, ok, ApiError } from '../../../../lib/api/response';
 
+import { newsroom, usesLwsCatalog } from '../../../../lib/admin-v2/lws';
 export const dynamic = 'force-dynamic';
 
 function authorized(request: NextRequest) {
-  const secrets = [process.env.CRON_SECRET, process.env.SUPABASE_SECRET_KEY].filter(Boolean) as string[];
+  const secrets = [process.env.CRON_SECRET, ...(usesLwsCatalog()?[]:[process.env.SUPABASE_SECRET_KEY])].filter(Boolean) as string[];
   const header = request.headers.get('authorization') ?? '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
   return secrets.some((secret) => {
@@ -21,6 +22,11 @@ function authorized(request: NextRequest) {
 async function run(request: NextRequest) {
   if (!authorized(request)) throw new ApiError('Accès non autorisé.', 401, 'UNAUTHORIZED');
 
+  if(usesLwsCatalog()) {
+    const data=await newsroom<{published:number;articles:unknown[]}>({id:'cron',permissions:['articles.publish_scheduled']},'publish_due');
+    if(data.published) invalidatePublicArticle();
+    return ok(data);
+  }
   const db = getServerSupabase();
   const now = new Date().toISOString();
   const v2 = usesTvplusV2();

@@ -6,7 +6,7 @@ import { ApiError } from '../api/response';
 
 export { usesLwsCatalog } from '../db/lws-public';
 
-export async function newsroom<T>(actor: V2Actor, operation: string, params: Record<string, unknown> = {}): Promise<T> {
+export async function newsroom<T>(actor: Pick<V2Actor,'id'|'permissions'>, operation: string, params: Record<string, unknown> = {}): Promise<T> {
   const key = process.env.LWS_EDITORIAL_SERVICE_KEY;
   if (!key) throw new ApiError('Connexion à la rédaction indisponible.', 503, 'UNAVAILABLE');
   const url = new URL(process.env.LWS_EDITORIAL_API_URL!);

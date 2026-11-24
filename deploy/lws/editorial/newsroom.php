@@ -34,6 +34,17 @@ function newsroom(PDO $pdo, array $config): void {
     if (str_starts_with($op,'shows.') || str_starts_with($op,'episodes.')) {
         require_once __DIR__.'/programming.php'; programming($pdo,$op,$request);
     }
+    if ($op === 'publish_due' && in_array('articles.publish_scheduled',$permissions,true)) {
+        $q=$pdo->prepare("UPDATE tvp_articles SET status='published',updated_at=UTC_TIMESTAMP(6) WHERE status='scheduled' AND published_at<=UTC_TIMESTAMP(6)");$q->execute();
+        respond(200,['published'=>$q->rowCount(),'articles'=>[]]);
+    }
+    if ($op === 'dashboard' && $read) {
+        $counts=array_fill_keys(['published','draft','in_review','approved','scheduled'],0);
+        foreach($pdo->query('SELECT status,COUNT(*) n FROM tvp_articles GROUP BY status') as $row) $counts[$row['status']]=(int)$row['n'];
+        $recent=$pdo->query('SELECT id,title,slug,status,updated_at FROM tvp_articles ORDER BY updated_at DESC LIMIT 7')->fetchAll();
+        foreach($recent as &$row) if($row['updated_at'])$row['updated_at']=articleVersion($row['updated_at']);unset($row);
+        respond(200,['published'=>$counts['published'],'drafts'=>$counts['draft'],'review'=>$counts['in_review'],'approved'=>$counts['approved'],'scheduled'=>$counts['scheduled'],'media'=>(int)$pdo->query('SELECT COUNT(*) FROM tvp_media')->fetchColumn(),'categories'=>(int)$pdo->query('SELECT COUNT(*) FROM tvp_categories')->fetchColumn(),'recent'=>$recent]);
+    }
     if ($op === 'list' && $read) {
         $where = []; $params = [];
         foreach (['category'=>'category_id','author'=>'author_id','status'=>'status'] as $key=>$field) {
