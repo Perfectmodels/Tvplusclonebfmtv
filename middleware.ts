@@ -11,6 +11,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(destination, 307);
   }
   let response = NextResponse.next({ request });
+  // En mode MySQL la session est un cookie signé : aucun jeton Supabase à rafraîchir.
+  if (process.env.LWS_EDITORIAL_API_URL) return response;
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return response;

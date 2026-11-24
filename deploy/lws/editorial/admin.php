@@ -40,6 +40,54 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
     $schema = 'Schéma MySQL administration à mettre en conformité.';
 
     try {
+        // Authentification MySQL : le mot de passe est vérifié côté Next.js,
+        // l'API ne fait que fournir le hash et les permissions du profil.
+        if ($op === 'auth.login' || $op === 'auth.me') {
+            $column = $op === 'auth.login' ? 'p.email' : 'p.id';
+            $value = $op === 'auth.login' ? (string)($data['email'] ?? '') : (string)($data['id'] ?? '');
+            if ($value === '' || ($op === 'auth.me' && !$isUuid($value))) respond(400, ['error' => 'Identifiant invalide.']);
+            $q = $pdo->prepare("SELECT p.id,p.email,p.full_name,p.role,p.is_active,p.password_hash,COALESCE(r.permissions,'[]') AS permissions
+                FROM tvp_profiles p LEFT JOIN tvp_roles r ON r.role_key=p.role WHERE $column=?");
+            $q->execute([$value]);
+            $profile = $q->fetch();
+            if (!$profile || !(bool)$profile['is_active']) respond(401, ['error' => 'Identifiants invalides.']);
+            $result = [
+                'id' => $profile['id'], 'email' => $profile['email'],
+                'full_name' => $profile['full_name'], 'role' => $profile['role'],
+                'is_active' => true, 'permissions' => json_decode($profile['permissions'], true) ?: [],
+            ];
+            if ($op === 'auth.login') $result['password_hash'] = $profile['password_hash'] ?? '';
+            respond(200, $result);
+        }
+
+        // Inscription / création de compte : le hash est produit côté Next.js.
+        if ($op === 'profile.signup') {
+            $email = (string)($data['email'] ?? '');
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) respond(400, ['error' => 'E-mail invalide.']);
+            if (empty($data['password_hash']) || !is_string($data['password_hash'])) respond(400, ['error' => 'Mot de passe manquant.']);
+            $role = (string)($data['role'] ?? 'reader');
+            if (!preg_match('/^[a-z_]{2,50}$/D', $role)) respond(400, ['error' => 'Rôle invalide.']);
+            $id = (string)($data['id'] ?? '');
+            if ($id !== '' && !$isUuid($id)) respond(400, ['error' => 'Identifiant invalide.']);
+            $check = $pdo->prepare('SELECT id FROM tvp_profiles WHERE email=?');
+            $check->execute([$email]);
+            if ($check->fetchColumn()) respond(409, ['error' => 'Un compte existe déjà avec cette adresse e-mail.']);
+            if ($id === '') $id = $pdo->query('SELECT UUID()')->fetchColumn();
+            $q = $pdo->prepare("INSERT INTO tvp_profiles (id,email,full_name,role,password_hash,is_active,created_at,updated_at)
+                VALUES (?,?,?,?,?,1,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))");
+            $q->execute([$id, $email, ($data['full_name'] ?? null) ?: null, $role, $data['password_hash']]);
+            respond(201, ['id' => $id, 'email' => $email, 'role' => $role, 'is_active' => true]);
+        }
+
+        if ($op === 'auth.set_password') {
+            $need('users.manage');
+            if (!$isUuid($id) || empty($data['password_hash'])) respond(400, ['error' => 'Mot de passe invalide.']);
+            $q = $pdo->prepare('UPDATE tvp_profiles SET password_hash=?,updated_at=UTC_TIMESTAMP(6) WHERE id=?');
+            $q->execute([$data['password_hash'], $id]);
+            if (!$q->rowCount()) respond(404, ['error' => 'Utilisateur introuvable.']);
+            respond(200, ['updated' => true]);
+        }
+
         // Résolution du profil : la session reste Supabase, les rôles viennent de MySQL.
         if ($op === 'profile.resolve') {
             if (!$isUuid($actorId)) respond(403, ['error' => 'Compte inconnu.']);

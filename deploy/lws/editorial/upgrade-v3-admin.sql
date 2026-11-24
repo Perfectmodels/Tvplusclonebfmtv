@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS tvp_profiles (
  email VARCHAR(255) NOT NULL DEFAULT '',
  full_name VARCHAR(120) NULL,
  role VARCHAR(50) NOT NULL DEFAULT 'reader',
+ password_hash VARCHAR(255) NULL,
  is_active TINYINT(1) NOT NULL DEFAULT 0,
  created_at DATETIME(6) NULL,
  updated_at DATETIME(6) NULL,

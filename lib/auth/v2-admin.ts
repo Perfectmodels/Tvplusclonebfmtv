@@ -6,6 +6,7 @@ import { createAuthClient } from './server';
 import { usesTvplusV2 } from '../db/v2-public';
 import { usesLwsCatalog } from '../db/lws-public';
 import { newsroom } from '../admin-v2/lws';
+import { getSession } from './session';
 
 export type V2Actor = {
   id: string;
@@ -17,24 +18,26 @@ export type V2Actor = {
 
 /** Le client conserve le JWT de la session, Supabase RLS autorise toutes les requêtes. */
 export const getV2Actor = cache(async (): Promise<V2Actor | null> => {
-  if (!usesTvplusV2()) return null;
-  const db = await createAuthClient();
-  const { data: { user }, error: authError } = await db.auth.getUser();
-  if (authError || !user) return null;
   if (usesLwsCatalog()) {
+    const session = await getSession();
+    if (!session) return null;
     try {
       const profile = await newsroom<{ id: string; email: string; full_name: string | null; role: string; permissions: string[]; is_active: boolean }>(
-        { id: user.id, permissions: [] }, 'profile.resolve',
+        { id: session.uid, permissions: [] }, 'auth.me', { data: { id: session.uid } },
       );
       if (!profile.is_active) return null;
       return {
-        id: user.id, email: user.email ?? profile.email ?? '', name: profile.full_name ?? user.email ?? '',
+        id: profile.id, email: profile.email, name: profile.full_name ?? profile.email,
         role: profile.role, permissions: profile.permissions,
       };
     } catch {
       return null;
     }
   }
+  if (!usesTvplusV2()) return null;
+  const db = await createAuthClient();
+  const { data: { user }, error: authError } = await db.auth.getUser();
+  if (authError || !user) return null;
   const { data: profile, error: profileError } = await db.from('profiles')
     .select('id,full_name,role,is_active').eq('id', user.id).maybeSingle();
   if (profileError || !profile || profile.is_active !== true) return null;

@@ -132,6 +132,9 @@ $create = [
 ];
 
 $addColumns = [
+    'tvp_profiles' => [
+        'password_hash' => 'VARCHAR(255) NULL',
+    ],
     'tvp_media' => [
         'size_bytes' => 'INT UNSIGNED NULL',
         'uploaded_by' => 'CHAR(36) NULL',
