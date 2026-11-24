@@ -156,7 +156,7 @@ export default function Header({
               ))}
             </div>
             <div className="mega-col">
-              <span className="mega-label">Toutes les rubriques</span>
+              <Link href="/rubriques" className="mega-label" onClick={() => setMenuOpen(false)}>Toutes les rubriques <ChevronRight size={14} aria-hidden="true"/></Link>
               {categories.slice(0, 5).map((category) => (
                 <Link
                   key={category}

@@ -14,7 +14,7 @@ export default function Footer({ categories = staticCategories }: { categories?:
           <p>Première sur l’info au Gabon. Suivez l’actualité en continu, 24h/24 et 7j/7.</p>
         </div>
         <div>
-          <h3 className="footer-title">Toutes les rubriques</h3>
+          <h3 className="footer-title"><Link href="/rubriques">Toutes les rubriques</Link></h3>
           <div className="footer-links">
             {categories.slice(0, 5).map((category) => (
               <Link key={category} href={categoryHref(category)}>

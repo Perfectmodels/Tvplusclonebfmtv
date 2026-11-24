@@ -7,7 +7,7 @@ export const revalidate = 60;
 
 const sections = [
   { title: 'L’information', links: [
-    ['Accueil', '/'], ['Dernières actualités', '/actualites'], ['Fil info News 24/7', '/news-24-7'], ['Recherche', '/recherche'],
+    ['Accueil', '/'], ['Toutes les rubriques', '/rubriques'], ['Dernières actualités', '/actualites'], ['Fil info News 24/7', '/news-24-7'], ['Recherche', '/recherche'],
     ['Direct', '/direct'], ['Vidéos', '/videos'],
   ] },
   { title: 'Les émissions', links: [

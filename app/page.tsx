@@ -128,7 +128,7 @@ export default async function Home({
               ))}
 
               <section className="category-block" aria-label="Toutes les rubriques">
-                <SectionHeading title="Toutes les rubriques" />
+                <SectionHeading title="Toutes les rubriques" moreHref="/rubriques" moreLabel="Explorer les rubriques" />
                 <div className="rubrique-chips">
                   {categories.map(category => (
                     <Link key={category} href={categoryHref(category)}>{category}</Link>
