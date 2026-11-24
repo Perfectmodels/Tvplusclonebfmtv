@@ -5,12 +5,16 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Newspaper, Images, ListTree, Tv, PlayCircle, MonitorPlay,
-  RectangleHorizontal, Menu, X, LogOut, ExternalLink, Plus, ChevronRight, UsersRound,
+  RectangleHorizontal, Menu, X, LogOut, ExternalLink, Plus, ChevronRight, UsersRound, ShieldCheck, Shield,
 } from 'lucide-react';
 import TvPlusLogo from '../TvPlusLogo';
 
 const GROUPS=[
-  { label:'Pilotage', links:[{href:'/admin-v2',label:'Vue générale',icon:LayoutDashboard,permission:''}] },
+  { label:'Pilotage', links:[
+    {href:'/admin-v2',label:'Vue générale',icon:LayoutDashboard,permission:''},
+    {href:'/admin-v2/controle',label:'Contrôle & rapports',icon:ShieldCheck,permission:'articles.review'},
+    {href:'/admin-v2/roles',label:'Rôles & accès',icon:Shield,permission:'roles.manage'},
+  ] },
   { label:'Rédaction', links:[
     {href:'/admin-v2/articles',label:'Articles',icon:Newspaper,permission:'articles.read_all'},
     {href:'/admin-v2/media',label:'Médiathèque',icon:Images,permission:'media.upload'},
@@ -26,6 +30,7 @@ const GROUPS=[
 ];
 const ROLES:Record<string,string>={
   super_admin:'Super administrateur',admin:'Administrateur',
+  chef_web:'Chef du web',redacteur_en_chef:'Rédacteur en chef',journaliste:'Journaliste',lecteur:'Lecteur',
   editor_in_chief:'Rédacteur en chef',journalist:'Journaliste',
   video_editor:'Monteur',community_manager:'Responsable numérique',
 };

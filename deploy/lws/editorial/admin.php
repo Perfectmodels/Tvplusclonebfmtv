@@ -36,6 +36,9 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
     $need = static function(string $permission) use ($has): void {
         if (!$has($permission)) respond(403, ['error' => 'Permission insuffisante.']);
     };
+    $needAny = static function(array $permissions) use ($has): void {
+        if (!array_filter($permissions, $has)) respond(403, ['error' => 'Permission insuffisante.']);
+    };
     $isUuid = static fn(string $value): bool => (bool)preg_match('/^[a-f0-9-]{36}$/iD', $value);
     $schema = 'Schéma MySQL administration à mettre en conformité.';
 
@@ -132,14 +135,31 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
             ], $rows)]);
         }
 
-        if ($op === 'users.list' || $op === 'roles.list') {
-            $need('users.manage');
-            if ($op === 'roles.list') {
-                $rows = $pdo->query("SELECT role_key AS `key`,label,permissions FROM tvp_roles ORDER BY role_key")->fetchAll();
-                foreach ($rows as &$row) $row['permissions'] = json_decode($row['permissions'], true) ?: [];
-                unset($row);
-                respond(200, ['items' => $rows]);
+        if ($op === 'roles.list') {
+            $needAny(['users.manage', 'roles.manage']);
+            $rows = $pdo->query("SELECT role_key AS `key`,label,permissions FROM tvp_roles ORDER BY role_key")->fetchAll();
+            foreach ($rows as &$row) $row['permissions'] = json_decode($row['permissions'], true) ?: [];
+            unset($row);
+            respond(200, ['items' => $rows]);
+        }
+
+        if ($op === 'roles.update') {
+            $need('roles.manage');
+            $key = (string)($data['key'] ?? '');
+            if (!preg_match('/^[a-z_]{2,50}$/D', $key)) respond(400, ['error' => 'Rôle invalide.']);
+            if (!isset($data['permissions']) || !is_array($data['permissions'])) respond(400, ['error' => 'Permissions invalides.']);
+            $clean = [];
+            foreach ($data['permissions'] as $permission) {
+                if (is_string($permission) && preg_match('/^[a-z_]+\.[a-z_]+$/D', $permission)) $clean[] = $permission;
             }
+            $q = $pdo->prepare("UPDATE tvp_roles SET label=?,permissions=? WHERE role_key=?");
+            $q->execute([(string)($data['label'] ?? $key), json_encode(array_values(array_unique($clean)), JSON_UNESCAPED_UNICODE), $key]);
+            if (!$q->rowCount()) respond(404, ['error' => 'Rôle introuvable.']);
+            respond(200, ['key' => $key, 'permissions' => array_values(array_unique($clean))]);
+        }
+
+        if ($op === 'users.list') {
+            $need('users.manage');
             $rows = $pdo->query("SELECT p.id,p.email,p.full_name,p.first_name,p.last_name,p.photo_url,p.birth_date,p.phone,p.city,p.bio,p.role,p.is_active,p.is_temporary,p.created_at,
                 (SELECT COUNT(*) FROM tvp_articles a WHERE a.author_id=p.id) AS article_count
                 FROM tvp_profiles p ORDER BY p.created_at DESC,p.id")->fetchAll();
@@ -195,11 +215,13 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
         if ($op === 'users.workspace') {
             $need('articles.read_all');
             if (!$isUuid($id)) respond(400, ['error' => 'Profil inconnu.']);
-            $q = $pdo->prepare("SELECT id,email,full_name,first_name,last_name,photo_url,birth_date,phone,city,bio,role,is_active,is_temporary
-                FROM tvp_profiles WHERE id=?");
+            $q = $pdo->prepare("SELECT p.id,p.email,p.full_name,p.first_name,p.last_name,p.photo_url,p.birth_date,p.phone,p.city,p.bio,
+                p.role,p.is_active,p.is_temporary,COALESCE(r.permissions,'[]') AS permissions
+                FROM tvp_profiles p LEFT JOIN tvp_roles r ON r.role_key=p.role WHERE p.id=?");
             $q->execute([$id]);
             $profile = $q->fetch();
             if (!$profile) respond(404, ['error' => 'Profil introuvable.']);
+            $profile['permissions'] = json_decode($profile['permissions'], true) ?: [];
             $profile['is_active'] = (bool)$profile['is_active'];
             $profile['is_temporary'] = (bool)$profile['is_temporary'];
             $q = $pdo->prepare("SELECT a.id,a.slug,a.title,a.status,a.country_code,a.published_at,a.created_at,c.name AS category
@@ -271,6 +293,11 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
             $dailyPublished = $pdo->query("SELECT DATE(published_at) day,COUNT(*) n FROM tvp_articles
                 WHERE published_at>=DATE_SUB(UTC_DATE(),INTERVAL 30 DAY) GROUP BY DATE(published_at) ORDER BY day DESC")->fetchAll();
             $countryStats = $pdo->query('SELECT country_code,COUNT(*) n FROM tvp_articles GROUP BY country_code ORDER BY n DESC')->fetchAll();
+            $reviewQueue = $pdo->query("SELECT a.id,a.title,a.status,a.updated_at,p.full_name AS author_name
+                FROM tvp_articles a LEFT JOIN tvp_profiles p ON p.id=a.author_id
+                WHERE a.status IN ('in_review','scheduled') ORDER BY a.updated_at DESC LIMIT 30")->fetchAll();
+            foreach ($reviewQueue as &$item) { $item['updated_at'] = lwsDate($item['updated_at']); }
+            unset($item);
             respond(200, [
                 'counts' => $counts, 'total' => array_sum($counts),
                 'media' => (int)$pdo->query('SELECT COUNT(*) FROM tvp_media')->fetchColumn(),
@@ -280,7 +307,7 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
                 'profiles' => $pdo->query('SELECT id,full_name FROM tvp_profiles WHERE is_active=1')->fetchAll(),
                 'author_stats' => $authorStats, 'daily_written' => $dailyWritten,
                 'daily_published' => $dailyPublished, 'country_stats' => $countryStats,
-                'audit' => $audit,
+                'review_queue' => $reviewQueue, 'audit' => $audit,
             ]);
         }
 

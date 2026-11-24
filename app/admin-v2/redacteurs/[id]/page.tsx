@@ -7,7 +7,7 @@ type Profile = {
   id: string; email: string; full_name: string | null; first_name: string | null;
   last_name: string | null; photo_url: string | null; birth_date: string | null;
   phone: string | null; city: string | null; bio: string | null;
-  role: string; is_active: boolean; is_temporary: boolean;
+  role: string; is_active: boolean; is_temporary: boolean; permissions: string[];
 };
 type Article = { id: string; title: string; status: string; country_code: string; category: string | null; published_at: string | null };
 type Workspace = { profile: Profile; articles: Article[]; counts: Record<string, number>; total: number };
@@ -58,6 +58,15 @@ export default function RedacteurWorkspace({ params }: { params: Promise<{ id: s
       <Link href="/admin-v2/redacteurs" className="v2-newsroom-secondary">Retour</Link>
     </header>
     {message && <p className="form-info" role="status">{message}</p>}
+
+    {profile && <section className="v2-dashboard-panel" aria-labelledby="acces-title">
+      <header><div><h2 id="acces-title">Accès du rédacteur</h2>
+        <p>Rôle : {profile.role} — {(profile.permissions ?? []).length} permission(s).</p></div></header>
+      <ul className="v2-permission-list">{(profile.permissions ?? []).map((permission) =>
+        <li key={permission}><code>{permission}</code></li>)}
+        {!(profile.permissions ?? []).length && <li>Aucune permission particulière.</li>}
+      </ul>
+    </section>}
 
     {profile && <section className="v2-dashboard-panel" aria-labelledby="profil-title">
       <header><div><h2 id="profil-title">Profil avancé</h2>
