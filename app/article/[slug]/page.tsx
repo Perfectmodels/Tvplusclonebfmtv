@@ -3,6 +3,8 @@ import { permanentRedirect, notFound } from 'next/navigation';
 import { getArticleBySlug, listArticles } from '../../../lib/db/repository';
 import { getSiteUrl } from '../../../lib/articles/site-url';
 import ArticleView from '../../../components/article/ArticleView';
+import {getV2ArticleReadCount} from '../../../lib/db/v2-public';
+import {relatedBySeo} from '../../../lib/articles/related';
 
 export const revalidate = 60;
 type Params = { params: Promise<{ slug: string }> };
@@ -30,17 +32,18 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function ArticlePage({ params }: Params) {
   const { slug } = await params;
   const [{ item }, { items }] = await Promise.all([
-    getArticleBySlug(slug), listArticles({ pageSize: 30 }),
+    getArticleBySlug(slug), listArticles({ pageSize: 140 }),
   ]);
   if (!item) notFound();
   if (item.shortId) permanentRedirect(`/a/${item.shortId}`);
   const siteUrl = await getSiteUrl();
-  const related = items
-    .filter((article) => article.slug !== item.slug && article.category === item.category).slice(0, 4);
+  const related=relatedBySeo(item,items,4);
+  const initialReadCount=item.articleId?await getV2ArticleReadCount(item.articleId):0;
   return (
     <ArticleView
       story={item}
-      related={related.length ? related : items.filter((article) => article.slug !== item.slug).slice(0, 4)}
+      related={related}
+      initialReadCount={initialReadCount}
       shortUrl={`${siteUrl}${item.shortId ? '/a/' + item.shortId : '/article/' + slug}`}
     />
   );

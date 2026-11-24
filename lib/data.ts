@@ -23,6 +23,10 @@ export type Story = {
   updatedAt?: string;
   wordCount?: number;
   readingTime?: number;
+  tags?: string[];
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  countryCode?: string;
 };
 
 export const topics: string[] = [];

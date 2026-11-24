@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ArticleView from '../../../components/article/ArticleView';
+import {getV2ArticleReadCount} from '../../../lib/db/v2-public';
+import {relatedBySeo} from '../../../lib/articles/related';
 import { getArticleByShortId, listArticles } from '../../../lib/db/repository';
 import { getSiteUrl } from '../../../lib/articles/site-url';
 
@@ -57,15 +59,12 @@ export default async function ShortArticlePage({ params }: Params) {
   const { shortId } = await params;
   const [{ item }, { items }] = await Promise.all([
     getArticleByShortId(shortId),
-    listArticles({ pageSize: 30 }),
+    listArticles({ pageSize: 140 }),
   ]);
   if (!item) notFound();
   const siteUrl = await getSiteUrl();
 
-  const related = items
-    .filter((s) => s.category.toLowerCase() === item.category.toLowerCase() && s.slug !== item.slug)
-    .slice(0, 4);
-  const others = items.filter((s) => s.slug !== item.slug).slice(0, 4);
-
-  return <ArticleView story={item} related={related.length ? related : others} shortUrl={`${siteUrl}/a/${shortId}`} />;
+  const related=relatedBySeo(item,items,4);
+  const initialReadCount=item.articleId?await getV2ArticleReadCount(item.articleId):0;
+  return <ArticleView story={item} related={related} initialReadCount={initialReadCount} shortUrl={`${siteUrl}/a/${shortId}`} />;
 }

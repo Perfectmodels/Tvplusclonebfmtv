@@ -2,14 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Story } from '../lib/data';
 import { articlePath } from '../lib/articles/urls';
 import StoryCard from './StoryCard';
 import SectionHeading from './SectionHeading';
 
 const PAGE_SIZE = 3;
-const INTERVAL_MS = 6500;
 
 export default function CategoryNewsCarousel({
   title, items, moreHref, sectionId, selection = false,
@@ -17,7 +16,6 @@ export default function CategoryNewsCarousel({
   title: string; items: Story[]; moreHref?: string; sectionId: string; selection?: boolean;
 }) {
   const [page, setPage] = useState(0);
-  const [paused, setPaused] = useState(false);
   const related = items.slice(1);
   const pages = useMemo(
     () => Array.from({ length: Math.ceil(related.length / PAGE_SIZE) }, (_, i) =>

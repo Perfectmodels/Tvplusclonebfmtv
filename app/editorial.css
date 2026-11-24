@@ -530,3 +530,14 @@ button.direct-player, button.direct-player-large {
   .nav-links{overflow-x:auto;overscroll-behavior-x:contain;}
   .nav-primary-inner{overflow:hidden;}
 }
+
+/* Couverture des articles : texte lisible sur la photo réelle, sans modifier l'image OG du partage. */
+.article-feature{position:relative;isolation:isolate;min-height:420px;}
+.article-feature-image{z-index:0;object-position:center 42%;}
+.article-feature-gradient{z-index:1;pointer-events:none;background:linear-gradient(0deg,rgba(2,12,40,.97) 0%,rgba(2,14,42,.88) 25%,rgba(2,18,47,.38) 65%,rgba(2,18,47,.12) 100%);}
+.article-feature-content{position:relative;z-index:2;width:min(100%,850px);padding:clamp(22px,4vw,42px);color:white;}
+.article-feature-content h1{color:#fff!important;text-wrap:balance;}
+.article-feature-intro{color:#f0f5ff!important;max-width:70ch;margin-top:15px;}
+.article-read-counter{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin-top:0;margin-bottom:6px;border:1px solid rgba(255,255,255,.3);border-radius:20px;background:rgba(5,20,47,.55);font:700 12px var(--editorial-font);color:#fff;}
+.article-rail-hint{font-size:12px;line-height:1.4;color:#62708a;margin:-7px 0 16px;}
+@media(max-width:760px){.article-feature{min-height:430px;}.article-feature-content{width:100%;padding:24px 18px;}.article-main .article-feature h1{font-size:clamp(25px,6.2vw,35px);}}

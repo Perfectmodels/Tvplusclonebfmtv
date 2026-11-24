@@ -130,6 +130,7 @@ export async function listArticles({
 }
 
 export type PublicArticle = Story & {
+  articleId?: string;
   body?: string | null;
   chapter?: string | null;
   contentHtml?: string | null;

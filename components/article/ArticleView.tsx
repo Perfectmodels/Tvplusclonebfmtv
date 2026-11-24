@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Breadcrumb from '../Breadcrumb';
 import ShareButtons from '../ShareButtons';
 import StoryCard from '../StoryCard';
+import ArticleReadCounter from './ArticleReadCounter';
 import type { PublicArticle } from '../../lib/db/repository';
 import type { Story } from '../../lib/data';
 import { categoryHref } from '../../lib/categories';
@@ -10,10 +11,12 @@ export default function ArticleView({
   story,
   related,
   shortUrl,
+  initialReadCount=0,
 }: {
   story: PublicArticle;
   related: Story[];
   shortUrl: string;
+  initialReadCount?:number;
 }) {
   const categoryPath = categoryHref(story.category);
 
@@ -57,6 +60,7 @@ export default function ArticleView({
               <div className="article-feature-content">
                 <Link href={categoryPath} className="article-feature-category">{story.category}</Link>
                 <h1>{story.title}</h1>
+                <ArticleReadCounter shortCode={story.shortId} initial={initialReadCount}/>
                 <p className="article-feature-intro">{story.chapter || story.summary}</p>
               </div>
             </header>
@@ -82,6 +86,7 @@ export default function ArticleView({
 
           <aside className="article-rail" aria-label="À lire aussi">
             <h2 className="article-rail-title">À lire aussi</h2>
+            <p className="article-rail-hint">Articles sélectionnés selon le sujet, les mots-clés et les informations SEO.</p>
             {(related.length ? related : []).map((item) => (
               <StoryCard key={item.slug} story={item} variant="rail" />
             ))}
