@@ -41,6 +41,17 @@ export default async function Home({
   // Les plus récents sont attribués d'abord au bloc « À la une ».
   const { alert, hero, rail, feed, blocks } = distributeHomepageStories(filtered, categories);
 
+  // Le filtre du fil d'actu ne propose que les rubriques réellement présentes,
+  // classées par nombre d'articles puis par ordre alphabétique français.
+  const feedCounts = new Map<string, number>();
+  for (const item of feed) {
+    const name = item.category || 'Actualité';
+    feedCounts.set(name, (feedCounts.get(name) ?? 0) + 1);
+  }
+  const feedCategories = [...feedCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'fr'))
+    .map(([name]) => name);
+
   return (
     <>
       {!q && alert && (
@@ -97,7 +108,7 @@ export default async function Home({
                 moreHref="/news-24-7"
                 moreLabel="Toute l'actualité"
               />
-              <FilActuFeed items={feed} categories={categories} />
+              <FilActuFeed items={feed} categories={feedCategories} />
             </section>
 
             <AdvertisingCarousel placement="after-feed" ads={ads?.["after-feed"] ?? []} />
