@@ -1435,3 +1435,11 @@
 .v2-watch-panel > .v2-lede { margin: 0; }
 .v2-watch-panel > .v2-note { margin-top: 16px; }
 .v2-watch-panel form { margin-top: 16px; }
+
+.v2-assistant { max-width: 880px; }
+.v2-assistant .v2-lede { margin-bottom: 16px; }
+.v2-assistant-messages { display: grid; gap: 8px; padding: 0; list-style: none; }
+.v2-assistant-message { margin: 0; }
+.v2-assistant-message p { margin: 7px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.v2-assistant-message.is-user { margin-inline-start: min(5vw, 48px); background: #eef0f4; color: #223c60; }
+.v2-assistant-message.is-assistant { margin-inline-end: min(5vw, 48px); }
