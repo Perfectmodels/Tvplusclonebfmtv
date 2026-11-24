@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { handleRoute, ok, created, ApiError } from '../../../../lib/api/response';
 import { cleanArticlePayload, invalidatePublicArticle } from '../../../../lib/admin-v2/article-write';
-import { enrichArticleRows, type ArticleAdminRow } from '../../../../lib/admin-v2/article-records';
+import { enrichArticleRows, enrichArticleRowsFromMysql, type ArticleAdminRow } from '../../../../lib/admin-v2/article-records';
 
 import { newsroom, usesLwsCatalog, getReferences } from '../../../../lib/admin-v2/lws';
 
@@ -21,7 +21,7 @@ export const GET = handleRoute(async (request: NextRequest) => {
   const order = p.get('sort') ?? 'updated';
   if (usesLwsCatalog()) {
     const result = await newsroom<{items:ArticleAdminRow[];total:number;page:number;pageSize:number}>(actor,'list',{data:{page,search,category,author,sort:order,status:allowedStatuses.includes(status)?status:''}});
-    return ok({...result,items:await enrichArticleRows(db,result.items)});
+    return ok({...result,items:await enrichArticleRowsFromMysql(actor,result.items)});
   }
   let query = db.from('articles').select(
     'id,slug,short_code,title,excerpt,category_id,cover_media_id,status,featured,is_alert,updated_at,created_at,published_at,author_id,reviewed_by',
@@ -45,7 +45,7 @@ export const POST = handleRoute(async (request: NextRequest) => {
   const {actor,db} = await requireV2Api('articles.create');
   const body = cleanArticlePayload(await request.json());
   if (usesLwsCatalog()) {
-    const references = await getReferences(db, body.category_id, body.cover_media_id);
+    const references = await getReferences(actor, db, body.category_id, body.cover_media_id);
     const article = await newsroom<{slug:string}>(actor,'create',{data:body,references});
     invalidatePublicArticle(article.slug);
     return created(article);

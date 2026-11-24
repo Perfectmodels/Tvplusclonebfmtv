@@ -5,8 +5,20 @@ import { del, put } from '@vercel/blob';
 import { BLOB_MEDIA_BUCKET, getExternalMediaUrl } from '../../../../lib/media-url';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { ApiError, handleRoute, ok, created } from '../../../../lib/api/response';
+import { newsroom, usesLwsCatalog } from '../../../../lib/admin-v2/lws';
 export const dynamic='force-dynamic';
 export const runtime='nodejs';
+
+type MysqlMedia = {
+  id:string; bucket:string; path:string; imgbb_url:string|null;
+  alt:string; caption:string; credit:string; mime_type:string; size_bytes:number;
+  width:number|null; height:number|null; created_at:string|null; url:string;
+};
+
+function asMysqlPublic(item: MysqlMedia) {
+  return { ...item, url: item.url || item.path };
+}
+
 function asPublic(db:Awaited<ReturnType<typeof requireV2Api>>['db'], item:{
   id:string;bucket:string;path:string;imgbb_url:string|null;
   alt:string;caption:string;credit:string;mime_type:string;size_bytes:number;
@@ -14,12 +26,19 @@ function asPublic(db:Awaited<ReturnType<typeof requireV2Api>>['db'], item:{
 }) {
   return {...item,url:getExternalMediaUrl(item)||db.storage.from(item.bucket).getPublicUrl(item.path).data.publicUrl};
 }
+
 export const GET=handleRoute(async(request:NextRequest)=>{
-  const {db}=await requireV2Api('articles.read_all');
+  const {actor,db}=await requireV2Api('articles.read_all');
   const params=request.nextUrl.searchParams;
   const page=Math.min(500,Math.max(1,Number(params.get('page'))||1));
   const size=Math.min(60,Math.max(1,Number(params.get('pageSize'))||32));
   const mediaId = params.get('id');
+  if (usesLwsCatalog()) {
+    const result = await newsroom<{items:MysqlMedia[];total:number;page:number;pageSize:number}>(actor,'media.list',{
+      data:{page,pageSize:size,id:mediaId||null},
+    });
+    return ok({items:result.items.map(asMysqlPublic),total:result.total,page:result.page,pageSize:result.pageSize});
+  }
   if (mediaId) {
     if (!/^[0-9a-f-]{36}$/i.test(mediaId)) throw new ApiError('Identifiant de média invalide.',400);
     const {data,error}=await db.from('media')
@@ -33,8 +52,9 @@ export const GET=handleRoute(async(request:NextRequest)=>{
   if(error)throw new ApiError('Médiathèque indisponible.',503,'UNAVAILABLE');
   return ok({items:(data??[]).map(item=>asPublic(db,item)),total:count??0,page,pageSize:size});
 });
+
 export const POST=handleRoute(async(request:NextRequest)=>{
-  const {db,actor}=await requireV2Api('media.upload');
+  const {actor,db}=await requireV2Api('media.upload');
   const form=await request.formData();
   const file=form.get('file');
   const alt=String(form.get('alt')??'').trim().slice(0,240);
@@ -93,6 +113,25 @@ export const POST=handleRoute(async(request:NextRequest)=>{
       cacheControl: '31536000',
     });
     if (uploadError) throw new ApiError('Envoi du fichier refusé.', 403, 'UNAUTHORIZED');
+  }
+  const mediaUrl = blobToken ? path : db.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  if (usesLwsCatalog()) {
+    try {
+      const item = await newsroom<MysqlMedia>(actor,'media.create',{data:{
+        original_path:path, media_url:mediaUrl, alt_text:alt,
+        caption:'', credit:'', mime_type:'image/webp',
+        size_bytes:processed.length, width_px:1200, height_px:630,
+      }});
+      return created(asMysqlPublic(item));
+    } catch (error) {
+      try {
+        if (blobToken) await del(path, { token: blobToken });
+        else await db.storage.from(bucket).remove([path]);
+      } catch {
+        console.error('Impossible de nettoyer un média après un échec d’enregistrement.');
+      }
+      throw error;
+    }
   }
   const {data,error}=await db.from('media').insert({
     bucket,path,mime_type:'image/webp',size_bytes:processed.length,

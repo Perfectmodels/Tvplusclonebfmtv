@@ -4,7 +4,8 @@ import type { createAuthClient } from '../auth/server';
 import { getExternalMediaUrl } from '../media-url';
 import { ApiError } from '../api/response';
 
-export { usesLwsCatalog } from '../db/lws-public';
+import { usesLwsCatalog } from '../db/lws-public';
+export { usesLwsCatalog };
 
 export async function newsroom<T>(actor: Pick<V2Actor,'id'|'permissions'>, operation: string, params: Record<string, unknown> = {}): Promise<T> {
   const key = process.env.LWS_EDITORIAL_SERVICE_KEY;
@@ -24,7 +25,34 @@ export async function newsroom<T>(actor: Pick<V2Actor,'id'|'permissions'>, opera
   return await response.json() as T;
 }
 
-export async function getReferences(db: Awaited<ReturnType<typeof createAuthClient>>, categoryId: string | null | undefined, mediaId?: string | null) {
+type LwsCategoryRef = { id: string; slug: string; name: string; description: string; position: number; parent_id: string | null };
+type LwsMediaRef = {
+  id: string; media_url: string; original_path: string; alt_text: string; caption: string;
+  credit: string; mime_type: string; width_px: number | null; height_px: number | null;
+};
+
+export async function getReferences(
+  actor: Pick<V2Actor,'id'|'permissions'>,
+  db: Awaited<ReturnType<typeof createAuthClient>>,
+  categoryId: string | null | undefined,
+  mediaId?: string | null,
+) {
+  if (usesLwsCatalog()) {
+    if (!categoryId && !mediaId) return { category: null, media: null };
+    const result = await newsroom<{ categories: LwsCategoryRef[]; media: LwsMediaRef[] }>(actor, 'lookups', {
+      ids: { categories: categoryId ? [categoryId] : [], media: mediaId ? [mediaId] : [] },
+    });
+    const category = result.categories.find((item) => item.id === categoryId) ?? null;
+    const m = result.media.find((item) => item.id === mediaId) ?? null;
+    return {
+      category,
+      media: m ? {
+        id: m.id, original_path: m.original_path, media_url: m.media_url || m.original_path,
+        alt_text: m.alt_text, caption: m.caption, credit: m.credit,
+        mime_type: m.mime_type, width_px: m.width_px, height_px: m.height_px,
+      } : null,
+    };
+  }
   const [category, media] = await Promise.all([
     categoryId ? db.from('categories').select('id,slug,name,description,position,parent_id').eq('id',categoryId).maybeSingle() : Promise.resolve({data:null,error:null}),
     mediaId ? db.from('media').select('id,path,bucket,imgbb_url,alt,caption,credit,mime_type,width,height').eq('id',mediaId).maybeSingle()

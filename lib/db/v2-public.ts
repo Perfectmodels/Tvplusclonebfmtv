@@ -1,5 +1,6 @@
 import 'server-only';
 import { usesLwsCatalog, listLwsArticles, getLwsArticle, getLwsCategories, getLwsTopics } from './lws-public';
+import { newsroom } from '../admin-v2/lws';
 import { getExternalMediaUrl } from '../media-url';
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
@@ -241,6 +242,12 @@ export async function searchV2(query: string) {
 /** Requête d'agrégat en cache : une seule ligne par article. */
 export const getV2ArticleReadCount = unstable_cache(async (articleId:string):Promise<number> => {
   if(!/^[0-9a-f-]{36}$/i.test(articleId))return 0;
+  if(usesLwsCatalog()){
+    try{
+      const {reads}=await newsroom<{reads:number}>({id:'public',permissions:[]},'reads.get',{data:{id:articleId}});
+      return Math.max(0,Number(reads)||0);
+    }catch{return 0;}
+  }
   const {data,error}=await client().from('article_read_stats').select('reads').eq('article_id',articleId).maybeSingle();
   if(error)return 0;
   return Math.max(0,Number(data?.reads)||0);

@@ -31,6 +31,10 @@ function newsroom(PDO $pdo, array $config): void {
     $read = in_array('articles.read_all', $permissions, true);
     $id = $request['id'] ?? '';
     $data = $request['data'] ?? [];
+    if (preg_match('/^(profile|users|roles|lookups|dashboard|categories|media|live|reads)\./', $op)) {
+        require_once __DIR__.'/admin.php';
+        lwsAdmin($pdo, $op, $request);
+    }
     if (str_starts_with($op,'shows.') || str_starts_with($op,'episodes.')) {
         require_once __DIR__.'/programming.php'; programming($pdo,$op,$request);
     }

@@ -29,7 +29,7 @@ export const POST=handleRoute(async(request:NextRequest)=>{
  const {actor,db}=await requireV2Api('shows.manage');
  const p=schema.safeParse(await request.json());
  if(!p.success)throw new ApiError('Données émission invalides.',400,'BAD_REQUEST',p.error.flatten());
- if(usesLwsCatalog()){const data=await newsroom(actor,'shows.create',{data:p.data,references:await getReferences(db,p.data.category_id,p.data.cover_media_id)});revalidateTag('public-programs');return created(data);}
+ if(usesLwsCatalog()){const data=await newsroom(actor,'shows.create',{data:p.data,references:await getReferences(actor,db,p.data.category_id,p.data.cover_media_id)});revalidateTag('public-programs');return created(data);}
  const {data,error}=await db.from('shows').insert(p.data).select('id,slug,title').single();
  if(error?.code==='23505')throw new ApiError('Ce lien d’émission existe déjà.',409,'CONFLICT');
  if(error)throw new ApiError('Création d’émission refusée.',403,'UNAUTHORIZED');
@@ -40,7 +40,7 @@ export const PATCH=handleRoute(async(request:NextRequest)=>{
  const p=schema.extend({id:z.string().uuid()}).safeParse(await request.json());
  if(!p.success)throw new ApiError('Données émission invalides.',400,'BAD_REQUEST',p.error.flatten());
  const {id,...values}=p.data;
- if(usesLwsCatalog()){const data=await newsroom(actor,'shows.edit',{id,data:values,references:await getReferences(db,values.category_id,values.cover_media_id)});revalidateTag('public-programs');revalidateTag('public-episodes');return ok(data);}
+ if(usesLwsCatalog()){const data=await newsroom(actor,'shows.edit',{id,data:values,references:await getReferences(actor,db,values.category_id,values.cover_media_id)});revalidateTag('public-programs');revalidateTag('public-episodes');return ok(data);}
  const {data,error}=await db.from('shows').update(values).eq('id',id).select('id,title,slug').maybeSingle();
  if(error||!data)throw new ApiError('Mise à jour refusée.',403,'UNAUTHORIZED');
  revalidateTag('public-programs');return ok(data);

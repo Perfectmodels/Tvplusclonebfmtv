@@ -15,6 +15,10 @@ async function read<T>(resource: string, filters: Record<string, string>, tags: 
   return await response.json() as T;
 }
 
+/** Lecture publique générique : aucun appel Supabase quand LWS est configuré. */
+export const readLwsResource = <T>(resource: string, filters: Record<string, string> = {}, tags: string[] = []) =>
+  read<T>(resource, filters, tags);
+
 type Article = {
   id: string; slug: string; short_code: string; title: string; excerpt: string | null;
   category: string | null; cover_url: string | null; published_at: string; updated_at: string | null;

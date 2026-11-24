@@ -28,7 +28,7 @@ export const PATCH=handleRoute(async (request:NextRequest,{params}:Context)=>{
   if(!expected)throw new ApiError('Version de l’article requise pour éviter les conflits.',400);
   const patch=cleanArticlePayload(input);
   if (usesLwsCatalog()) {
-    const references=await getReferences(db,patch.category_id,patch.cover_media_id);
+    const references=await getReferences(actor,db,patch.category_id,patch.cover_media_id);
     const article=await newsroom<{slug:string}>(actor,'edit',{id,data:patch,expected,references});
     invalidatePublicArticle(article.slug);
     return ok(article);

@@ -51,6 +51,17 @@ try {
             throw $e;
         }
     }
+    if ($resource === 'live') {
+        try {
+            $row = $pdo->query('SELECT title,description,standby_message,player_platform,playback_url,hls_url,enabled,starts_at,ends_at FROM tvp_live_settings WHERE id=1')->fetch();
+            if (!$row) respond(503, ['error' => 'Réglages du direct à initialiser dans la V3.']);
+            $row['enabled'] = (bool)$row['enabled'];
+            respond(200, $row);
+        } catch (PDOException $e) {
+            if (in_array(($e->errorInfo[1] ?? 0), [1054, 1146], true)) respond(503, ['error' => 'Réglages du direct en cours de configuration.']);
+            throw $e;
+        }
+    }
     if ($resource !== 'articles') {
         respond(404, ['error' => 'Ressource inconnue']);
     }

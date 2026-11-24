@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { ApiError } from '../api/response';
 import { createAuthClient } from './server';
 import { usesTvplusV2 } from '../db/v2-public';
+import { usesLwsCatalog } from '../db/lws-public';
+import { newsroom } from '../admin-v2/lws';
 
 export type V2Actor = {
   id: string;
@@ -19,6 +21,20 @@ export const getV2Actor = cache(async (): Promise<V2Actor | null> => {
   const db = await createAuthClient();
   const { data: { user }, error: authError } = await db.auth.getUser();
   if (authError || !user) return null;
+  if (usesLwsCatalog()) {
+    try {
+      const profile = await newsroom<{ id: string; email: string; full_name: string | null; role: string; permissions: string[]; is_active: boolean }>(
+        { id: user.id, permissions: [] }, 'profile.resolve',
+      );
+      if (!profile.is_active) return null;
+      return {
+        id: user.id, email: user.email ?? profile.email ?? '', name: profile.full_name ?? user.email ?? '',
+        role: profile.role, permissions: profile.permissions,
+      };
+    } catch {
+      return null;
+    }
+  }
   const { data: profile, error: profileError } = await db.from('profiles')
     .select('id,full_name,role,is_active').eq('id', user.id).maybeSingle();
   if (profileError || !profile || profile.is_active !== true) return null;
