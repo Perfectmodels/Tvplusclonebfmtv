@@ -5,7 +5,7 @@ export async function POST(request:NextRequest){
   const origin=request.headers.get('origin');
   if(!origin||origin!==request.nextUrl.origin)return NextResponse.json({error:'Origine refusée'},{status:403});
   if((request.headers.get('sec-fetch-site')||'').toLowerCase()==='cross-site')return NextResponse.json({error:'Requête refusée'},{status:403});
-  if(/bot|crawler|spider|preview|facebookexternalhit|whatsapp|googlebot|bingbot/i.test(request.headers.get('user-agent')||''))return NextResponse.json({reads:null},{status:204});
+  if(/bot|crawler|spider|preview|facebookexternalhit|whatsapp|googlebot|bingbot/i.test(request.headers.get('user-agent')||''))return new NextResponse(null,{status:204});
   let shortCode='';
   try{const body=await request.json();shortCode=String(body?.shortCode||'');}catch{return NextResponse.json({error:'Requête invalide'},{status:400});}
   if(!/^[A-Za-z0-9_-]{8}$/.test(shortCode))return NextResponse.json({error:'Article invalide'},{status:400});
