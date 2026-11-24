@@ -56,9 +56,9 @@ try {
     $from = ' FROM tvp_articles a LEFT JOIN tvp_categories c ON c.id = a.category_id LEFT JOIN tvp_media m ON m.id = a.cover_media_id WHERE ' . implode(' AND ', $criteria);
     $count = $pdo->prepare('SELECT COUNT(*)' . $from);
     $count->execute($params);
-    $fields = 'a.id, a.title, a.slug, a.short_code, a.excerpt, a.published_at, a.country_code, a.featured, a.is_alert, c.name AS category, c.slug AS category_slug, m.media_url AS cover_url, m.alt_text AS cover_alt';
+    $fields = 'a.id, a.title, a.slug, a.short_code, a.excerpt, a.published_at, a.created_at, a.updated_at, a.is_video_article, a.tags_json, a.seo_title, a.seo_description, a.country_code, a.featured, a.is_alert, c.name AS category, c.slug AS category_slug, m.media_url AS cover_url, m.alt_text AS cover_alt';
     if (isset($_GET['code']) || isset($_GET['slug'])) {
-        $fields .= ', a.content_html, a.seo_title, a.seo_description, a.tags_json, m.caption AS cover_caption, m.credit AS cover_credit';
+        $fields .= ', a.content_html, a.province_slug, m.caption AS cover_caption, m.credit AS cover_credit';
     }
     $query = $pdo->prepare("SELECT $fields $from ORDER BY a.published_at DESC, a.id ASC LIMIT $limit OFFSET $offset");
     $query->execute($params);

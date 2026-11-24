@@ -1,4 +1,5 @@
 import 'server-only';
+import { usesLwsCatalog, listLwsArticles, getLwsArticle, getLwsCategories } from './lws-public';
 import { getExternalMediaUrl } from '../media-url';
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
@@ -111,6 +112,7 @@ function mapFull(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Publ
 export const listV2Articles = unstable_cache(async ({
   category, country, search, page = 1, pageSize = 12,
 }: {category?: string; country?: string; search?: string; page?: number; pageSize?: number} = {}) => {
+  if (usesLwsCatalog()) return listLwsArticles({category, country, search, page, pageSize});
   const db = client();
   let q = db.from('articles').select(SELECT_ARTICLE_LIST, { count: 'exact' }).eq('status', 'published');
   if(country) q=q.eq('country_code',country);
@@ -133,6 +135,7 @@ export const listV2Articles = unstable_cache(async ({
 }, ['v2-public-article-list'], { revalidate: 60, tags: ['public-articles'] });
 
 export const getV2ArticleBySlug = unstable_cache(async (slug: string) => {
+  if (usesLwsCatalog()) return getLwsArticle({slug});
   const { data, error } = await client().from('articles').select(SELECT_ARTICLE_DETAIL)
     .eq('status', 'published').eq('slug', slug).maybeSingle();
   if (error) throw new Error(error.message);
@@ -143,6 +146,7 @@ export const getV2ArticleBySlug = unstable_cache(async (slug: string) => {
 }, ['v2-public-article-detail'], { revalidate: 90, tags: ['public-articles'] });
 
 export const getV2ArticleByShortCode = unstable_cache(async (shortCode: string) => {
+  if (usesLwsCatalog()) return getLwsArticle({code:shortCode});
   if (!/^[A-Za-z0-9_-]{8}$/.test(shortCode)) return { item: null as PublicArticle | null, source: 'supabase' as const };
   const { data, error } = await client().from('articles').select(SELECT_ARTICLE_DETAIL)
     .eq('status', 'published').eq('short_code', shortCode).maybeSingle();
@@ -154,6 +158,7 @@ export const getV2ArticleByShortCode = unstable_cache(async (shortCode: string) 
 }, ['v2-public-article-short-code'], { revalidate: 90, tags: ['public-articles'] });
 
 export const getV2Categories = unstable_cache(async () => {
+  if (usesLwsCatalog()) return getLwsCategories();
   const { data, error } = await client().from('categories').select('name').order('position');
   if (error) throw new Error(error.message);
   return { data: (data ?? []).map((c) => c.name), source: 'supabase' as const };
