@@ -541,3 +541,8 @@ button.direct-player, button.direct-player-large {
 .article-read-counter{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin-top:0;margin-bottom:6px;border:1px solid rgba(255,255,255,.3);border-radius:20px;background:rgba(5,20,47,.55);font:700 12px var(--editorial-font);color:#fff;}
 .article-rail-hint{font-size:12px;line-height:1.4;color:#62708a;margin:-7px 0 16px;}
 @media(max-width:760px){.article-feature{min-height:430px;}.article-feature-content{width:100%;padding:24px 18px;}.article-main .article-feature h1{font-size:clamp(25px,6.2vw,35px);}}
+
+.editorial-category-loading,.editorial-category-error{font:700 12px var(--editorial-font);padding:7px 13px;margin:0;}
+.editorial-category-error{color:#b41b32;}
+.editorial-side-actions button:disabled {opacity:.35;cursor:not-allowed;}
+.editorial-side-viewport .editorial-side-track {transform:none!important;}

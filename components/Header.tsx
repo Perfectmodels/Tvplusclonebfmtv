@@ -106,7 +106,7 @@ export default function Header({
             </Link>
             <button type="button" className="nav-country-toggle" aria-expanded={countryOpen}
               aria-controls="country-navigation" onClick={()=>{setCountryOpen(v=>!v);setMenuOpen(false)}}>
-              <GabonMark /> Pays <ChevronDown size={14} aria-hidden="true"/>
+              <GabonMark /> Gabon <ChevronDown size={14} aria-hidden="true"/>
             </button>
             {categories.map((category) => (
               <Link key={category} href={categoryHref(category)}>
