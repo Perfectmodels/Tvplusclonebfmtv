@@ -234,7 +234,7 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
         }
 
         // Rubriques administratives.
-        if (str_starts_with($op, 'categories.')) {
+        if (strpos($op, 'categories.') === 0) {
             $action = substr($op, strlen('categories.'));
             if ($action === 'list') {
                 $need('articles.read_all');
@@ -309,7 +309,7 @@ function lwsAdmin(PDO $pdo, string $op, array $request): void {
         }
 
         // Médiathèque : les fichiers restent sur Vercel Blob, les fiches passent en MySQL.
-        if (str_starts_with($op, 'media.')) {
+        if (strpos($op, 'media.') === 0) {
             $action = substr($op, strlen('media.'));
             $columns = 'id,original_path,media_url,alt_text,caption,credit,mime_type,size_bytes,width_px,height_px,created_at';
             if ($action === 'list') {

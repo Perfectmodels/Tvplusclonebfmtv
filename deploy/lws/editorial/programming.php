@@ -2,7 +2,7 @@
 declare(strict_types=1);
 function programming(PDO $pdo,string $op,array $request): void {
  if(!in_array('shows.manage',$request['actor']['permissions']??[],true)) respond(403,['error'=>'Permission émissions requise']);
- $show=str_starts_with($op,'shows.');$table=$show?'tvp_shows':'tvp_episodes';$action=substr($op,strpos($op,'.')+1);
+ $show=strpos($op,'shows.')===0;$table=$show?'tvp_shows':'tvp_episodes';$action=substr($op,strpos($op,'.')+1);
  $id=$request['id']??'';$data=$request['data']??[];
  if(!in_array($action,['list','create','edit','delete'],true))respond(400,['error'=>'Action invalide']);
  if(in_array($action,['edit','delete'],true)&&!preg_match('/^[a-f0-9-]{36}$/iD',$id))respond(400,['error'=>'Identifiant invalide']);

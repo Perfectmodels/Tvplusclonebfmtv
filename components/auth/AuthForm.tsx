@@ -33,7 +33,18 @@ export default function AuthForm({ mode }: { mode: Mode }) {
       setStatus('done');
       if (isLogin) {
         const next = new URLSearchParams(window.location.search).get('next');
-        router.push(next && /^\/admin-v2(?:\/|$)/.test(next) ? next : '/compte');
+        let destination = '/compte';
+        try {
+          const meResponse = await fetch('/api/auth/me', { cache: 'no-store' });
+          const me = await meResponse.json();
+          const profile = me?.data?.profile;
+          const permissions: string[] = profile?.permissions ?? [];
+          const isAdmin = permissions.includes('articles.read_all') || ['admin', 'super_admin'].includes(profile?.role);
+          if (isAdmin) destination = '/admin-v2';
+        } catch {
+          // En cas d'échec, on conserve la destination lecteur.
+        }
+        router.push(next && /^\/admin-v2(?:\/|$)/.test(next) ? next : destination);
         router.refresh();
       } else {
         setMessage(
