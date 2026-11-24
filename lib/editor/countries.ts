@@ -19,3 +19,20 @@ export const GABON_PROVINCES = [
   { value: 'ogooue-maritime', label: 'Ogooué-Maritime' },
   { value: 'woleu-ntem', label: 'Woleu-Ntem' },
 ] as const;
+
+// Pays disponibles dans le sélecteur éditorial. Une page vide signale l'absence de publication,
+// elle n'attribue pas automatiquement des articles gabonais à d'autres pays.
+export const EDITORIAL_COUNTRIES = [
+  { code:'GA', name:'Gabon' },
+  { code:'CM', name:'Cameroun' },
+  { code:'CG', name:'Congo' },
+  { code:'CD', name:'RD Congo' },
+  { code:'GQ', name:'Guinée équatoriale' },
+  { code:'CF', name:'Centrafrique' },
+  { code:'TD', name:'Tchad' },
+  { code:'CI', name:'Côte d’Ivoire' },
+  { code:'SN', name:'Sénégal' },
+  { code:'BJ', name:'Bénin' },
+  { code:'TG', name:'Togo' },
+  { code:'FR', name:'France' },
+] as const;

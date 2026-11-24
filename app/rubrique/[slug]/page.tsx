@@ -1,54 +1,37 @@
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import {notFound} from 'next/navigation';
 import Breadcrumb from '../../../components/Breadcrumb';
-import SectionHeading from '../../../components/SectionHeading';
 import StoryCard from '../../../components/StoryCard';
-import { categories as staticCategories } from '../../../lib/data';
-import { categorySlug } from '../../../lib/categories';
-import { getCategories, listArticles } from '../../../lib/db/repository';
-
-export const revalidate = 60;
-
-export async function generateStaticParams() {
-  const { data: categories } = await getCategories();
-  return (categories.length ? categories : staticCategories).map((c) => ({ slug: categorySlug(c) }));
+import ArticlePagination from '../../../components/ArticlePagination';
+import {categories as staticCategories} from '../../../lib/data';
+import {categorySlug} from '../../../lib/categories';
+import {getCategories,listArticles} from '../../../lib/db/repository';
+export const revalidate=60;
+const PAGE_SIZE=12;
+export async function generateStaticParams(){
+ const {data:categories}=await getCategories();
+ return (categories.length?categories:staticCategories).map(c=>({slug:categorySlug(c)}));
 }
-
-export default async function Category({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const normalizedSlug = categorySlug(decodeURIComponent(slug));
-  const { data: categories } = await getCategories();
-  const label = (categories.length ? categories : staticCategories).find((c) => categorySlug(c) === normalizedSlug);
-  if (!label) notFound();
-
-  const { items } = await listArticles({ category: normalizedSlug, pageSize: 30 });
-
-  return (
-    <main className="shell category-page">
-      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: label }]} />
-      <h1 className="page-title">{label}</h1>
-      <p className="page-intro">
-        Retrouvez toute l’actualité {label.toLowerCase()} au Gabon : analyses, réactions,
-        décryptages et dernières informations de la rédaction TV Plus.
-      </p>
-
-      {items.length > 0 ? (
-        <>
-          <div className="category-hero">
-            <StoryCard story={items[0]} variant="hero" />
-            <div className="hero-rail">
-              {items.slice(1, 5).map((story) => <StoryCard key={story.slug} story={story} variant="rail" />)}
-            </div>
-          </div>
-          <SectionHeading title={'Toutes les actualités ' + label.toLowerCase()} moreHref="/news-24-7" moreLabel="Le fil info" />
-          <div className="selection-grid">
-            {items.slice(5).map((story) => <StoryCard key={story.slug} story={story} />)}
-          </div>
-        </>
-      ) : (
-        <p className="empty-state">Les articles de cette rubrique seront bientôt disponibles.</p>
-      )}
-    </main>
-  );
+export default async function Category({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{page?:string}>}){
+ const {slug}=await params;
+ const normalizedSlug=categorySlug(decodeURIComponent(slug));
+ const {data:categories}=await getCategories();
+ const label=(categories.length?categories:staticCategories).find(c=>categorySlug(c)===normalizedSlug);
+ if(!label)notFound();
+ const search=await searchParams;
+ const page=Math.min(2000,Math.max(1,Number(search.page)||1));
+ const {items,total}=await listArticles({category:normalizedSlug,page,pageSize:PAGE_SIZE});
+ const totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+ return <main className="shell category-page">
+  <Breadcrumb items={[{label:'Accueil',href:'/'},{label}]}/>
+  <h1 className="page-title">{label}</h1>
+  <p className="page-intro">Toute l'actualité de la rubrique {label.toLowerCase()}, classée du plus récent au plus ancien. {total.toLocaleString('fr-FR')} publications.</p>
+  {items.length?<>
+    {page===1&&<div className="category-hero">
+      <StoryCard story={items[0]} variant="hero"/>
+      <div className="hero-rail">{items.slice(1,5).map(s=><StoryCard key={s.shortId||s.slug} story={s} variant="rail"/>)}</div>
+    </div>}
+    <div className="selection-grid">{(page===1?items.slice(5):items).map(s=><StoryCard key={s.shortId||s.slug} story={s}/>)}</div>
+  </>:<p className="empty-state">Aucun article sur cette page.</p>}
+  <ArticlePagination path={'/rubrique/'+normalizedSlug} page={page} totalPages={totalPages}/>
+ </main>;
 }

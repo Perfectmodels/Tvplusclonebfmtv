@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Menu, X, Search, ChevronRight } from 'lucide-react';
+import { Menu, X, Search, ChevronRight, ChevronDown, House } from 'lucide-react';
+import { EDITORIAL_COUNTRIES } from '../lib/editor/countries';
 import TvPlusLogo from './TvPlusLogo';
 import { topicLinks, topics as staticTopics } from '../lib/data';
 import { categoryHref } from '../lib/categories';
@@ -26,11 +27,13 @@ export default function Header({
 }: { topics?: TopicItem[]; categories?: string[] }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [countryOpen, setCountryOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     setMenuOpen(false);
     setSearchOpen(false);
+    setCountryOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -38,6 +41,7 @@ export default function Header({
       if (event.key !== 'Escape') return;
       setMenuOpen(false);
       setSearchOpen(false);
+      setCountryOpen(false);
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
@@ -97,10 +101,13 @@ export default function Header({
             ))}
           </div>
           <div className="nav-links">
-            <Link href="/rubrique/politique" className="nav-special">
-              <GabonMark />
-              Gabon
+            <Link href="/" className={'nav-home-btn'+(pathname==='/'?' is-active':'')} aria-label="Accueil">
+              <House size={16} aria-hidden="true"/> Accueil
             </Link>
+            <button type="button" className="nav-country-toggle" aria-expanded={countryOpen}
+              aria-controls="country-navigation" onClick={()=>{setCountryOpen(v=>!v);setMenuOpen(false)}}>
+              <GabonMark /> Pays <ChevronDown size={14} aria-hidden="true"/>
+            </button>
             {categories.map((category) => (
               <Link key={category} href={categoryHref(category)}>
                 {category}
@@ -109,6 +116,24 @@ export default function Header({
           </div>
         </div>
       </nav>
+
+      {countryOpen && (
+        <div id="country-navigation" className="country-navigation" role="navigation" aria-label="Choisir un pays">
+          <div className="country-navigation-inner shell">
+            <strong>Actualités par pays</strong>
+            <div className="country-navigation-grid">
+              {EDITORIAL_COUNTRIES.map(country => (
+                <Link href={'/pays/'+country.code.toLowerCase()} key={country.code}
+                  className={country.code==='GA'?'country-gabon':''}
+                  onClick={()=>setCountryOpen(false)}>
+                  {country.name}<ChevronRight size={14} aria-hidden="true"/>
+                </Link>
+              ))}
+            </div>
+            <p>Les pays sans publication affichent un état vide, sans reprendre les actualités du Gabon.</p>
+          </div>
+        </div>
+      )}
 
       {searchOpen && (
         <form id="site-search-form" className="header-search shell" action="/recherche" role="search">
@@ -122,7 +147,10 @@ export default function Header({
         <div className="mega-menu" id="site-mega-menu" aria-label="Menu de navigation">
           <div className="shell mega-inner">
             <div className="mega-col mega-lead">
-              <span className="mega-label">À la une</span>
+              <span className="mega-label">Navigation</span>
+              <Link href="/" onClick={() => setMenuOpen(false)}>Accueil <ChevronRight size={15}/></Link>
+              <Link href="/actualites" onClick={() => setMenuOpen(false)}>Toutes les actualités <ChevronRight size={15}/></Link>
+              <Link href="/pays/ga" onClick={() => setMenuOpen(false)}>Gabon et pays <ChevronRight size={15}/></Link>
               {topics.map((topic) => (
                 <Link key={topic.label} href={topic.link} onClick={() => setMenuOpen(false)}>
                   {topic.label} <ChevronRight size={15} />

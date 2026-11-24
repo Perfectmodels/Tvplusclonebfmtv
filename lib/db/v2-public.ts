@@ -106,10 +106,11 @@ function mapFull(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Publ
 }
 
 export const listV2Articles = unstable_cache(async ({
-  category, search, page = 1, pageSize = 12,
-}: {category?: string; search?: string; page?: number; pageSize?: number} = {}) => {
+  category, country, search, page = 1, pageSize = 12,
+}: {category?: string; country?: string; search?: string; page?: number; pageSize?: number} = {}) => {
   const db = client();
   let q = db.from('articles').select(SELECT_ARTICLE_LIST, { count: 'exact' }).eq('status', 'published');
+  if(country) q=q.eq('country_code',country);
   if (category) {
     const { data: cat, error } = await db.from('categories').select('id').eq('slug', categorySlug(category)).maybeSingle();
     if (error) throw new Error(error.message);

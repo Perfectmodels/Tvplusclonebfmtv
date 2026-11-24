@@ -69,16 +69,18 @@ async function fromSupabase<T>(
 
 export async function listArticles({
   category,
+  country,
   search,
   page = 1,
   pageSize = 12,
 }: {
   category?: string;
+  country?: string;
   search?: string;
   page?: number;
   pageSize?: number;
 } = {}): Promise<Paginated<Story>> {
-  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, search, page, pageSize });
+  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, country, search, page, pageSize });
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
