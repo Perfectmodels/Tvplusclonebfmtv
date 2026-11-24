@@ -84,10 +84,10 @@ try {
     }
     $limit = max(1, min(200, (int)($_GET['limit'] ?? 20)));
     $offset = max(0, (int)($_GET['offset'] ?? 0));
-    $from = ' FROM tvp_articles a LEFT JOIN tvp_categories c ON c.id = a.category_id LEFT JOIN tvp_media m ON m.id = a.cover_media_id WHERE ' . implode(' AND ', $criteria);
+    $from = ' FROM tvp_articles a LEFT JOIN tvp_categories c ON c.id = a.category_id LEFT JOIN tvp_media m ON m.id = a.cover_media_id LEFT JOIN tvp_profiles p ON p.id = a.author_id WHERE ' . implode(' AND ', $criteria);
     $count = $pdo->prepare('SELECT COUNT(*)' . $from);
     $count->execute($params);
-    $fields = 'a.id, a.title, a.slug, a.short_code, a.excerpt, a.published_at, a.created_at, a.updated_at, a.is_video_article, a.tags_json, a.seo_title, a.seo_description, a.country_code, a.featured, a.is_alert, c.name AS category, c.slug AS category_slug, m.media_url AS cover_url, m.alt_text AS cover_alt';
+    $fields = 'a.id, a.title, a.slug, a.short_code, a.excerpt, a.published_at, a.created_at, a.updated_at, a.is_video_article, a.tags_json, a.seo_title, a.seo_description, a.country_code, a.featured, a.is_alert, c.name AS category, c.slug AS category_slug, m.media_url AS cover_url, m.alt_text AS cover_alt, p.full_name AS author_name';
     if (isset($_GET['code']) || isset($_GET['slug'])) {
         $fields .= ', a.content_html, a.province_slug, m.caption AS cover_caption, m.credit AS cover_credit';
     }
