@@ -24,5 +24,6 @@ export type NormalizedItem = {
   title: string;
   link: string;
   description: string;
+  publisher?: string;
   publishedAt: string | null;
 };

@@ -12,6 +12,7 @@ import TiptapEditor, { type EditorValue } from '../editor/TiptapEditor';
 import { COUNTRIES, GABON_PROVINCES } from '../../lib/editor/countries';
 import { parseVideoUrl } from '../../lib/video/providers';
 import ReplayEmbed from '../video/ReplayEmbed';
+import { watchDraftKey, watchDraftSchema } from '../../lib/editorial/veille-types';
 
 type Category = { id: string; name: string; slug: string };
 type Media = { id: string; url: string; alt: string; mime_type: string };
@@ -47,8 +48,8 @@ function extractArticleText(node: unknown): string {
 }
 
 export default function V2ArticleEditor({
-  id, actorId, canReview,
-}: { id?: string; actorId: string; canReview: boolean }) {
+  id, actorId, canReview, fromWatch = false,
+}: { id?: string; actorId: string; canReview: boolean; fromWatch?: boolean }) {
   const router = useRouter();
   const [form, setForm] = useState<ArticleForm>(initialForm);
   const [keywords, setKeywords] = useState('');
@@ -71,6 +72,38 @@ export default function V2ArticleEditor({
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleLocal, setScheduleLocal] = useState(()=>new Date(Date.now()+2*60*60_000).toISOString().slice(0,16));
   const [publicationDate, setPublicationDate] = useState<string|null>(null);
+
+  useEffect(() => {
+    if (!fromWatch || id) return;
+    try {
+      const cached = sessionStorage.getItem(watchDraftKey + ':' + actorId);
+      const result = watchDraftSchema.safeParse(cached ? JSON.parse(cached) : null);
+      if (!result.success) { setError('Le brouillon de veille est introuvable dans cet onglet.'); return; }
+      const draft = result.data;
+      const json = {
+        type: 'doc',
+        content: [
+          ...draft.paragraphs.map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] })),
+          { type: 'paragraph', content: [
+            { type: 'text', text: 'Source : ' },
+            { type: 'text', text: draft.source, marks: [{ type: 'link', attrs: { href: draft.href } }] },
+          ] },
+        ],
+      };
+      const text = draft.paragraphs.join(' ');
+      setForm({
+        ...initialForm, title: draft.title, slug: slugify(draft.title), excerpt: draft.excerpt,
+        seo_title: draft.title, seo_description: draft.excerpt, country_code: draft.region === 'gabon' ? 'GA' : '',
+      });
+      setKeywords(draft.keywords.join(', '));
+      setInitialJson(json);
+      setContent({ json, text, words: text.split(/\s+/).length });
+      setDirty(true);
+      setSuccess('Proposition importée. Relisez les faits et choisissez la rubrique avant d’enregistrer.');
+    } catch {
+      setError('Le brouillon de veille n’a pas pu être chargé.');
+    }
+  }, [actorId, fromWatch, id]);
 
   const canEdit = canReview || (ownerId === actorId && ['draft', 'in_review'].includes(status));
   const cover = useMemo(() => media.find(item => item.id === form.cover_media_id), [media, form.cover_media_id]);
@@ -189,13 +222,16 @@ export default function V2ArticleEditor({
       if (result.data.short_code) setShortCode(result.data.short_code);
       setDirty(false);
       setSuccess('Article enregistré.');
-      if (!id) router.replace('/admin-v2/articles/' + result.data.id + '/edit');
+      if (!id) {
+        if (fromWatch) { try { sessionStorage.removeItem(watchDraftKey + ':' + actorId); } catch {} }
+        router.replace('/admin-v2/articles/' + result.data.id + '/edit');
+      }
       return result.data;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur réseau');
       return null;
     } finally { setSaving(false); }
-  }, [canEdit, form, keywords, content.json, updatedAt, id, router]);
+  }, [canEdit, form, keywords, content.json, updatedAt, id, router, fromWatch, actorId]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -539,6 +575,7 @@ export default function V2ArticleEditor({
                     }));
                     setDirty(true); setSuccess('');
                   }}>
+                  <option value="">Sélectionner un pays</option>
                   {COUNTRIES.map(country =>
                     <option value={country.code} key={country.code}>{country.name}</option>)}
                 </select>

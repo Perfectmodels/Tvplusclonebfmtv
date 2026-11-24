@@ -30,7 +30,7 @@ function pickLink(value: unknown): string {
   if (typeof value === 'string') return value;
   if (Array.isArray(value)) {
     const alternate = value.find((v) => (v as Record<string, string>)?.['@_rel'] === 'alternate');
-    return text(alternate ?? value[0]?.['@_href'] ?? value[0]);
+    return pickLink(alternate ?? value[0]);
   }
   if (value && typeof value === 'object') {
     const obj = value as Record<string, unknown>;
@@ -44,7 +44,7 @@ function stripSourceSuffix(title: string): string {
   return title.replace(/\s+-\s+[^-]{2,60}$/, '').trim();
 }
 
-export function parseFeed(xml: string, isGoogleNews = false): NormalizedItem[] {
+export function parseFeed(xml: string, isGoogleNews = false, summaryLimit = 320): NormalizedItem[] {
   const doc = parser.parse(xml) as Record<string, any>;
   const channel = doc?.rss?.channel ?? doc?.feed ?? {};
   const raw = channel.item ?? channel.entry ?? [];
@@ -72,7 +72,8 @@ export function parseFeed(xml: string, isGoogleNews = false): NormalizedItem[] {
         guid,
         title: title.slice(0, 220),
         link,
-        description: description.slice(0, 320),
+        description: description.slice(0, summaryLimit),
+        publisher: clean(text(item.source)).slice(0, 120) || undefined,
         publishedAt,
       };
     })
