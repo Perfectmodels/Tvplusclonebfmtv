@@ -1,5 +1,5 @@
 import 'server-only';
-import { usesLwsCatalog, listLwsArticles, getLwsArticle, getLwsCategories } from './lws-public';
+import { usesLwsCatalog, listLwsArticles, getLwsArticle, getLwsCategories, getLwsTopics } from './lws-public';
 import { getExternalMediaUrl } from '../media-url';
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
@@ -172,7 +172,8 @@ export async function getV2FilActu(limit = 20) {
   })), source: 'supabase' as const };
 }
 
-export const getV2Topics = unstable_cache(async (): Promise<{data: TopicItem[]; source: 'supabase'}> => {
+export const getV2Topics = unstable_cache(async (): Promise<{data: TopicItem[]; source: 'supabase'|'mysql'}> => {
+  if (usesLwsCatalog()) return getLwsTopics();
   const { data, error } = await client().from('articles')
     .select('slug,short_code,title,featured,is_alert').eq('status', 'published')
     .or('featured.eq.true,is_alert.eq.true').order('published_at', { ascending: false }).limit(5);

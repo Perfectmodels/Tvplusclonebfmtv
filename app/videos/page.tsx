@@ -2,13 +2,17 @@ import Breadcrumb from '../../components/Breadcrumb';
 import LivePlayer from '../../components/LivePlayer';
 import MediaBrowser from '../../components/MediaBrowser';
 import { getVideos } from '../../lib/db/repository';
+import { usesLwsCatalog, getLwsVideoArticles } from '../../lib/db/lws-public';
+import { articlePath } from '../../lib/articles/urls';
 import { isPlayableVideoUrl } from '../../lib/media/urls';
 
 export const revalidate = 60;
 
 export default async function VideosPage() {
-  const { data: videos } = await getVideos();
-  const items = videos.filter((v) => isPlayableVideoUrl(v.href)).map((v) => ({
+  const mysql=usesLwsCatalog();
+  const { data: videos } = mysql ? {data:[]} : await getVideos();
+  const reports=mysql ? await getLwsVideoArticles() : [];
+  const items = mysql ? reports.map(a=>({id:a.articleId||a.slug,title:a.title,category:a.category,image:a.image,meta:'Reportage',description:a.summary,href:articlePath(a)})) : videos.filter((v) => isPlayableVideoUrl(v.href)).map((v) => ({
     id: v.id,
     title: v.title,
     category: v.category,

@@ -7,7 +7,7 @@ import { getPrograms } from '../../lib/db/repository';
 export const revalidate = 60;
 
 export default async function ReplayPage() {
-  const { data: programs } = await getPrograms();
+  const { data: programs, error } = await getPrograms();
   const items = programs.map((p) => ({
     id: p.id,
     title: p.name,
@@ -26,7 +26,7 @@ export default async function ReplayPage() {
         Retrouvez vos émissions préférées en replay : information, décryptage, sport, culture et entretiens.
       </p>
       <div className="section-head has-rule"><h2>Toutes les émissions</h2></div>
-      <MediaBrowser items={items} variant="program" pageSize={6} />
+      {error ? <p className="empty-state">{error}</p> : <MediaBrowser items={items} variant="program" pageSize={6} />}
       <p className="program-replay-cta"><Link href="/replays" className="direct-cta">Voir tous les épisodes disponibles</Link></p>
       <Newsletter
         title="Ne manquez plus une émission"

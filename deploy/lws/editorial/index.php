@@ -37,11 +37,27 @@ try {
         $rows = $pdo->query('SELECT id, name, slug FROM tvp_categories ORDER BY position, name')->fetchAll();
         respond(200, ['items' => $rows]);
     }
+    if ($resource === 'programs' || $resource === 'episodes') {
+        try {
+            if ($resource==='programs') {
+                $rows=$pdo->query("SELECT s.id,s.slug,s.title AS name,s.host_name AS host,s.schedule_label AS slot,COALESCE(c.name,'Émission') AS category,COALESCE(m.media_url,'') AS image,COALESCE(NULLIF(s.description,''),s.tagline) AS description FROM tvp_shows s LEFT JOIN tvp_categories c ON c.id=s.category_id LEFT JOIN tvp_media m ON m.id=s.cover_media_id WHERE s.is_active=1 ORDER BY s.position,s.title")->fetchAll();
+            } else {
+                $limit=max(1,min(200,(int)($_GET['limit']??24)));
+                $rows=$pdo->query("SELECT e.id,e.show_id,e.title,e.description,e.platform,e.external_id,e.source_url,e.thumbnail_url,e.duration_seconds,e.aired_at FROM tvp_episodes e JOIN tvp_shows s ON s.id=e.show_id WHERE s.is_active=1 AND (e.status='published' OR (e.status='draft' AND e.publish_at IS NOT NULL AND e.publish_at<=UTC_TIMESTAMP(6))) AND (e.publish_at IS NULL OR e.publish_at<=UTC_TIMESTAMP(6)) ORDER BY e.aired_at DESC LIMIT $limit")->fetchAll();
+            }
+            respond(200,['items'=>$rows]);
+        } catch(PDOException $e) {
+            if(in_array(($e->errorInfo[1]??0),[1054,1146],true))respond(503,['error'=>'Catalogue émissions/replays en cours de configuration.']);
+            throw $e;
+        }
+    }
     if ($resource !== 'articles') {
         respond(404, ['error' => 'Ressource inconnue']);
     }
     $criteria = ["a.status = 'published'", 'a.published_at <= UTC_TIMESTAMP()'];
     $params = [];
+    if (($_GET['video']??'')==='1') $criteria[]='a.is_video_article=1';
+    if (($_GET['highlights']??'')==='1') $criteria[]='(a.featured=1 OR a.is_alert=1)';
     foreach (['code' => 'a.short_code', 'slug' => 'a.slug', 'category' => 'c.slug', 'country' => 'a.country_code'] as $key => $column) {
         if (isset($_GET[$key])) {
             if (!is_string($_GET[$key]) || strlen($_GET[$key]) > 255) respond(400, ['error' => 'Filtre invalide']);

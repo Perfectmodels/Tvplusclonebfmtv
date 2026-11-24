@@ -1,5 +1,6 @@
 import 'server-only';
 import * as v2 from './v2-public';
+import { usesLwsCatalog, getLwsPrograms, getLwsEpisodes } from './lws-public';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   categories as staticCategories,
@@ -261,6 +262,7 @@ export async function getVideos(): Promise<Wrapped<typeof staticVideos>> {
 }
 
 export async function getPrograms(): Promise<Wrapped<typeof staticPrograms>> {
+  if (usesLwsCatalog()) return getLwsPrograms();
   if (v2.usesTvplusV2()) return v2.getV2Programs();
   const result = await fromSupabase<ProgramRow[]>(
     (db) => db.from('programs').select('*').order('slot'),
@@ -562,6 +564,7 @@ export type PublicEpisode = {
 };
 
 export async function getEpisodes(limit = 24): Promise<Wrapped<PublicEpisode[]>> {
+  if (usesLwsCatalog()) return getLwsEpisodes(limit);
   if (v2.usesTvplusV2()) return v2.getV2Episodes(limit);
   const result = await fromSupabase<EpisodeRow[]>(
     (db) => db.from('episodes').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(limit),

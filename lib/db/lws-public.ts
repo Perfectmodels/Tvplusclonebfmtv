@@ -1,7 +1,9 @@
 import 'server-only';
 import { categorySlug } from '../categories';
 import { relativeTime } from './format';
-import type { PublicArticle } from './repository';
+import { videoWatchUrl } from '../video/providers';
+import type { programs } from '../extra';
+import type { PublicEpisode, PublicArticle } from './repository';
 
 export const usesLwsCatalog = () => Boolean(process.env.LWS_EDITORIAL_API_URL);
 
@@ -56,4 +58,25 @@ export async function getLwsArticle(filters: { code: string } | { slug: string }
 export async function getLwsCategories() {
   const result = await read<{ items: { name: string }[] }>('categories', {}, ['public-categories']);
   return { data: result.items.map(row => row.name), source: 'mysql' as const };
+}
+
+type Program = (typeof programs)[number];
+export async function getLwsPrograms() {
+  try {const {items}=await read<{items:Program[]}>('programs',{},['public-programs']);return {data:items,source:'mysql' as const};}
+  catch {return {data:[] as Program[],source:'mysql' as const,error:'Le catalogue des émissions est en cours de configuration.'};}
+}
+type Episode = {id:string;show_id:string;title:string;description:string;platform:string|null;external_id:string|null;source_url:string;thumbnail_url:string;duration_seconds:number|null;aired_at:string};
+export async function getLwsEpisodes(limit=24) {
+  try {
+    const {items}=await read<{items:Episode[]}>('episodes',{limit:String(limit)},['public-episodes']);
+    return {source:'mysql' as const,data:items.map((e):PublicEpisode=>({id:e.id,programId:e.show_id,title:e.title,description:e.description||'',videoUrl:videoWatchUrl(e.platform,e.external_id,e.source_url),thumbnail:e.thumbnail_url||(e.platform==='youtube'&&/^[a-zA-Z0-9_-]{11}$/.test(e.external_id||'')?'https://i.ytimg.com/vi/'+e.external_id+'/hqdefault.jpg':''),duration:e.duration_seconds==null?'':Math.ceil(Number(e.duration_seconds)/60)+' min',publishedAt:e.aired_at.replace(' ','T')+'Z'}))};
+  } catch {return {data:[] as PublicEpisode[],source:'mysql' as const,error:'Le catalogue des replays est en cours de configuration.'};}
+}
+export async function getLwsVideoArticles() {
+ const {items}=await read<{items:Article[]}>('articles',{video:'1',limit:'100'},['public-articles']);
+ return items.map(mapArticle);
+}
+export async function getLwsTopics() {
+ const {items}=await read<{items:Article[]}>('articles',{highlights:'1',limit:'5'},['public-articles']);
+ return {data:items.map(a=>({label:a.title.length>58?a.title.slice(0,55).trimEnd()+'…':a.title,link:'/a/'+a.short_code})),source:'mysql' as const};
 }

@@ -7,7 +7,7 @@ import { getEpisodes } from '../../lib/db/repository';
 export const revalidate = 60;
 
 export default async function ReplaysPage() {
-  const { data: episodes } = await getEpisodes(24);
+  const { data: episodes, error } = await getEpisodes(24);
 
   return (
     <main className="shell listing-page">
@@ -31,7 +31,7 @@ export default async function ReplaysPage() {
           ))}
         </div>
       ) : (
-        <p className="empty-state">Aucun replay disponible pour le moment.</p>
+        <p className="empty-state">{error || 'Aucun replay disponible pour le moment.'}</p>
       )}
 
       <div className="section-head has-rule"><h2>Une question ?</h2></div>
