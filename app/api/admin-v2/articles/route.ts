@@ -4,11 +4,13 @@ import { handleRoute, ok, created, ApiError } from '../../../../lib/api/response
 import { cleanArticlePayload, invalidatePublicArticle } from '../../../../lib/admin-v2/article-write';
 import { enrichArticleRows, type ArticleAdminRow } from '../../../../lib/admin-v2/article-records';
 
+import { newsroom, usesLwsCatalog, getReferences } from '../../../../lib/admin-v2/lws';
+
 export const dynamic = 'force-dynamic';
 const allowedStatuses = ['draft','in_review','approved','scheduled','published','inactive','archived'];
 
 export const GET = handleRoute(async (request: NextRequest) => {
-  const {db} = await requireV2Api('articles.read_all');
+  const {actor,db} = await requireV2Api('articles.read_all');
   const p = request.nextUrl.searchParams;
   const page = Math.min(10000, Math.max(1, Number(p.get('page')) || 1));
   const pageSize = 18;
@@ -17,6 +19,10 @@ export const GET = handleRoute(async (request: NextRequest) => {
   const category = p.get('category') ?? '';
   const author = p.get('author') ?? '';
   const order = p.get('sort') ?? 'updated';
+  if (usesLwsCatalog()) {
+    const result = await newsroom<{items:ArticleAdminRow[];total:number;page:number;pageSize:number}>(actor,'list',{data:{page,search,category,author,sort:order,status:allowedStatuses.includes(status)?status:''}});
+    return ok({...result,items:await enrichArticleRows(db,result.items)});
+  }
   let query = db.from('articles').select(
     'id,slug,short_code,title,excerpt,category_id,cover_media_id,status,featured,is_alert,updated_at,created_at,published_at,author_id,reviewed_by',
     { count:'exact' },
@@ -38,6 +44,12 @@ export const GET = handleRoute(async (request: NextRequest) => {
 export const POST = handleRoute(async (request: NextRequest) => {
   const {actor,db} = await requireV2Api('articles.create');
   const body = cleanArticlePayload(await request.json());
+  if (usesLwsCatalog()) {
+    const references = await getReferences(db, body.category_id, body.cover_media_id);
+    const article = await newsroom<{slug:string}>(actor,'create',{data:body,references});
+    invalidatePublicArticle(article.slug);
+    return created(article);
+  }
   const {data,error} = await db.from('articles').insert({
     ...body,author_id:actor.id,status:'draft',published_at:null
   }).select('id,slug,short_code,status,updated_at').single();

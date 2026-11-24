@@ -12,7 +12,7 @@ function respond(int $status, array $payload): void {
 }
 
 try {
-    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    if (($_GET['resource'] ?? '') !== 'newsroom' && $_SERVER['REQUEST_METHOD'] !== 'GET') {
         header('Allow: GET');
         respond(405, ['error' => 'Méthode non autorisée']);
     }
@@ -25,6 +25,10 @@ try {
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
     $resource = $_GET['resource'] ?? 'health';
+    if ($resource === 'newsroom') {
+        require_once __DIR__ . '/newsroom.php';
+        newsroom($pdo, $config);
+    }
     if ($resource === 'health') {
         $pdo->query('SELECT id FROM tvp_articles LIMIT 1');
         respond(200, ['status' => 'ok']);

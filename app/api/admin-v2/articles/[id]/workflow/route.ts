@@ -4,6 +4,8 @@ import { requireV2AnyApi, hasV2Permission } from '../../../../../../lib/auth/v2-
 import { handleRoute, ok, ApiError } from '../../../../../../lib/api/response';
 import { invalidatePublicArticle } from '../../../../../../lib/admin-v2/article-write';
 
+import { newsroom, usesLwsCatalog } from '../../../../../../lib/admin-v2/lws';
+
 export const dynamic='force-dynamic';
 type Context={params:Promise<{id:string}>};
 const schema=z.object({
@@ -31,7 +33,9 @@ export const POST=handleRoute(async(request:NextRequest,{params}:Context)=>{
   const body=parsed.data;
   const {id}=await params;
   if(!/^[\da-f-]{36}$/i.test(id))throw new ApiError('Identifiant d’article invalide.',400);
-  const {data:article,error:readError}=await db.from('articles')
+  const {data:article,error:readError}=usesLwsCatalog()
+    ? {data:await newsroom<{slug:string;author_id:string;status:string;updated_at:string;published_at:string|null}>(actor,'get',{id}),error:null}
+    : await db.from('articles')
     .select('id,slug,short_code,status,author_id,updated_at,published_at')
     .eq('id',id).maybeSingle();
   if(readError||!article)throw new ApiError('Article inaccessible.',404,'NOT_FOUND');
@@ -56,6 +60,11 @@ export const POST=handleRoute(async(request:NextRequest,{params}:Context)=>{
     patch.reviewed_by=actor.id;patch.reviewed_at=new Date().toISOString();
   }
   // Archives et désactivations préservent la date historique, mais ne sont plus visibles côté public.
+  if (usesLwsCatalog()) {
+    const updated=await newsroom(actor,'transition',{id,data:patch,expected:body.expected_updated_at});
+    invalidatePublicArticle(article.slug);
+    return ok(updated);
+  }
   const {data,error}=await db.from('articles').update(patch).eq('id',id)
     .eq('updated_at',body.expected_updated_at)
     .select('id,slug,short_code,status,published_at,updated_at').maybeSingle();
