@@ -5,8 +5,9 @@ type CategoryBlock = { name: string; items: Story[] };
 
 /**
  * Une actualité n'est attribuée qu'à un seul bloc éditorial de l'accueil.
- * Ordre de priorité : alerte > une > titres secondaires > sélection
- * > fil d'actualité > rubriques. L'alerte conserve son rôle de bandeau.
+ * Ordre : alerte > article publié le plus récemment > titres secondaires
+ * > sélection > fil d'actualité > rubriques. L'alerte conserve son bandeau.
+ * Les mises en avant éditoriales sont conservées pour la sélection.
  */
 export function distributeHomepageStories(articles: Story[], categories: string[]) {
   const used = new Set<string>();
@@ -21,8 +22,9 @@ export function distributeHomepageStories(articles: Story[], categories: string[
   const alert = articles.find(story => story.kind === 'alert');
   claim(alert);
 
-  const hero = articles.find(story => story.featured && available(story))
-    ?? articles.find(available);
+  // Le bloc « À la une » affiche systématiquement la publication la plus récente.
+  // La sélection éditoriale conserve la logique « featured » plus bas dans la page.
+  const hero = articles.find(available);
   claim(hero);
 
   const rail = articles.filter(available).slice(0, 3);
