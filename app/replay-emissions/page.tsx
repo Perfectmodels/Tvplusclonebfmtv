@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Breadcrumb from '../../components/Breadcrumb';
 import MediaBrowser from '../../components/MediaBrowser';
+import ShowIntro from '../../components/video/ShowIntro';
 import Newsletter from '../../components/Newsletter';
 import { getPrograms } from '../../lib/db/repository';
 
@@ -27,6 +28,7 @@ export default async function ReplayPage() {
       </p>
       <div className="section-head has-rule"><h2>Toutes les émissions</h2></div>
       <MediaBrowser items={items} variant="program" pageSize={6} />
+      {programs.some(p=>p.introVideoUrl)&&<section className="editorial-section"><h2>Les génériques de nos émissions</h2><div className="media-grid">{programs.filter(p=>p.introVideoUrl).map(p=><article className="media-card" key={p.id}><ShowIntro title={p.name} url={p.introVideoUrl} poster={p.image}/>{p.slug&&<Link href={'/emissions/'+p.slug}>{p.name}</Link>}</article>)}</div></section>}
       <p className="program-replay-cta"><Link href="/replays" className="direct-cta">Voir tous les épisodes disponibles</Link></p>
       <Newsletter
         title="Ne manquez plus une émission"
