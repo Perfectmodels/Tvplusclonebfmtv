@@ -8,6 +8,7 @@ import {
   Globe2, ImagePlus, Image as ImageIcon, Link2, Save, Send, ShieldCheck,
   RotateCcw, ToggleLeft, ToggleRight, X,
 } from 'lucide-react';
+import { analyzeSeo } from '../../lib/seo/editor-analysis';
 import TiptapEditor, { type EditorValue } from '../editor/TiptapEditor';
 import { COUNTRIES, GABON_PROVINCES } from '../../lib/editor/countries';
 
@@ -86,6 +87,7 @@ export default function V2ArticleEditor({
     { label: 'Mots-clés saisis', valid: tagCount > 0 },
   ];
   const completeCount = checks.filter(check => check.valid).length;
+  const seo = useMemo(() => analyzeSeo({title:form.title,excerpt:form.excerpt,seoTitle:form.seo_title,seoDescription:form.seo_description,slug:form.slug,text:content.text,tags:parseKeywords(keywords),hasCover:!!form.cover_media_id,alt:cover?.alt,category:form.category_id,country:form.country_code}),[form,content.text,keywords,cover]);
 
   const setField = <K extends keyof ArticleForm>(key: K, value: ArticleForm[K]) => {
     setForm(current => ({ ...current, [key]: value }));
@@ -381,6 +383,18 @@ export default function V2ArticleEditor({
                   <h2 id="article-seo-title">SEO et partage</h2>
                   <p>Optimisez la visibilité de votre article dans les moteurs et sur les réseaux sociaux.</p></div>
               </div>
+              <div className="v2-compose-search-preview" aria-label="Assistant SEO éditorial">
+                <strong>Score interne : {seo.score}/100</strong>
+                <progress max={100} value={seo.score} aria-label="Score SEO interne" style={{width:'100%'}}/>
+                <ul className="v2-compose-checklist">{seo.checks.map(check=><li key={check.label} className={check.ok?'is-complete':''}>{check.ok?<CheckCircle2 size={15}/>:<Circle size={15}/>} {check.label} · {check.ok?check.weight:0}/{check.weight}</li>)}</ul>
+                <p>Suggestions calculées à partir de votre texte, sans invention de faits. Vérifiez les sources, les dates et les réponses aux questions du lecteur. Ce score n’est pas un score Google.</p>
+                {canEdit && <div className="v2-compose-action-row" style={{flexWrap:'wrap'}}>
+                  <button type="button" className="v2-compose-button secondary" disabled={!seo.title} onClick={()=>setField('seo_title',seo.title)}>Appliquer le titre proposé</button>
+                  <button type="button" className="v2-compose-button secondary" disabled={!seo.description} onClick={()=>setField('seo_description',seo.description)}>Appliquer la description</button>
+                  <button type="button" className="v2-compose-button secondary" disabled={!seo.suggestedTags.length} onClick={()=>{setKeywords([...new Set([...parseKeywords(keywords),...seo.suggestedTags])].slice(0,20).join(', '));setDirty(true);setSuccess('');}}>Ajouter les mots-clés suggérés</button>
+                </div>}
+                <small>{seo.suggestedTags.join(' · ')}</small>
+              </div>
               <div className="v2-compose-search-preview">
                 <span className="v2-compose-search-site">TV+ Afrique · Article</span>
                 <strong>{form.seo_title.trim() || form.title.trim() || 'Le titre de votre article s’affichera ici'}</strong>
@@ -408,7 +422,7 @@ export default function V2ArticleEditor({
               <div className="v2-compose-shortlink">
                 <Link2 size={16} aria-hidden="true" />
                 <span className="v2-compose-shortlink-label">Adresse courte de partage</span>
-                <code>{articleLink ? 'tvplusv2.vercel.app' + articleLink : 'Générée lors de la première sauvegarde'}</code>
+                <code>{articleLink ? articleLink : 'Générée lors de la première sauvegarde'}</code>
                 {status === 'published' && articleLink &&
                   <button type="button" className="v2-compose-link-button" onClick={() => void copyPublicLink()}>
                     <Copy size={14} /> Copier</button>}
