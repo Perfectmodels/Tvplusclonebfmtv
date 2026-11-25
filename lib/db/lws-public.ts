@@ -6,12 +6,13 @@ import { videoWatchUrl } from '../video/providers';
 import type { programs } from '../extra';
 import type { PublicEpisode, PublicArticle } from './repository';
 
-export const usesLwsCatalog = () => Boolean(process.env.LWS_EDITORIAL_API_URL);
+export const usesLwsCatalog = () => true; // MySQL est désormais la seule source.
 
 async function read<T>(resource: string, filters: Record<string, string>, tags: string[]) {
-  const url = new URL(process.env.LWS_EDITORIAL_API_URL!);
+  const endpoint=process.env.LWS_EDITORIAL_API_URL;if(!endpoint)throw new Error('LWS_EDITORIAL_API_URL manquante.');
+  const url=new URL(endpoint);if(url.protocol!=='https:'||url.username||url.password)throw new Error('API LWS HTTPS requise.');
   url.search = new URLSearchParams({ resource, ...filters }).toString();
-  const response = await fetch(url, { next: { revalidate: 60, tags }, signal: AbortSignal.timeout(8000) });
+  const response = await fetch(url, { next: { revalidate: 60, tags }, redirect:'error', signal: AbortSignal.timeout(8000) });
   if (!response.ok) throw new Error('Catalogue MySQL indisponible.');
   return await response.json() as T;
 }
@@ -30,8 +31,8 @@ type Article = {
 };
 
 function mapArticle(row: Article): PublicArticle {
-  const publishedAt = row.published_at.replace(' ', 'T') + 'Z';
-  const tags = row.tags_json ? JSON.parse(row.tags_json) as string[] : [];
+  const publishedAt = new Date(row.published_at.includes('T')?row.published_at:row.published_at.replace(' ','T')+'Z').toISOString();
+  let tags:string[]=[];try{const parsed=JSON.parse(row.tags_json||'[]');if(Array.isArray(parsed))tags=parsed.filter((t:unknown):t is string=>typeof t==='string');}catch{}
   const wordCount = row.content_html?.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
   return {
     articleId: row.id, shortId: row.short_code, slug: row.slug, title: row.title,
@@ -46,12 +47,15 @@ function mapArticle(row: Article): PublicArticle {
   };
 }
 
-export async function listLwsArticles({ category, country, search, page = 1, pageSize = 12 }: {
-  category?: string; country?: string; search?: string; page?: number; pageSize?: number;
+export async function listLwsArticles({ category, country, province, excludeSlugs=[], videoOnly=false, search, page = 1, pageSize = 12 }: {
+  category?: string; country?: string; province?:string; excludeSlugs?:string[];videoOnly?:boolean;search?: string; page?: number; pageSize?: number;
 }) {
   const filters: Record<string, string> = { offset: String((page - 1) * pageSize), limit: String(pageSize) };
   if (category) filters.category = categorySlug(category);
   if (country) filters.country = country;
+  if(province)filters.province=province;
+  if(videoOnly)filters.video='1';
+  if(excludeSlugs.length)filters.exclude=excludeSlugs.slice(0,2).join(',');
   if (search?.trim()) filters.search = search.trim().slice(0,120);
   const result = await read<{ items: Article[]; total: number }>('articles', filters, ['public-articles']);
   return { items: result.items.map(mapArticle), total: result.total, page, pageSize, source: 'mysql' as const };
