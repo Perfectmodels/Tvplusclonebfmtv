@@ -221,10 +221,10 @@ export const getV2Episodes = unstable_cache(async (limit = 24): Promise<{data: P
 
 export const getV2Schedule = unstable_cache(async () => {
   const { data, error } = await client().from('program_slots')
-    .select('weekday,start_time,title,kind').order('weekday').order('start_time').limit(60);
+    .select('weekday,start_time,title,kind').order('weekday').order('start_time').limit(300);
   if (error) throw new Error(error.message);
   return { data: (data ?? []).map((p) => ({
-    weekday: Number(p.weekday), time: String(p.start_time).slice(0, 5), title: p.title,
+    weekday: p.weekday==null?undefined:Number(p.weekday), time: String(p.start_time).slice(0, 5), title: p.title,
     category: p.kind, live: false,
   })), source: 'supabase' as const };
 }, ['v2-public-schedule'], { revalidate: 600, tags: ['public-schedule'] });
