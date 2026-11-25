@@ -21,6 +21,7 @@ const GROUPS=[
     {href:'/admin-v2/editorial-media',label:'Reels, reportages, podcasts',icon:PlayCircle,permission:'shows.manage'},
     {href:'/admin-v2/replays',label:'Replays',icon:PlayCircle,permission:'shows.manage'},
     {href:'/admin-v2/live',label:'Direct',icon:MonitorPlay,permission:'schedule.manage'},
+    {href:'/admin-v2/homepage',label:'Organisation accueil',icon:ListTree,permission:'settings.manage'},
     {href:'/admin-v2/advertising',label:'Publicités',icon:RectangleHorizontal,permission:'settings.manage'},
   ] },
 ];
