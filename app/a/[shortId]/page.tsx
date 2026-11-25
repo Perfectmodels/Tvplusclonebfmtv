@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { articleMetadata } from '../../../lib/seo/article-metadata';
 import { notFound } from 'next/navigation';
 import ArticleView from '../../../components/article/ArticleView';
 import {getV2ArticleReadCount} from '../../../lib/db/v2-public';
@@ -18,41 +19,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { shortId } = await params;
   const { item } = await getArticleByShortId(shortId);
-  if (!item) return { title: 'Article introuvable — TV+ Afrique', robots: { index: false, follow: false } };
-
-  const siteUrl = await getSiteUrl();
-  const url = `${siteUrl}/a/${shortId}`;
-  const title = item.seoTitle || item.title;
-  const description = (item.seoDescription || item.chapter || item.summary || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 165);
-
-  return {
-    title,
-    description,
-    keywords: item.keywords ?? item.tags ?? [],
-    category: item.category,
-    authors: [{ name: 'La rédaction TV+ Afrique' }],
-    alternates: { canonical: url },
-    robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
-    openGraph: {
-      type: 'article',
-      title,
-      description,
-      url,
-      siteName: 'TV+ Afrique',
-      locale: 'fr_GA',
-      publishedTime: item.publishedAt,
-      modifiedTime: item.updatedAt ?? item.publishedAt,
-      section: item.category,
-      authors: ['La rédaction TV+ Afrique'],
-      images: [{ url: `${siteUrl}/og/${shortId}?v=${encodeURIComponent(item.updatedAt ?? item.publishedAt ?? '1')}`, width: 1200, height: 630, alt: `${item.category} — ${item.title}` }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [`${siteUrl}/og/${shortId}?v=${encodeURIComponent(item.updatedAt ?? item.publishedAt ?? '1')}`],
-    },
-  };
+  return articleMetadata(item, await getSiteUrl());
 }
 
 export default async function ShortArticlePage({ params }: Params) {
