@@ -71,17 +71,21 @@ async function fromSupabase<T>(
 export async function listArticles({
   category,
   country,
+  province,
+  excludeSlugs=[],
+  videoOnly=false,
   search,
   page = 1,
   pageSize = 12,
 }: {
   category?: string;
   country?: string;
+  province?:string;excludeSlugs?:string[];videoOnly?:boolean;
   search?: string;
   page?: number;
   pageSize?: number;
 } = {}): Promise<Paginated<Story>> {
-  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, country, search, page, pageSize });
+  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, country, province, excludeSlugs, videoOnly, search, page, pageSize });
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -239,7 +243,7 @@ export async function getFilActu(limit = 20): Promise<Wrapped<typeof staticFilAc
 }
 
 export async function getVideos(): Promise<Wrapped<typeof staticVideos>> {
-  if (v2.usesTvplusV2()) return { data: [], source: 'supabase' as const };
+  if (v2.usesTvplusV2()) return { data: [], source: 'mysql' as const };
   const result = await fromSupabase<VideoRow[]>(
     (db) => db.from('videos').select('*').order('published_at', { ascending: false }),
     [],
