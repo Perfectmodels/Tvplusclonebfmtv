@@ -1,6 +1,6 @@
 /** URL providers used by the public replay player and the editorial studio. */
-export type VideoProvider='youtube'|'facebook'|'tiktok'|'vimeo'|'dailymotion';
-const known:VideoProvider[]=['youtube','facebook','tiktok','vimeo','dailymotion'];
+export type VideoProvider='youtube'|'facebook'|'tiktok'|'vimeo'|'dailymotion'|'sproutvideo';
+const known:VideoProvider[]=['youtube','facebook','tiktok','vimeo','dailymotion','sproutvideo'];
 export function parseVideoUrl(value:string):{platform:VideoProvider;externalId:string;url:string}|null{
   try{
     const u=new URL(value.trim());
@@ -22,6 +22,9 @@ export function parseVideoUrl(value:string):{platform:VideoProvider;externalId:s
     }else if(host==='vimeo.com'||host==='www.vimeo.com'||host==='player.vimeo.com'){
       platform='vimeo';externalId=path.match(/(?:\/video)?\/(\d{5,15})/)?.[1]||'';
       if(!externalId) return null;
+    }else if(host==='videos.sproutvideo.com'){
+      platform='sproutvideo';externalId=path.match(/^\/embed\/([a-f0-9]+\/[a-f0-9]+)\/?$/i)?.[1]||'';
+      if(!externalId||u.port)return null;
     }else if(host==='dailymotion.com'||host==='www.dailymotion.com'||host==='dai.ly'){
       platform='dailymotion';externalId=(host==='dai.ly'?path.split('/')[1]:path.match(/\/video\/([a-zA-Z0-9]+)/)?.[1])||'';
       if(!/^[a-zA-Z0-9]+$/.test(externalId)) return null;
@@ -33,6 +36,7 @@ export function parseVideoUrl(value:string):{platform:VideoProvider;externalId:s
 export function videoWatchUrl(platform:string|null,id:string|null,sourceUrl?:string|null):string{
   if(sourceUrl&&parseVideoUrl(sourceUrl))return sourceUrl;
   if(!id)return '';
+  if(platform==='sproutvideo'&&/^[a-f0-9]+\/[a-f0-9]+$/i.test(id))return 'https://videos.sproutvideo.com/embed/'+id;
   if(platform==='youtube'&&/^[a-zA-Z0-9_-]{11}$/.test(id))return 'https://www.youtube.com/watch?v='+id;
   if(platform==='vimeo'&&/^\d+$/.test(id))return 'https://vimeo.com/'+id;
   if(platform==='dailymotion'&&/^[a-zA-Z0-9]+$/.test(id))return 'https://www.dailymotion.com/video/'+id;
@@ -43,6 +47,7 @@ export function videoEmbedUrl(platform:string|null,id:string|null,sourceUrl?:str
   const provider=link?.platform||platform;
   const code=link?.externalId||id;
   if(!code)return '';
+  if(provider==='sproutvideo'&&/^[a-f0-9]+\/[a-f0-9]+$/i.test(code))return 'https://videos.sproutvideo.com/embed/'+code;
   if(provider==='youtube'&&/^[a-zA-Z0-9_-]{11}$/.test(code))return 'https://www.youtube-nocookie.com/embed/'+code;
   if(provider==='tiktok'&&/^\d{10,25}$/.test(code))return 'https://www.tiktok.com/player/v1/'+code;
   if(provider==='facebook'&&link)return 'https://www.facebook.com/plugins/video.php?href='+encodeURIComponent(link.url)+'&show_text=false';

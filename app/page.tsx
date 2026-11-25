@@ -15,7 +15,7 @@ import CategoryNewsCarousel from '../components/CategoryNewsCarousel';
 import HomeMediaStrip from '../components/HomeMediaStrip';
 import {listArticles,getCategories,getPrograms,getEpisodes} from '../lib/db/repository';
 import {readHomeConfig,type HomeBlock} from '../lib/editorial/home-config';
-import {listCatalog} from '../lib/media/catalog';
+import {homeMediaCatalog} from '../lib/media/catalog';
 import {distributeHomepageStories} from '../lib/editorial/home-distribution';
 import {articlePath} from '../lib/articles/urls';
 import {categoryHref,categorySlug} from '../lib/categories';
@@ -30,7 +30,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  const articles=result?.items??[];
  if(q)return <main className="shell"><section className="search-results"><SectionHeading title={'Résultats pour « '+q+' »'}/>{articles.length?<div className="selection-grid">{articles.map(s=><StoryCard story={s} key={s.slug}/>)}</div>:<p className="empty-state">Aucune actualité disponible pour cette recherche.</p>}</section></main>;
  const [wire,cats,ads,media,programs,episodes,layout]=await Promise.all([
-  getNewsFeed(20).catch(()=>({items:[]})),getCategories().catch(()=>({data:[]})),getHomepageAds(),listCatalog(undefined,60),getPrograms().catch(()=>({data:[]})),getEpisodes(500).catch(()=>({data:[]})),readHomeConfig()
+  getNewsFeed(20).catch(()=>({items:[]})),getCategories().catch(()=>({data:[]})),getHomepageAds(),homeMediaCatalog(),getPrograms().catch(()=>({data:[]})),getEpisodes(500).catch(()=>({data:[]})),readHomeConfig()
  ]);
  const categories=cats.data;
  const {alert,hero,selection,feed,blocks,videoArticles}=distributeHomepageStories(articles,categories);

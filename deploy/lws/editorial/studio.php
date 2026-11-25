@@ -18,6 +18,7 @@ function studioSource(string $kind,string $url):bool {
  if(!studioHttps($url))return false;
  $u=parse_url($url);$host=strtolower($u['host']);$path=$u['path']??'';
  if($kind==='podcast')return (bool)preg_match('/\.(mp3|ogg|wav|m4a|aac)$/i',$path)||in_array($host,['open.spotify.com','spotify.com','www.spotify.com','soundcloud.com','www.soundcloud.com','deezer.com','www.deezer.com','podcasts.apple.com'],true);
+ if($host==='videos.sproutvideo.com')return (bool)preg_match('#^/embed/[a-f0-9]+/[a-f0-9]+/?$#iD',$path);
  return (bool)preg_match('/\.(mp4|webm|m3u8)$/i',$path)||in_array($host,['youtube.com','www.youtube.com','m.youtube.com','youtu.be','facebook.com','www.facebook.com','m.facebook.com','web.facebook.com','fb.watch','tiktok.com','www.tiktok.com','m.tiktok.com','vimeo.com','www.vimeo.com','player.vimeo.com','dailymotion.com','www.dailymotion.com','dai.ly'],true);
 }
 function studio(PDO $pdo,string $op,array $request):void {
