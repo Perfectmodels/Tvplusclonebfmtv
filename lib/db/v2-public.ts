@@ -10,7 +10,7 @@ export const listV2Articles=unstable_cache(listLwsArticles,['mysql-public-articl
 export const getV2ArticleBySlug=unstable_cache((slug:string)=>getLwsArticle({slug}),['mysql-public-slug'],{revalidate:60,tags:['public-articles']});
 export const getV2ArticleByShortCode=unstable_cache((code:string)=>getLwsArticle({code}),['mysql-public-code'],{revalidate:60,tags:['public-articles']});
 export const getV2Categories=unstable_cache(getLwsCategories,['mysql-public-categories'],{revalidate:300,tags:['public-categories']});
-export async function getV2FilActu(limit=20){const {items}=await listV2Articles({pageSize:limit});return {data:items.map(a=>({time:a.time,category:a.category,title:a.title,summary:a.summary,slug:a.slug,image:a.image,shortId:a.shortId})),source:'mysql' as const};}
+export async function getV2FilActu(limit=20){const {items}=await listV2Articles({pageSize:limit});return {data:items.map(a=>({time:a.time,category:a.category,title:a.title,summary:a.summary,slug:a.slug,image:a.image,shortId:a.shortId,publishedAt:a.publishedAt})),source:'mysql' as const};}
 export const getV2Topics=getLwsTopics;
 export const getV2Programs=getLwsPrograms;
 export const getV2Episodes=getLwsEpisodes;

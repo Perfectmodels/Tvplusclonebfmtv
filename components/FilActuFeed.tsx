@@ -2,10 +2,20 @@
 import Link from 'next/link';
 import {useEffect,useRef,useState} from 'react';
 import {ChevronLeft,ChevronRight,ArrowRight} from 'lucide-react';
+import TvPlusLogo from './TvPlusLogo';
 import {articlePath} from '../lib/articles/urls';
 export type FeedItem={time:string;category:string;title:string;summary:string;slug:string;image?:string;shortId?:string;publishedAt?:string};
 const SIZE=10;
 function dateLabel(item:FeedItem){const d=item.publishedAt?new Date(item.publishedAt):null;return d&&Number.isFinite(d.valueOf())?new Intl.DateTimeFormat('fr-FR',{timeZone:'Africa/Libreville',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(d):item.time;}
+function FeedThumbnail({image}:{image?:string}){
+ const source=image?.trim()||'';
+ const [failedSource,setFailedSource]=useState<string|null>(null);
+ const showCover=!!source&&failedSource!==source;
+ return <span className="tvplus-chronicle-thumbnail" aria-hidden="true">
+  <span className="tvplus-chronicle-placeholder"><TvPlusLogo/></span>
+  {showCover&&<img key={source} className="tvplus-chronicle-cover" src={source} alt="" width={144} height={96} loading="lazy" decoding="async" onError={()=>setFailedSource(source)}/>}
+ </span>;
+}
 export default function FilActuFeed({items,categories=[],total,excludeSlugs=[]}:{items:FeedItem[];categories?:string[];total?:number;excludeSlugs?:string[]}){
  const [page,setPage]=useState(1),[rows,setRows]=useState(items.slice(0,SIZE)),[count,setCount]=useState(total??items.length),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const controller=useRef<AbortController|null>(null);
@@ -28,8 +38,8 @@ export default function FilActuFeed({items,categories=[],total,excludeSlugs=[]}:
   {rows.length?<ol className="tvplus-chronicle-list">{rows.map(item=><li key={item.shortId||item.slug}>
    <Link href={articlePath(item)} className="tvplus-chronicle-row">
     <span className="tvplus-chronicle-time">{dateLabel(item)}</span>
+    <FeedThumbnail image={item.image}/>
     <span className="tvplus-chronicle-copy"><span className="category-label">{item.category}</span><strong>{item.title}</strong></span>
-    {item.image&&<img src={item.image} alt="" loading="lazy" decoding="async"/>}
     <ChevronRight size={16} aria-hidden="true"/>
    </Link></li>)}</ol>:<p className="empty-state">Aucune actualité disponible.</p>}
   {pages>1&&<nav className="tvplus-chronicle-pages" aria-label="Pagination du fil actu">
