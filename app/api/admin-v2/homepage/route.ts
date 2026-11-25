@@ -1,0 +1,11 @@
+import {NextRequest} from 'next/server';
+import {z} from 'zod';
+import {requireV2Api} from '../../../../lib/auth/v2-admin';
+import {getServerSupabase} from '../../../../lib/supabase/server';
+import {defaultHomeOrder,readHomeConfig} from '../../../../lib/editorial/home-config';
+import {handleRoute,ok,ApiError} from '../../../../lib/api/response';
+import {revalidateTag,revalidatePath} from 'next/cache';
+const block=z.enum(defaultHomeOrder);
+const schema=z.object({order:z.array(block).length(5).refine(x=>new Set(x).size===5),hidden:z.array(block).max(5)});
+export const GET=handleRoute(async()=>{await requireV2Api('settings.manage');return ok(await readHomeConfig());});
+export const PATCH=handleRoute(async(request:NextRequest)=>{await requireV2Api('settings.manage');const p=schema.safeParse(await request.json());if(!p.success)throw new ApiError('Ordre invalide.',400);const {error}=await getServerSupabase().from('home_editorial_settings').upsert({id:1,media_order:p.data.order,hidden_media:p.data.hidden});if(error)throw new ApiError('Configuration indisponible. Vérifier la migration.',503,'UNAVAILABLE');revalidateTag('home-editorial-settings');revalidatePath('/');return ok(p.data);});
