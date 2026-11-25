@@ -3,7 +3,8 @@ import { listArticles, getCategories, getPrograms } from '../lib/db/repository';
 import { getSiteUrl } from '../lib/articles/site-url';
 import { categoryHref } from '../lib/categories';
 import { articlePath } from '../lib/articles/urls';
-import { absoluteUrl, validDate } from '../lib/seo/public-feeds';
+import { absoluteUrl, validDate, isIndexable } from '../lib/seo/public-feeds';
+import { GABON_PROVINCES } from '../lib/editor/countries';
 import { unstable_cache } from 'next/cache';
 
 export const revalidate = 3600;
@@ -49,7 +50,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     })),
     ...Array.from(new Set(articles.map(a=>a.countryCode).filter((code):code is string=>!!code&&/^[A-Z]{2}$/.test(code)))).map(code=>({url:base+'/pays/'+code.toLowerCase(),changeFrequency:'daily' as const})),
-    ...articles.filter(article => !article.publishedAt || (validDate(article.publishedAt)?.getTime() ?? Infinity) <= Date.now()).map((article) => ({
+    ...GABON_PROVINCES.filter(p=>articles.some(a=>a.countryCode==='GA'&&a.province===p.value)).map(p=>({url:base+'/provinces/'+p.value,changeFrequency:'daily' as const})),
+    ...articles.filter(article => isIndexable(article) && (!article.publishedAt || (validDate(article.publishedAt)?.getTime() ?? Infinity) <= Date.now())).map((article) => ({
       url: `${base}${articlePath(article)}`,
       lastModified: validDate(article.updatedAt ?? article.publishedAt),
       images: article.image ? [absoluteUrl(article.image, base)].filter((url): url is string => Boolean(url)) : undefined,
