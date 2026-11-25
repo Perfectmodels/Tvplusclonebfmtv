@@ -1,8 +1,5 @@
 import Link from 'next/link';
 import Breadcrumb from '../../components/Breadcrumb';
-import { getCategories } from '../../lib/db/repository';
-import { categoryHref } from '../../lib/categories';
-import { navigationCategories } from '../../lib/public-navigation';
 
 export const revalidate = 60;
 
@@ -24,9 +21,7 @@ const sections = [
   ] },
 ];
 
-export default async function PlanDuSitePage() {
-  const { data: categories } = await getCategories();
-
+export default function PlanDuSitePage() {
   return (
     <main className="shell listing-page">
       <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Plan du site' }]} />
@@ -36,18 +31,14 @@ export default async function PlanDuSitePage() {
         {sections.map((section) => (
           <section key={section.title}>
             <h2>{section.title}</h2>
-            <div className="footer-links">
+            <div className="sitemap-links">
               {section.links.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
             </div>
           </section>
         ))}
         <section id="rubriques">
           <h2>Toutes les rubriques</h2>
-          <div className="footer-links">
-            {navigationCategories(categories).map((category) => (
-              <Link key={category} href={categoryHref(category)}>{category}</Link>
-            ))}
-          </div>
+          <div className="sitemap-links"><Link href="/rubriques">Ouvrir le répertoire des rubriques</Link></div>
         </section>
       </div>
     </main>

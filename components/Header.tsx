@@ -72,16 +72,15 @@ export default function Header({ categories = [] }: { categories?: string[] }) {
       <nav className="nav-primary" aria-label="Navigation principale">
         <div className="shell nav-primary-inner">
           <div className="nav-links">
-            <Link href="/pays/ga" aria-current={active('/pays/ga')} onClick={close}>Gabon</Link>
             <button type="button" className="nav-country-toggle" aria-expanded={panel === 'countries'}
-              aria-controls="country-navigation" onClick={() => toggle('countries')}>
-              Par pays <ChevronDown size={14} aria-hidden="true" />
+              aria-controls="country-navigation" aria-label="Gabon et actualités par pays" onClick={() => toggle('countries')}>
+              Gabon <ChevronDown size={14} aria-hidden="true" />
             </button>
             {categories.slice(0, 5).map((category) => (
               <Link key={category} href={categoryHref(category)} className="nav-editorial-category"
                 aria-current={active(categoryHref(category))} onClick={close}>{category}</Link>
             ))}
-            <Link href="/plan-du-site#rubriques" onClick={close}>Toutes les rubriques</Link>
+            <Link href="/rubriques" aria-current={active('/rubriques')} onClick={close}>Toutes les rubriques</Link>
           </div>
         </div>
       </nav>
@@ -120,7 +119,7 @@ export default function Header({ categories = [] }: { categories?: string[] }) {
                   {category} <ChevronRight size={15} aria-hidden="true" />
                 </Link>
               ))}
-              <Link href="/plan-du-site#rubriques" onClick={close}>Toutes les rubriques <ChevronRight size={15} aria-hidden="true" /></Link>
+              <Link href="/rubriques" aria-current={active('/rubriques')} onClick={close}>Toutes les rubriques <ChevronRight size={15} aria-hidden="true" /></Link>
             </section>
             {menuGroups.map((group) => (
               <section className="mega-col" key={group.label}>

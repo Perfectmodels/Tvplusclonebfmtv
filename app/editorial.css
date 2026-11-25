@@ -731,3 +731,38 @@ button.direct-player, button.direct-player-large {
 @media (prefers-reduced-motion: reduce) {
   .tv-assistant *, .tv-assistant-panel { animation: none !important; transition: none !important; }
 }
+
+.rubriques-page-heading { margin-block: 22px 24px; }
+.rubriques-page-heading h1 {
+  margin: 0 0 8px;
+  color: #0b2449;
+  font: 900 clamp(28px, 5vw, 44px)/1.08 var(--font-barlow-black);
+}
+.rubriques-page-heading p { margin: 0; color: #415574; font-size: 17px; line-height: 1.4; }
+.rubriques-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 235px), 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rubriques-list a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 58px;
+  padding: 12px 15px;
+  border: 1px solid #c8d8ec;
+  border-radius: 8px;
+  background: #f5f8ff;
+  color: #102f60;
+  font-size: 18px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.rubriques-list a:hover { background: #e8f0fe; border-color: #7295c6; }
+.rubriques-list a:focus-visible { outline: 2px solid #1e57ad; outline-offset: 2px; }
+.rubriques-list svg { flex: none; }
+.rubriques-page .empty-state a { color: #174382; text-decoration: underline; }

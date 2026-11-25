@@ -64,7 +64,7 @@ export default function Footer({ categories = staticCategories }: { categories?:
               { label: 'Fil info 24/7', href: '/news-24-7' },
               ...topics,
             ]} />
-            <Link className="footer-all-topics" href="/plan-du-site#rubriques">
+            <Link className="footer-all-topics" href="/rubriques">
               Toutes les rubriques <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </section>
