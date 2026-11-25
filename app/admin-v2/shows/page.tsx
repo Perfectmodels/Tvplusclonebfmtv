@@ -4,10 +4,10 @@ import PaginatedList from '../../../components/admin/PaginatedList';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CalendarDays, ExternalLink, Images, Plus, Search, Trash2, Tv } from 'lucide-react';
-type Show={id:string;slug:string;title:string;tagline:string;description:string;schedule_label:string;host_name:string;frequency:string;category_id:string|null;cover_media_id:string|null;is_active:boolean;position:number};
+type Show={id:string;slug:string;title:string;tagline:string;description:string;schedule_label:string;host_name:string;frequency:string;category_id:string|null;cover_media_id:string|null;intro_video_url:string|null;is_active:boolean;position:number};
 type Form=Omit<Show,'id'>;
 type Medium={id:string;url:string;alt:string};
-const blank:Form={slug:'',title:'',tagline:'',description:'',schedule_label:'',host_name:'',frequency:'',category_id:null,cover_media_id:null,is_active:false,position:0};
+const blank:Form={slug:'',title:'',tagline:'',description:'',schedule_label:'',host_name:'',frequency:'',category_id:null,cover_media_id:null,intro_video_url:null,is_active:false,position:0};
 function slugify(v:string){return v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,100)}
 export default function ShowsV2(){
  const [items,setItems]=useState<Show[]>([]),[cats,setCats]=useState<{id:string;name:string}[]>([]);
@@ -78,6 +78,7 @@ export default function ShowsV2(){
      <label className="v2-field"><span>Rubrique</span><select value={form.category_id||''} onChange={e=>field('category_id',e.target.value||null)}><option value="">Non définie</option>{cats.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
      <label className="v2-field"><span><Images size={16}/> Visuel de couverture (médiathèque)</span><select value={form.cover_media_id||''} onChange={e=>field('cover_media_id',e.target.value||null)}><option value="">Aucun visuel</option>{media.map(m=><option key={m.id} value={m.id}>{m.alt||m.id}</option>)}</select></label>
      {image?.url&&<img src={image.url} alt={image.alt||'Couverture de l’émission'} style={{maxWidth:'100%',maxHeight:180,objectFit:'contain'}}/>}
+     <label className="v2-field"><span>Générique vidéo</span><input type="url" value={form.intro_video_url||''} onChange={e=>field('intro_video_url',e.target.value||null)} maxLength={1300}/></label>
      <label className="v2-field"><span>Ordre sur le site</span><input type="number" min={0} max={32000} value={form.position} onChange={e=>field('position',Number(e.target.value))}/></label>
      <label className="v2-regie-check"><input type="checkbox" checked={form.is_active} onChange={e=>field('is_active',e.target.checked)}/> Afficher le programme sur le site public</label>
      <div className="v2-actions"><button type="submit" disabled={busy} className="admin-btn admin-btn-primary"><Plus size={16}/>{busy?'Enregistrement…':'Enregistrer l’émission'}</button>

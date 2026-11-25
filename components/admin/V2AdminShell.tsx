@@ -10,7 +10,7 @@ import {
 import TvPlusLogo from '../TvPlusLogo';
 
 const GROUPS=[
-  { label:'Pilotage', links:[
+  { label:'Pilotage', links:[{href:'/admin-v2/seo',label:'SEO & Visibilité',icon:Newspaper,permission:'articles.read_all'},
     {href:'/admin-v2',label:'Vue générale',icon:LayoutDashboard,permission:''},
     {href:'/admin-v2/controle',label:'Contrôle & rapports',icon:ShieldCheck,permission:'articles.review'},
     {href:'/admin-v2/utilisateurs',label:'Utilisateurs et rôles',icon:Shield,permission:'users.manage', alternatePermission:'roles.manage'},

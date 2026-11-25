@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { ApiError, handleRoute,ok,created } from '../../../../lib/api/response';
+import {parseVideoUrl} from '../../../../lib/video/providers';
 import { revalidateTag } from 'next/cache';
 import { newsroom, usesLwsCatalog, getReferences } from '../../../../lib/admin-v2/lws';
 export const dynamic='force-dynamic';
@@ -15,6 +16,7 @@ const schema=z.object({
   frequency:z.string().trim().max(130).default(''),
   category_id:z.string().uuid().nullable().optional(),
   cover_media_id:z.string().uuid().nullable().optional(),
+  intro_video_url:z.string().trim().max(1300).refine(v=>!v||!!parseVideoUrl(v)||/^https:\/\/[^\s]+\.(mp4|webm)(?:\?.*)?$/i.test(v)).nullable().optional(),
   is_active:z.boolean().default(false),
   position:z.number().int().min(0).max(32000).default(0)
 });
