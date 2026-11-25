@@ -24,7 +24,7 @@ export default async function ReplaysPage() {
               <ReplayEmbed title={episode.title} url={episode.videoUrl} thumbnail={episode.thumbnail} />
               <span className="media-body">
                 <span className="media-meta">REPLAY · {new Date(episode.publishedAt).toLocaleDateString('fr-FR')}</span>
-                <span className="media-title">{episode.title}</span>
+                <Link className="media-title" href={'/replays/'+encodeURIComponent(episode.id)}>{episode.title}</Link>
                 {episode.description && <span className="media-description">{episode.description}</span>}
               </span>
             </article>
