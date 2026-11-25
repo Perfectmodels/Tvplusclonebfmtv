@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ApiError } from '../api/response';
 import { renderTiptapHtml } from '../editor/render';
 import { revalidatePath, revalidateTag } from 'next/cache';
+import {parseVideoUrl} from '../video/providers';
 import { COUNTRY_CODES, GABON_PROVINCES } from '../editor/countries';
 
 export const articlePayload = z.object({
@@ -19,6 +20,7 @@ export const articlePayload = z.object({
     .refine(slug => !slug || GABON_PROVINCES.some(p => p.value === slug), 'Province du Gabon inconnue.'),
   featured: z.boolean().default(false),
   is_alert: z.boolean().default(false),
+  video_source_url:z.string().trim().max(1300).refine(v=>!v||!!parseVideoUrl(v),'Lien vidéo non pris en charge').nullable().optional(),
 });
 
 export function cleanArticlePayload(input: unknown) {
@@ -33,6 +35,7 @@ export function cleanArticlePayload(input: unknown) {
   const html = renderTiptapHtml(article.content_json);
   return {
     ...article,
+    ...(article.video_source_url!==undefined?{video_source_url:article.video_source_url||null,is_video_article:!!article.video_source_url}:{}),
     province_slug: article.country_code === 'GA' ? article.province_slug ?? null : null,
     content_html: html,
     cover_media_id: article.cover_media_id ?? null,
