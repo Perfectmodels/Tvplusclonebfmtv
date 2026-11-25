@@ -3,8 +3,9 @@
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {ArrowUpRight,Send,X,RotateCcw,Search,ChevronRight} from 'lucide-react';
+import {ArrowUpRight,Send,X,RotateCcw,Search,ChevronRight,GripHorizontal} from 'lucide-react';
 import RobotAvatar from './RobotAvatar';
+import {useFloatingChat} from './useFloatingChat';
 
 type Result={answer:string;links:{href:string;title:string}[]};
 type Message={id:number;question:string;result?:Result;error?:string;pending?:boolean};
@@ -18,6 +19,7 @@ export default function PublicAssistant(){
  useEffect(()=>{if(open&&window.matchMedia('(pointer:fine)').matches)input.current?.focus();},[open]);
  useEffect(()=>()=>pending.current?.abort(),[]);
  useEffect(()=>{if(open&&results.current)results.current.scrollTop=results.current.scrollHeight;},[messages,open,greeting]);
+ const floating=useFloatingChat(open);
  const last=messages[messages.length-1];
  const mood=busy?'thinking':last?.error?'error':last?.result?'answer':'idle';
  function close(){setOpen(false);requestAnimationFrame(()=>launcher.current?.focus());}
@@ -37,10 +39,10 @@ export default function PublicAssistant(){
   }catch(reason){if(!controller.signal.aborted)update({error:reason instanceof Error?reason.message:'La recherche est momentanément indisponible.'});}
   finally{if(pending.current===controller){pending.current=null;setBusy(false);}}
  }
- return <div className={'tv-chat'+(open?' is-open':'')}>
+ return <div ref={floating.root} className={'tv-chat'+(open?' is-open':'')+(floating.dragging?' is-dragging':'')}>
   {open?<section id="tv-chat-panel" className="tv-chat-panel" role="dialog" aria-label="Recherche conversationnelle TV+ Afrique" onKeyDown={event=>{if(event.key==='Escape')close();}}>
    <header className="tv-chat-header">
-    <div className="tv-chat-header-mark"><span className="tv-chat-dot"/><div><strong>Recherche d’articles</strong><small aria-live="polite">{busy?'Recherche en cours…':'À votre écoute'}</small></div></div>
+    <button type="button" className="tv-chat-header-mark tv-chat-drag-handle" {...floating.dragHandle} aria-label="Déplacer le chat. Utilisez les flèches du clavier ou faites glisser." title="Faire glisser pour déplacer"><GripHorizontal size={18} aria-hidden="true"/><span><strong>Recherche d’articles</strong><small aria-live="polite">{busy?'Recherche en cours…':'À votre écoute'}</small></span></button>
     <div className="tv-chat-actions"><button type="button" onClick={reset} aria-label="Nouvelle conversation" title="Nouvelle conversation"><RotateCcw size={17}/></button><button type="button" onClick={close} aria-label="Fermer le chat" title="Fermer"><X size={21}/></button></div>
    </header>
    <div className="tv-chat-robotbar">
@@ -60,6 +62,6 @@ export default function PublicAssistant(){
     <button type="submit" className="tv-chat-send" aria-label="Envoyer" disabled={busy||question.trim().length<3}><Send size={18}/></button>
    </form>
    <footer className="tv-chat-note">Recherche basée sur les publications de TV+ Afrique.</footer>
-  </section>:<button ref={launcher} type="button" className="tv-chat-launch" onClick={()=>setOpen(true)} aria-label="Ouvrir la recherche conversationnelle" aria-expanded={false} aria-controls="tv-chat-panel"><RobotAvatar/><span className="tv-chat-launch-dot" aria-hidden="true"/></button>}
+  </section>:<button ref={launcher} type="button" className="tv-chat-launch tv-chat-drag-handle" {...floating.dragHandle} onClick={event=>{if(floating.allowLaunch(event.detail))setOpen(true);}} aria-label="Ouvrir ou déplacer la recherche conversationnelle" title="Cliquer pour ouvrir, faire glisser pour déplacer" aria-expanded={false} aria-controls="tv-chat-panel"><RobotAvatar/><span className="tv-chat-launch-dot" aria-hidden="true"/></button>}
  </div>;
 }

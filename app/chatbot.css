@@ -13,3 +13,14 @@
 @keyframes tv-robot-hover{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-3px) rotate(1deg)}}@keyframes tv-robot-thinking{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-2px) rotate(3deg)}}@keyframes tv-robot-answer{0%,100%{transform:scale(1)}50%{transform:scale(1.08) rotate(-4deg)}}@keyframes tv-chat-dots{0%,100%{opacity:.35;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}@keyframes tv-chat-appear{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:600px){.tv-chat{right:max(12px,env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom))}.tv-chat-launch{width:49px;height:49px;padding:2px}.tv-chat-launch-dot{width:9px;height:9px}.tv-chat-panel{width:min(326px,calc(100vw - 24px));height:min(450px,66dvh);max-height:calc(100dvh - 32px);border-radius:14px}.tv-chat-header{padding:9px 10px}.tv-chat-header-mark strong{font-size:13px}.tv-chat-robotbar{padding:4px 9px;gap:7px}.tv-robot--interactive{width:73px;height:67px;flex-basis:73px}.tv-robot-greet{width:22px;height:22px;font-size:16px!important}.tv-chat-intro strong{font-size:14px}.tv-chat-intro small{font-size:11px}.tv-chat-results{padding:9px;gap:8px}.tv-chat-message,.tv-chat-user{font-size:12px}.tv-chat-note{font-size:9px}.tv-chat-form{padding:7px 8px 3px}.tv-chat-form input{padding:8px}.tv-chat-send{width:35px;height:35px;flex-basis:35px}}
 @media(prefers-reduced-motion:reduce){.tv-chat *{animation:none!important;transition:none!important}}
+
+/* Position libre: la fenêtre et la bulle partagent un ancrage relatif mémorisé. */
+.tv-chat{max-width:var(--tv-chat-available-width,calc(100vw - 24px))}
+.tv-chat-panel{max-height:var(--tv-chat-available-height,calc(100dvh - 24px))}
+.tv-chat-drag-handle{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab!important}
+.tv-chat-header-mark.tv-chat-drag-handle{flex:1;min-width:0;text-align:left;border:0;padding:0;background:transparent;color:inherit;gap:8px}
+.tv-chat-header-mark.tv-chat-drag-handle>svg{flex:none;opacity:.8}
+.tv-chat.is-dragging .tv-chat-drag-handle{cursor:grabbing!important}
+.tv-chat.is-dragging .tv-chat-panel,.tv-chat.is-dragging .tv-chat-launch{animation:none;transition:none;transform:none}
+.tv-chat-launch.tv-chat-drag-handle:active{transform:none}
+.tv-chat.is-dragging{user-select:none;-webkit-user-select:none}
