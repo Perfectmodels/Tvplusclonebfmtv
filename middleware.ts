@@ -1,68 +1,8 @@
-import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
-
-export async function middleware(request: NextRequest) {
-  // Garder les anciennes URL administratives tout en servant l'admin TV+ V2
-  // réellement compatible. Les anciennes pages du clone ne sont jamais exécutées.
-  if (process.env.SUPABASE_SCHEMA_MODE === 'tvplus-v2' &&
-      /^\/admin(?:\/|$)/.test(request.nextUrl.pathname)) {
-    const destination = new URL('/admin-v2' + request.nextUrl.pathname.slice(6), request.url);
-    destination.search = request.nextUrl.search;
-    return NextResponse.redirect(destination, 307);
-  }
-  let response = NextResponse.next({ request });
-  // En mode MySQL la session est un cookie signé : aucun jeton Supabase à rafraîchir.
-  if (process.env.LWS_EDITORIAL_API_URL) return response;
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return response;
-
-  // Anciennes URL longues -> URL courte définitive (redirection permanente 308).
-  const legacy = request.nextUrl.pathname.match(/^\/article\/([^/]+)\/?$/);
-  if (legacy && process.env.SUPABASE_SCHEMA_MODE !== 'tvplus-v2') {
-    const slug = decodeURIComponent(legacy[1]);
-    const secret = process.env.SUPABASE_SECRET_KEY;
-    if (secret) {
-      try {
-        const lookup = await fetch(
-          `${url}/rest/v1/articles?select=short_id&slug=eq.${encodeURIComponent(slug)}&status=eq.published&deleted_at=is.null&limit=1`,
-          { headers: { apikey: secret, Authorization: `Bearer ${secret}` }, cache: 'no-store' },
-        );
-        const rows = await lookup.json();
-        const shortId = rows?.[0]?.short_id;
-        if (shortId) {
-          return NextResponse.redirect(new URL(`/a/${shortId}`, request.url), 308);
-        }
-      } catch {
-        // la page se chargera et redirigera côté RSC
-      }
-    }
-  }
-
-  // Aucune session à rafraîchir pour les visiteurs anonymes : éviter des
-  // opérations Auth inutiles à chaque requête publique.
-  const hasAuthCookie = request.cookies.getAll().some(({ name }) =>
-    name.startsWith('sb-') && name.includes('-auth-token'),
-  );
-  if (!hasAuthCookie) return response;
-
-  const supabase = createServerClient(url, key, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-      },
-    },
-  });
-
-  await supabase.auth.getUser();
-  return response;
+import {NextResponse,type NextRequest} from 'next/server';
+export function middleware(request:NextRequest){
+ if(/^\/admin(?:\/|$)/.test(request.nextUrl.pathname)){
+  const destination=new URL('/admin-v2'+request.nextUrl.pathname.slice(6),request.url);destination.search=request.nextUrl.search;return NextResponse.redirect(destination,307);
+ }
+ return NextResponse.next();
 }
-
-export const config = {
-  matcher: ['/((?!_next/static|_next/image|api/live-stream|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
-};
+export const config={matcher:['/admin/:path*']};
