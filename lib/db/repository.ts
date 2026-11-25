@@ -72,6 +72,7 @@ export async function listArticles({
   country,
   province,
   excludeSlugs = [],
+  videoOnly = false,
   search,
   page = 1,
   pageSize = 12,
@@ -80,11 +81,12 @@ export async function listArticles({
   country?: string;
   province?: string;
   excludeSlugs?: string[];
+  videoOnly?: boolean;
   search?: string;
   page?: number;
   pageSize?: number;
 } = {}): Promise<Paginated<Story>> {
-  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, country, province, excludeSlugs, search, page, pageSize });
+  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, country, province, excludeSlugs, videoOnly, search, page, pageSize });
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -94,6 +96,7 @@ export async function listArticles({
     if (country) q = q.eq('country_code', country);
     if (province) q = q.eq('province', province);
     for(const slug of excludeSlugs)q=q.neq('slug',slug);
+    if(videoOnly)q=q.eq('kind','video');
     if (search) {
       const term = `%${search}%`;
       q = q.or(`title.ilike.${term},summary.ilike.${term},category_slug.ilike.${term}`);
@@ -105,6 +108,7 @@ export async function listArticles({
     .filter(s => !country || s.countryCode === country)
     .filter(s => !province || s.province === province)
     .filter(s=>!excludeSlugs.includes(s.slug))
+    .filter(s=>!videoOnly||s.kind==='video')
     .filter((s) => !category || s.category.toLowerCase() === category.toLowerCase())
     .filter(
       (s) =>
@@ -122,6 +126,7 @@ export async function listArticles({
       if (country) countQuery = countQuery.eq('country_code', country);
       if (province) countQuery = countQuery.eq('province', province);
       for(const slug of excludeSlugs)countQuery=countQuery.neq('slug',slug);
+      if(videoOnly)countQuery=countQuery.eq('kind','video');
       if (search) {
         const term = `%${search}%`;
         countQuery = countQuery.or(`title.ilike.${term},summary.ilike.${term},category_slug.ilike.${term}`);
@@ -144,6 +149,7 @@ export async function listArticles({
 
 export type PublicArticle = Story & {
   articleId?: string;
+  videoUrl?: string | null;
   body?: string | null;
   chapter?: string | null;
   contentHtml?: string | null;
