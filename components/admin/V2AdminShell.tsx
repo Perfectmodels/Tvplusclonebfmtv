@@ -18,6 +18,7 @@ const GROUPS=[
   ] },
   { label:'Diffusion', links:[
     {href:'/admin-v2/shows',label:'Émissions',icon:Tv,permission:'shows.manage'},
+    {href:'/admin-v2/editorial-media',label:'Reels, reportages, podcasts',icon:PlayCircle,permission:'shows.manage'},
     {href:'/admin-v2/replays',label:'Replays',icon:PlayCircle,permission:'shows.manage'},
     {href:'/admin-v2/live',label:'Direct',icon:MonitorPlay,permission:'schedule.manage'},
     {href:'/admin-v2/advertising',label:'Publicités',icon:RectangleHorizontal,permission:'settings.manage'},
