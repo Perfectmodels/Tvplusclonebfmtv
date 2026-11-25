@@ -69,11 +69,18 @@ try {
     $params = [];
     if (($_GET['video']??'')==='1') $criteria[]='a.is_video_article=1';
     if (($_GET['highlights']??'')==='1') $criteria[]='(a.featured=1 OR a.is_alert=1)';
-    foreach (['code' => 'a.short_code', 'slug' => 'a.slug', 'category' => 'c.slug', 'country' => 'a.country_code'] as $key => $column) {
+    foreach (['code' => 'a.short_code', 'slug' => 'a.slug', 'category' => 'c.slug', 'country' => 'a.country_code', 'province' => 'a.province_slug'] as $key => $column) {
         if (isset($_GET[$key])) {
             if (!is_string($_GET[$key]) || strlen($_GET[$key]) > 255) respond(400, ['error' => 'Filtre invalide']);
             $criteria[] = $column . ' = ?';
             $params[] = $_GET[$key];
+        }
+    }
+    if (isset($_GET['exclude'])) {
+        $slugs = array_slice(explode(',', (string)$_GET['exclude']),0,2);
+        foreach($slugs as $slug) {
+            if (!preg_match('/^[a-z0-9-]{1,120}$/i',$slug)) respond(400,['error'=>'Exclusion invalide']);
+            $criteria[]='a.slug <> ?'; $params[]=$slug;
         }
     }
     if (isset($_GET['search'])) {
@@ -87,9 +94,9 @@ try {
     $from = ' FROM tvp_articles a LEFT JOIN tvp_categories c ON c.id = a.category_id LEFT JOIN tvp_media m ON m.id = a.cover_media_id LEFT JOIN tvp_profiles p ON p.id = a.author_id LEFT JOIN tvp_article_read_stats rs ON rs.article_id = a.id WHERE ' . implode(' AND ', $criteria);
     $count = $pdo->prepare('SELECT COUNT(*)' . $from);
     $count->execute($params);
-    $fields = 'a.id, a.title, a.slug, a.short_code, a.excerpt, a.published_at, a.created_at, a.updated_at, a.is_video_article, a.tags_json, a.seo_title, a.seo_description, a.country_code, a.featured, a.is_alert, c.name AS category, c.slug AS category_slug, m.media_url AS cover_url, m.alt_text AS cover_alt, p.full_name AS author_name, COALESCE(rs.read_count,0) AS article_reads';
+    $fields = 'a.id, a.title, a.slug, a.short_code, a.excerpt, a.published_at, a.created_at, a.updated_at, a.is_video_article, a.tags_json, a.seo_title, a.seo_description, a.country_code, a.province_slug, a.featured, a.is_alert, c.name AS category, c.slug AS category_slug, m.media_url AS cover_url, m.alt_text AS cover_alt, p.full_name AS author_name, COALESCE(rs.read_count,0) AS article_reads';
     if (isset($_GET['code']) || isset($_GET['slug'])) {
-        $fields .= ', a.content_html, a.province_slug, m.caption AS cover_caption, m.credit AS cover_credit';
+        $fields .= ', a.content_html, m.caption AS cover_caption, m.credit AS cover_credit';
     }
     $query = $pdo->prepare("SELECT $fields $from ORDER BY a.published_at DESC, a.id ASC LIMIT $limit OFFSET $offset");
     $query->execute($params);
