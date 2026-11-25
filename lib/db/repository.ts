@@ -87,6 +87,7 @@ export async function listArticles({
   const result = await fromSupabase<ArticleRow[]>((db) => {
     let q = db.from('articles').select('*').eq('status', 'published').is('deleted_at', null);
     if (category) q = q.eq('category_slug', category.toLowerCase());
+    if (country) q = q.eq('country_code', country);
     if (search) {
       const term = `%${search}%`;
       q = q.or(`title.ilike.${term},summary.ilike.${term},category_slug.ilike.${term}`);
@@ -95,6 +96,7 @@ export async function listArticles({
   }, []);
 
   const fallback = staticStories
+    .filter(s => !country || s.countryCode === country)
     .filter((s) => !category || s.category.toLowerCase() === category.toLowerCase())
     .filter(
       (s) =>
@@ -109,6 +111,7 @@ export async function listArticles({
       const db = getServerSupabase();
       let countQuery = db.from('articles').select('*', { count: 'exact', head: true }).eq('status', 'published').is('deleted_at', null);
       if (category) countQuery = countQuery.eq('category_slug', category.toLowerCase());
+      if (country) countQuery = countQuery.eq('country_code', country);
       if (search) {
         const term = `%${search}%`;
         countQuery = countQuery.or(`title.ilike.${term},summary.ilike.${term},category_slug.ilike.${term}`);
