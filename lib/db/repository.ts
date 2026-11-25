@@ -70,17 +70,19 @@ async function fromSupabase<T>(
 export async function listArticles({
   category,
   country,
+  province,
   search,
   page = 1,
   pageSize = 12,
 }: {
   category?: string;
   country?: string;
+  province?: string;
   search?: string;
   page?: number;
   pageSize?: number;
 } = {}): Promise<Paginated<Story>> {
-  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, country, search, page, pageSize });
+  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, country, province, search, page, pageSize });
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -88,6 +90,7 @@ export async function listArticles({
     let q = db.from('articles').select('*').eq('status', 'published').is('deleted_at', null);
     if (category) q = q.eq('category_slug', category.toLowerCase());
     if (country) q = q.eq('country_code', country);
+    if (province) q = q.eq('province', province);
     if (search) {
       const term = `%${search}%`;
       q = q.or(`title.ilike.${term},summary.ilike.${term},category_slug.ilike.${term}`);
@@ -97,6 +100,7 @@ export async function listArticles({
 
   const fallback = staticStories
     .filter(s => !country || s.countryCode === country)
+    .filter(s => !province || s.province === province)
     .filter((s) => !category || s.category.toLowerCase() === category.toLowerCase())
     .filter(
       (s) =>
@@ -112,6 +116,7 @@ export async function listArticles({
       let countQuery = db.from('articles').select('*', { count: 'exact', head: true }).eq('status', 'published').is('deleted_at', null);
       if (category) countQuery = countQuery.eq('category_slug', category.toLowerCase());
       if (country) countQuery = countQuery.eq('country_code', country);
+      if (province) countQuery = countQuery.eq('province', province);
       if (search) {
         const term = `%${search}%`;
         countQuery = countQuery.or(`title.ilike.${term},summary.ilike.${term},category_slug.ilike.${term}`);
