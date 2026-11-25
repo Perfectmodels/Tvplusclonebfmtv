@@ -39,14 +39,17 @@ export default function Footer({ categories = staticCategories }: { categories?:
             <Link href="/direct">Direct TV Plus</Link>
             <Link href="/programme-tv">Programme TV</Link>
             <Link href="/replays">Replays</Link>
-            <Link href="/news-24-7">Le fil info</Link>
+            <Link href="/actualites">Toutes les actualités</Link>
           </div>
         </div>
         <div>
           <h3 className="footer-title">Services</h3>
           <div className="footer-links">
             <Link href="/newsletters">Newsletters</Link>
-            <Link href="/videos">Vidéos</Link>
+            <Link href="/videos">Reportages & vidéos</Link>
+            <Link href="/reels">TV+ Reels</Link>
+            <Link href="/ligne-rouge">Ligne Rouge</Link>
+            <Link href="/articles-video">Articles vidéo</Link>
             <Link href="/podcasts">Podcasts</Link>
             <Link href="/plan-du-site">Plan du site</Link>
             <Link href="/programme-tv">Programme TV</Link>
