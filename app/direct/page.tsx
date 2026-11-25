@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import PremiumGate from '../../components/video/PremiumGate';
+import {recipeActor} from '../../lib/payments/recipe-server';
 import {premiumAccess} from '../../lib/video/premium';
 import { ChevronRight } from 'lucide-react';
 import Breadcrumb from '../../components/Breadcrumb';
@@ -11,9 +12,9 @@ export const dynamic='force-dynamic';
 export const metadata={title:'Direct Premium — TV+ Afrique',alternates:{canonical:'/direct'}};
 
 export default async function DirectPage() {
-  const [access,{ data: schedule }, { items: stories }] = await Promise.all([
+  const [access,{ data: schedule }, { items: stories },recipe] = await Promise.all([
     premiumAccess(),getTvSchedule().catch(()=>({data:[]})),
-    listArticles({ pageSize: 4 }).catch(()=>({items:[]})),
+    listArticles({ pageSize: 4 }).catch(()=>({items:[]})),recipeActor(),
   ]);
 
   const today=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(new Intl.DateTimeFormat('en-US',{weekday:'short',timeZone:'Africa/Libreville'}).format(new Date()))+1;
@@ -26,6 +27,7 @@ export default async function DirectPage() {
         <p className="page-intro">Accédez au direct de TV+ Afrique avec votre abonnement Premium.</p>
       </div>
 
+      {recipe&&<p><Link href="/direct/recette" className="direct-cta">Ouvrir la recette de paiement (simulation)</Link></p>}
       <div className="direct-main-player">
         {access.entitled&&access.configured?<DirectLiveStage/>:<PremiumGate {...access}/>}
         <div className="direct-schedule">

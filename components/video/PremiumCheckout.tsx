@@ -18,13 +18,13 @@ export default function PremiumCheckout({authenticated,configured}:{authenticate
  }catch(e){setError(e instanceof Error?e.message:'Paiement indisponible.');}finally{lock.current=false;setBusy(false);}
  }
  return <div className="premium-offers">
-  {data?.mode==='sandbox'&&<p className="premium-info">Mode test — aucun accès réel n’est activé.</p>}
+  {data?.mode==='sandbox'&&<p className="premium-info">Portefeuille de test SingPay — aucun droit Premium réel n’est accordé. Les opérations opérateur peuvent avoir des conséquences financières : utilisez uniquement les moyens autorisés par SingPay.</p>}
   {error&&<p role="alert" className="premium-error">{error}</p>}
   {!data&&!error&&<p>Chargement des offres…</p>}
   {data&&(!data.enabled||(!configured&&data.mode!=='sandbox')||!data.plans.length)&&<p>Les offres de paiement ne sont pas encore ouvertes.</p>}
   {!!data?.plans.length&&<fieldset><legend>Choisissez votre accès au direct</legend>{data.plans.map(p=><label className={'premium-option'+(slug===p.slug?' selected':'')} key={p.slug}><input type="radio" name="premium-plan" checked={slug===p.slug} onChange={()=>{setSlug(p.slug);setConfirmed(false);}}/><span><strong>{p.name}</strong><small>{duration(p.duration_minutes)}</small></span><b>{money(p.amount)}</b></label>)}</fieldset>}
   {!authenticated?<Link href="/connexion?next=/direct" className="premium-primary">Se connecter pour acheter</Link>:<>
-  {plan&&data?.enabled&&(configured||data.mode==='sandbox')&&<><label className="premium-confirm"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/> Je confirme l’achat de {plan.name} à {money(plan.amount)}. Pas de renouvellement automatique.</label><button type="button" className="premium-primary" disabled={!confirmed||busy} onClick={()=>void purchase()}>{busy?'Préparation du paiement…':'Payer avec SingPay'}</button></>}
+  {plan&&data?.enabled&&(configured||data.mode==='sandbox')&&<><label className="premium-confirm"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/> Je confirme l’achat de {plan.name} à {money(plan.amount)}. Pas de renouvellement automatique.</label><button type="button" className="premium-primary" disabled={!confirmed||busy} onClick={()=>void purchase()}>{busy?'Préparation du paiement…':(data.mode==='sandbox'?'Tester avec SingPay':'Payer avec SingPay')}</button></>}
   <Link href="/direct/paiement" className="premium-secondary">Mes paiements et vérification</Link></>}
   <small>Paiement sur la page sécurisée de SingPay. Aucun code Mobile Money n’est demandé par TV+ Afrique.</small>
  </div>;

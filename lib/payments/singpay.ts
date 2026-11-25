@@ -3,15 +3,17 @@ import {z} from 'zod';
 import {ApiError} from '../api/response';
 const BASE='https://gateway.singpay.ga/v1';
 export function paymentConfig(){
- const clientId=process.env.SINGPAY_CLIENT_ID?.trim(),clientSecret=process.env.SINGPAY_CLIENT_SECRET?.trim(),wallet=process.env.SINGPAY_WALLET_ID?.trim(),disbursement=process.env.SINGPAY_DISBURSEMENT_ID?.trim();
- const returnOrigin=process.env.SINGPAY_RETURN_ORIGIN?.trim();
- const allowedHosts=(process.env.SINGPAY_CHECKOUT_HOSTS||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+ const sandbox=process.env.SINGPAY_MODE==='sandbox';
+ // Aucune réutilisation des identifiants de production en recette.
+ const clientId=(sandbox?process.env.SINGPAY_TEST_CLIENT_ID:process.env.SINGPAY_CLIENT_ID)?.trim(),clientSecret=(sandbox?process.env.SINGPAY_TEST_CLIENT_SECRET:process.env.SINGPAY_CLIENT_SECRET)?.trim(),wallet=(sandbox?process.env.SINGPAY_TEST_WALLET_ID:process.env.SINGPAY_WALLET_ID)?.trim(),disbursement=(sandbox?process.env.SINGPAY_TEST_DISBURSEMENT_ID:process.env.SINGPAY_DISBURSEMENT_ID)?.trim();
+ const returnOrigin=(sandbox?process.env.SINGPAY_TEST_RETURN_ORIGIN:process.env.SINGPAY_RETURN_ORIGIN)?.trim();
+ const allowedHosts=((sandbox?process.env.SINGPAY_TEST_CHECKOUT_HOSTS:process.env.SINGPAY_CHECKOUT_HOSTS)||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
  let origin:string|undefined;
  try{const u=new URL(returnOrigin||'');if(u.protocol==='https:'&&!u.username&&!u.password&&u.pathname==='/'&&!u.search&&!u.hash)origin=u.origin;}catch{}
- const credentialsReady=!!(clientId&&clientSecret&&wallet&&(process.env.SINGPAY_MODE==='sandbox'||(process.env.SINGPAY_MODE==='production'&&disbursement)));
+ const credentialsReady=!!(clientId&&clientSecret&&wallet&&((sandbox&&process.env.SINGPAY_TEST_WALLET_CONFIRMED==='true')||(process.env.SINGPAY_MODE==='production'&&disbursement)));
  const configured=!!(credentialsReady&&origin&&allowedHosts.length);
  const mode=process.env.SINGPAY_MODE||'unconfigured';
- const environmentMatches=process.env.VERCEL_ENV==='preview'?mode==='sandbox':process.env.VERCEL_ENV==='production'?mode==='production':true;
+ const environmentMatches=process.env.VERCEL_ENV==='preview'?mode==='sandbox':process.env.VERCEL_ENV==='production'?mode==='production':mode==='production'?process.env.NODE_ENV==='production':process.env.NODE_ENV==='development'||process.env.SINGPAY_TEST_ENVIRONMENT==='true';
  const goLiveConfirmed=process.env.SINGPAY_GOLIVE_CONFIRMED==='true';
  return {clientId,clientSecret,wallet,disbursement,origin,allowedHosts,credentialsReady,environmentMatches,goLiveConfirmed,configured,enabled:configured&&environmentMatches&&process.env.SINGPAY_ENABLED==='true'&&(mode!=='production'||goLiveConfirmed),mode};
 }
