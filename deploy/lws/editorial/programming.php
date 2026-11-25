@@ -22,7 +22,7 @@ function programming(PDO $pdo,string $op,array $request): void {
   $q=$pdo->prepare("DELETE FROM $table WHERE id=?");$q->execute([$id]);if(!$q->rowCount())respond(404,['error'=>'Contenu introuvable']);
   $pdo->commit();respond(200,['deleted'=>true]);
  }
- $fields=$show?['slug','title','tagline','description','schedule_label','host_name','frequency','category_id','cover_media_id','is_active','position']:['show_id','title','description','aired_at','duration_seconds','platform','external_id','source_url','thumbnail_url','publish_at','status'];
+ $fields=$show?['slug','title','tagline','description','schedule_label','host_name','frequency','category_id','cover_media_id','intro_video_url','is_active','position']:['show_id','title','description','aired_at','duration_seconds','platform','external_id','source_url','thumbnail_url','publish_at','status'];
  $values=array_intersect_key($data,array_flip($fields));
  if($show){
   $values['is_active']=(int)(bool)$values['is_active'];
