@@ -6,9 +6,9 @@ Activer l'API Search Console dans un projet Google Cloud, créer un compte de se
 ## Géographie
 Les pays et provinces utilisent les champs éditoriaux réellement enregistrés. Les pages vides portent noindex. Le sitemap ne découvre que les territoires présents dans les articles parcourus. Pas de bureau régional fictif ni hreflang sans traductions.
 ## Assistant rédactionnel
-Analyse locale et suggestions extraites du titre, du chapeau et du texte ; score indicatif et explicable. Aucun modèle génératif connecté et aucun changement automatique du contenu. Les actions sont manuelles, via la sauvegarde existante.
+Analyse locale et suggestions extraites du titre, du chapeau et du texte ; score indicatif et explicable. Le connecteur génératif facultatif utilise GROQ_API_KEY et GROQ_SEO_MODEL côté serveur. L’utilisateur autorise explicitement l’envoi du texte ; la réponse est validée et modifiable. Aucun appel génératif n’est effectué pendant la saisie. Configurer les quotas du fournisseur avant activation. Aucun changement automatique du contenu. Les actions sont manuelles, via la sauvegarde existante.
 ## Restant
 - Mesures GA4, Bing, backlinks, GEO et campagnes SEA/SMA/SEM : connecter les comptes et implémenter les API adaptées avant de déclarer ces fonctionnalités actives.
-- IA générative, transcriptions, pages auteurs vérifiées, contenus de confiance et politiques éditoriales : nécessitent configuration ou validation de la rédaction.
+- Activation et recette IA générative, transcriptions, pages auteurs vérifiées, contenus de confiance et politiques éditoriales : nécessitent configuration ou validation de la rédaction.
 - ASO : uniquement en présence d'une application native.
 - Tests TypeScript, build, validation de preview et inspection Search Console restent nécessaires. Aucun déploiement de production autorisé.
