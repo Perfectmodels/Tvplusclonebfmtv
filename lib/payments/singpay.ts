@@ -9,7 +9,9 @@ export function paymentConfig(){
  let origin:string|undefined;
  try{const u=new URL(returnOrigin||'');if(u.protocol==='https:'&&!u.username&&!u.password&&u.pathname==='/'&&!u.search&&!u.hash)origin=u.origin;}catch{}
  const configured=!!(clientId&&clientSecret&&wallet&&origin&&allowedHosts.length&&(process.env.SINGPAY_MODE==='sandbox'||(process.env.SINGPAY_MODE==='production'&&disbursement)));
- return {clientId,clientSecret,wallet,disbursement,origin,allowedHosts,configured,enabled:configured&&process.env.SINGPAY_ENABLED==='true',mode:process.env.SINGPAY_MODE||'unconfigured'};
+ const mode=process.env.SINGPAY_MODE||'unconfigured';
+ const environmentMatches=process.env.VERCEL_ENV==='preview'?mode==='sandbox':process.env.VERCEL_ENV==='production'?mode==='production':true;
+ return {clientId,clientSecret,wallet,disbursement,origin,allowedHosts,configured,enabled:configured&&environmentMatches&&process.env.SINGPAY_ENABLED==='true',mode};
 }
 async function request(path:string,body?:unknown){
  const c=paymentConfig();if(!c.configured)throw new ApiError('Configuration SingPay incomplète.',503,'UNAVAILABLE');
@@ -32,7 +34,7 @@ export async function createCheckout(order:PaymentOrder){
 }
 const transaction=z.object({id:z.string().min(1).max(200),reference:z.string(),status:z.string(),result:z.string().nullish(),amount:z.union([z.string(),z.number()]),portefeuille:z.object({id:z.string().optional(),_id:z.string().optional()})});
 export async function verifyOrder(order:PaymentOrder){
- const c=paymentConfig();if(order.wallet_id!==c.wallet)throw new ApiError('Portefeuille différent. Vérification manuelle requise.',409,'CONFLICT');
+ const c=paymentConfig();if(order.wallet_id!==c.wallet||order.mode!==c.mode||(process.env.VERCEL_ENV==='preview'&&order.mode==='production')||(process.env.VERCEL_ENV==='production'&&order.mode==='sandbox'))throw new ApiError('Portefeuille différent. Vérification manuelle requise.',409,'CONFLICT');
  const data=await request('/transaction/api/search/by-reference/'+encodeURIComponent(order.reference));
  if(data===null)return {state:'pending' as const};
  const direct=transaction.safeParse(data);

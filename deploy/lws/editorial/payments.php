@@ -37,7 +37,7 @@ function payments(PDO $pdo,string $op,array $req):void {
   $q->execute([$slug,$name,$amount,$duration,(int)$d['active']]);respond(200,['saved'=>true]);
  }
  if($op==='payments.mine'){
-  $q=$pdo->prepare('SELECT reference,plan_name,amount,state,mode,entitlement_ends_at FROM tvp_live_payments WHERE user_id=? ORDER BY created_at DESC LIMIT 30');$q->execute([$actor]);respond(200,['orders'=>$q->fetchAll()]);
+  $q=$pdo->prepare('SELECT reference,plan_name,amount,state,mode,entitlement_ends_at FROM tvp_live_payments WHERE user_id=? ORDER BY created_at DESC LIMIT 30');$q->execute([$actor]);$orders=$q->fetchAll();foreach($orders as &$item){if(!empty($item['entitlement_ends_at']))$item['entitlement_ends_at']=str_replace(' ','T',$item['entitlement_ends_at']).'Z';}unset($item);respond(200,['orders'=>$orders]);
  }
  if($op==='payments.reserve'){
   $wallet=(string)($d['wallet']??'');$mode=(string)($d['mode']??'');$slug=(string)($d['plan']??'');

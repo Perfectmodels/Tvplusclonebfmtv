@@ -25,7 +25,7 @@ export const POST=handleRoute(async(req:NextRequest)=>{
   if(!c.enabled||req.nextUrl.origin!==c.origin||(c.mode==='sandbox'&&process.env.VERCEL_ENV==='production')||!process.env.LIVE_TOKEN_BROKER_URL||!process.env.LIVE_TOKEN_BROKER_SECRET||!process.env.LIVE_EMBED_HOSTS)throw new ApiError('Le paiement du direct n’est pas encore activé.',503,'UNAVAILABLE');
   const {order,fresh}=await newsroom<{order:PaymentOrder;fresh:boolean}>(a,'payments.reserve',{data:{plan:v.plan,wallet:c.wallet,mode:c.mode,amount:v.amount,durationMinutes:v.durationMinutes}});
   if(!fresh){
-   if(order.plan_slug===v.plan&&order.state==='pending'&&order.checkout_url&&(!order.checkout_expires_at||Date.parse(order.checkout_expires_at)>Date.now()))return ok({...publicOrder(order),url:checkoutUrl(order.checkout_url)});
+   if(order.plan_slug===v.plan&&order.mode===c.mode&&order.wallet_id===c.wallet&&Number(order.amount)===v.amount&&Number(order.duration_minutes)===v.durationMinutes&&order.state==='pending'&&order.checkout_url&&(!order.checkout_expires_at||Date.parse(order.checkout_expires_at)>Date.now()))return ok({...publicOrder(order),url:checkoutUrl(order.checkout_url)});
    return ok({...publicOrder(order),url:null,message:'Une transaction est déjà en cours. Vérifiez son état avant un nouvel achat.'});
   }
   try{
