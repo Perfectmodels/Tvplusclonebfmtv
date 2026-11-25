@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Newspaper, Images, ListTree, Tv, PlayCircle, MonitorPlay,
-  RectangleHorizontal, Menu, X, LogOut, ExternalLink, Plus, ChevronRight,
+  RectangleHorizontal, Menu, X, LogOut, ExternalLink, Plus, ChevronRight, Search,
 } from 'lucide-react';
 import TvPlusLogo from '../TvPlusLogo';
 
 const GROUPS=[
-  { label:'Pilotage', links:[{href:'/admin-v2',label:'Vue générale',icon:LayoutDashboard,permission:''}] },
+  { label:'Pilotage', links:[{href:'/admin-v2',label:'Vue générale',icon:LayoutDashboard,permission:''},{href:'/admin-v2/seo',label:'SEO & Visibilité',icon:Search,permission:'articles.read_all'}] },
   { label:'Rédaction', links:[
     {href:'/admin-v2/articles',label:'Articles',icon:Newspaper,permission:'articles.read_all'},
     {href:'/admin-v2/media',label:'Médiathèque',icon:Images,permission:'media.upload'},
