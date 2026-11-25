@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { canonicalSiteUrl } from '../lib/articles/site-url';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import BackToTop from '../components/BackToTop';
@@ -9,7 +10,7 @@ import './editorial.css';
 import './replay-embeds.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tvplusv2.vercel.app'),
+  metadataBase: new URL(canonicalSiteUrl()),
   applicationName: 'TV+ Afrique',
   alternates: { types: { 'application/rss+xml': '/rss.xml' } },
   openGraph: { siteName: 'TV+ Afrique', locale: 'fr_GA', type: 'website' },
