@@ -109,12 +109,13 @@ function mapFull(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Publ
 }
 
 export const listV2Articles = unstable_cache(async ({
-  category, country, province, search, page = 1, pageSize = 12,
-}: {category?: string; country?: string; province?: string; search?: string; page?: number; pageSize?: number} = {}) => {
+  category, country, province, excludeSlugs = [], search, page = 1, pageSize = 12,
+}: {category?: string; country?: string; province?: string; excludeSlugs?: string[]; search?: string; page?: number; pageSize?: number} = {}) => {
   const db = client();
   let q = db.from('articles').select(SELECT_ARTICLE_LIST, { count: 'exact' }).eq('status', 'published');
   if(country) q=q.eq('country_code',country);
   if(province) q=q.eq('province_slug',province);
+  for(const slug of excludeSlugs)q=q.neq('slug',slug);
   if (category) {
     const { data: cat, error } = await db.from('categories').select('id').eq('slug', categorySlug(category)).maybeSingle();
     if (error) throw new Error(error.message);
@@ -126,7 +127,7 @@ export const listV2Articles = unstable_cache(async ({
     q = q.or(`title.ilike.%${safe}%,excerpt.ilike.%${safe}%`);
   }
   const start = (page - 1) * pageSize;
-  const { data, count, error } = await q.order('published_at', { ascending: false }).range(start, start + pageSize - 1);
+  const { data, count, error } = await q.order('published_at', { ascending: false }).order('id',{ascending:false}).range(start, start + pageSize - 1);
   if (error) throw new Error(error.message);
   const articles = (data ?? []) as V2Article[];
   const index = await lookups(articles.map((a) => a.cover_media_id));
