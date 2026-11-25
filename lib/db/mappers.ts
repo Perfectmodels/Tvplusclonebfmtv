@@ -35,6 +35,8 @@ export function mapArticle(row: ArticleRow): Story {
     kind: row.is_alert ? 'alert' : (row.kind ?? undefined),
     featured: row.featured,
     countryCode: row.country_code,
+    province: row.province,
+    robots: row.robots,
     seoTitle: row.seo_title,
     seoDescription: row.seo_description,
     tags: row.tags ?? [],
