@@ -11,3 +11,18 @@
 .tvplus-chronicle-row>svg{grid-column:3;grid-row:1/3;align-self:center;width:14px}
 .tvplus-chronicle-copy strong{font-size:.98rem}.tvplus-media-track{grid-auto-columns:minmax(164px,72%)}.tvplus-media-track.is-vertical{grid-auto-columns:minmax(112px,39%)}.tvplus-premium-gate{min-height:240px;aspect-ratio:auto}}
 .tvplus-show-intro{margin:20px 0;min-width:0}.tvplus-show-intro h2{margin:0 0 10px;font-size:1.2rem}.tvplus-reel-grid{grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:16px}.tvplus-home-main .card-hero{min-width:0}.header-search-btn[hidden]{display:none!important}.tvplus-chronicle-copy .category-label{font-size:.68rem}.tvplus-home-aside .advertising-carousel__creative{aspect-ratio:16/9;display:grid;place-items:center}.tvplus-home-aside .advertising-carousel__image{max-height:100%;object-fit:contain}.tvplus-media-strip h2{margin:0}.tvplus-media-strip a{overflow-wrap:anywhere}.tvplus-premium-gate h2{color:inherit}.tvplus-premium-gate button{color:#fff;background:#b7192e;padding:10px 15px;border:0;border-radius:4px;cursor:pointer}
+
+/* Direct Premium : remplace la liste secondaire de l’accueil. */
+.tvplus-home-premium{display:grid;gap:14px;min-width:0;border-radius:10px;overflow:hidden;background:linear-gradient(145deg,#071632,#123866);padding:18px;color:#fff}
+.tvplus-home-premium-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:.78rem;font-weight:700;letter-spacing:.035em}
+.tvplus-home-premium-top>span{display:inline-flex;align-items:center;gap:6px}
+.tvplus-home-premium-tag{padding:5px 8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:4px;color:#fff}
+.tvplus-home-premium-visual{min-height:94px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(255,255,255,.14);border-radius:7px;background:radial-gradient(ellipse at center,#244e80,transparent 75%);font-weight:800;letter-spacing:.13em}
+.tvplus-home-premium-visual>svg{color:#fff}
+.tvplus-home-premium h2{margin:0;color:#fff;font-size:1.45rem;line-height:1.18}
+.tvplus-home-premium p{margin:0;color:#d9e6f6;font-size:.95rem;line-height:1.45}
+.tvplus-home-premium-link{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:10px 13px;background:#c71930;color:#fff!important;border-radius:5px;font-weight:700;text-decoration:none;line-height:1.2}
+.tvplus-home-premium-link:hover{background:#a91429}
+.tvplus-home-premium-link:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.tvplus-home-premium-link svg{flex:none}
+@media(max-width:760px){.tvplus-home-premium{padding:16px;gap:12px}.tvplus-home-premium-visual{min-height:80px}}

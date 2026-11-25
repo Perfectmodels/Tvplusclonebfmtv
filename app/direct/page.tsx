@@ -12,8 +12,8 @@ export const metadata={title:'Direct Premium — TV+ Afrique',alternates:{canoni
 
 export default async function DirectPage() {
   const [access,{ data: schedule }, { items: stories }] = await Promise.all([
-    premiumAccess(),getTvSchedule(),
-    listArticles({ pageSize: 4 }),
+    premiumAccess(),getTvSchedule().catch(()=>({data:[]})),
+    listArticles({ pageSize: 4 }).catch(()=>({items:[]})),
   ]);
 
   const today=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(new Intl.DateTimeFormat('en-US',{weekday:'short',timeZone:'Africa/Libreville'}).format(new Date()))+1;

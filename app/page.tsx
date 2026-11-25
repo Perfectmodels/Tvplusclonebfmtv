@@ -6,6 +6,7 @@ import Newsletter from '../components/Newsletter';
 import QuestionSection from '../components/QuestionSection';
 import FilActuFeed from '../components/FilActuFeed';
 import NewsTicker from '../components/NewsTicker';
+import HomePremiumCard from '../components/video/HomePremiumCard';
 import AdvertisingCarousel from '../components/AdvertisingCarousel';
 import {getHomepageAds} from '../lib/ads/v2';
 import SectionHeading from '../components/SectionHeading';
@@ -32,7 +33,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
   getNewsFeed(20).catch(()=>({items:[]})),getCategories().catch(()=>({data:[]})),getHomepageAds(),listCatalog(undefined,60),getPrograms().catch(()=>({data:[]})),getEpisodes(100).catch(()=>({data:[]})),readHomeConfig()
  ]);
  const categories=cats.data;
- const {alert,hero,rail,selection,feed,blocks,videoArticles}=distributeHomepageStories(articles,categories);
+ const {alert,hero,selection,feed,blocks,videoArticles}=distributeHomepageStories(articles,categories);
  const excluded=[alert?.slug,hero?.slug].filter((s):s is string=>!!s);
  const catalog=(kind:'reel'|'reportage'|'podcast')=>media.items.filter(m=>m.kind===kind).map(m=>({id:m.id,title:m.title,image:m.thumbnail_url,href:'/media/'+m.id,meta:m.category}));
  const line=programs.data.find(p=>p.slug==='ligne-rouge'||p.name.toLowerCase().trim()==='ligne rouge');
@@ -54,7 +55,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
    {hero?<StoryCard story={hero} variant="hero"/>:<p className="empty-state">Les actualités à la une seront bientôt disponibles.</p>}
    <section className="tvplus-home-feed" id="fil-info"><SectionHeading title="Fil actu"/><FilActuFeed items={feed} total={Math.max(0,(result?.total??articles.length)-excluded.length)} excludeSlugs={excluded}/></section>
   </div>
-  <aside className="tvplus-home-aside"><NewsTicker items={wire.items.map(({id,time,title})=>({id,time,title}))} variant="rail" limit={20}/><AdvertisingCarousel placement="after-live" ads={ads['after-live']}/>{rail.map(s=><StoryCard key={s.slug} story={s} variant="rail"/>)}</aside>
+  <aside className="tvplus-home-aside"><HomePremiumCard/><NewsTicker items={wire.items.map(({id,time,title})=>({id,time,title}))} variant="rail" limit={20}/><AdvertisingCarousel placement="after-live" ads={ads['after-live']}/></aside>
  </div>
  <AdvertisingCarousel placement="after-hero" ads={ads['after-hero']}/>
  {videoArticles.length>0&&<HomeMediaStrip title="L’actualité en vidéo" href="/articles-video" items={videoArticles.map(s=>({id:s.slug,title:s.title,image:s.image,href:articlePath(s),meta:s.category}))}/>}
