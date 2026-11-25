@@ -4,7 +4,7 @@ import {notFound} from 'next/navigation';
 import Breadcrumb from '../../../components/Breadcrumb';
 import StoryCard from '../../../components/StoryCard';
 import ArticlePagination from '../../../components/ArticlePagination';
-import {COUNTRY_CODES,EDITORIAL_COUNTRIES,COUNTRIES} from '../../../lib/editor/countries';
+import {COUNTRY_CODES,EDITORIAL_COUNTRIES,COUNTRIES,GABON_PROVINCES} from '../../../lib/editor/countries';
 import {listArticles} from '../../../lib/db/repository';
 export const revalidate=60;
 const PAGE_SIZE=15;
@@ -32,6 +32,7 @@ export default async function CountryPage({params,searchParams}:{params:Promise<
   <div className="rubrique-chips" aria-label="Choisir un pays">
    {EDITORIAL_COUNTRIES.map(c=><a key={c.code} href={'/pays/'+c.code.toLowerCase()} className={c.code===code?'is-active':''}>{c.name}</a>)}
   </div>
+  {code==='GA'&&<nav className="rubrique-chips" aria-label="Provinces du Gabon">{GABON_PROVINCES.map(p=><a href={'/provinces/'+p.value} key={p.value}>{p.label}</a>)}</nav>}
   {items.length?<div className="selection-grid">{items.map(story=><StoryCard key={story.shortId||story.slug} story={story}/>)}</div>
   :<p className="empty-state">Aucun article géolocalisé pour {label} pour le moment. Les articles du Gabon ne sont pas classés automatiquement dans d'autres pays.</p>}
   <ArticlePagination path={'/pays/'+code.toLowerCase()} page={page} totalPages={totalPages}/>
