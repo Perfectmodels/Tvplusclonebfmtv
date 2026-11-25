@@ -37,7 +37,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  const line=programs.data.find(p=>p.slug==='ligne-rouge'||p.name.toLowerCase().trim()==='ligne rouge');
  const replay=(isLine:boolean)=>episodes.data.filter(e=>!!e.videoUrl&&(isLine?!!line&&e.programId===line.id:!line||e.programId!==line.id)).map(e=>({id:e.id,title:e.title,image:e.thumbnail,href:'/replays/'+e.id,meta:e.duration}));
  const reels=catalog('reel'),lineItems=replay(true),replays=replay(false),reports=catalog('reportage'),podcasts=catalog('podcast');
- const strips=[
+ const strips: {title:string;href:string;items:ReturnType<typeof catalog>;vertical?:boolean;red?:boolean;audio?:boolean}[]=[
   {title:'TV+ Reels',href:'/reels',items:reels,vertical:true},
   {title:'Ligne Rouge',href:'/ligne-rouge',items:lineItems,red:true},
   {title:'À revoir en replay',href:'/replays',items:replays},
