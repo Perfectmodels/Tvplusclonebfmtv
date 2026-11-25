@@ -8,6 +8,7 @@ import { getCategories, getHeaderTopics } from '../lib/db/repository';
 import './globals.css';
 import './editorial.css';
 import './replay-embeds.css';
+import './home-refresh.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(canonicalSiteUrl()),
