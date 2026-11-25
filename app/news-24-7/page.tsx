@@ -32,13 +32,13 @@ export default async function FilInfoPage() {
 
   return (
     <main className="shell listing-page">
-      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Fil info' }]} />
+      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Alerte Info' }]} />
       {alert && <AlertBar title={alert.title} href={alert.shortId ? `/a/${alert.shortId}` : `/article/${alert.slug}`} time={alert.time} />}
       <h1 className="page-title">Alerte Info</h1>
       <p className="page-intro">
         Toute l’actualité du Gabon et du monde, minute par minute. Le flux de veille externe est distinct des articles de la rédaction TV+ Afrique.
       </p>
-      <NewsTicker items={wire} limit={20}/>
+      <NewsTicker items={wire.map(({id,time,title})=>({id,time,title}))} limit={20}/>
       <div className="section-head has-rule">
         <h2>Le fil de la rédaction</h2>
       </div>
