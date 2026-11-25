@@ -39,9 +39,13 @@ export function cleanArticlePayload(input: unknown) {
   };
 }
 
-export function invalidatePublicArticle(slug?: string) {
+export function invalidatePublicArticle(slug?: string, shortCode?: string) {
   revalidateTag('public-articles');
   revalidatePath('/');
+  revalidatePath('/sitemap.xml');
+  revalidatePath('/sitemap-news.xml');
+  revalidatePath('/rss.xml');
+  if(shortCode) revalidatePath('/a/'+shortCode);
   if (slug) revalidatePath('/article/' + slug);
 }
 
