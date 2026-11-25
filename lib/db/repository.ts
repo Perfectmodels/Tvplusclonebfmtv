@@ -9,6 +9,7 @@ import {articlePath} from '../articles/urls';
 import type {Story} from '../data';
 import {topics,topicLinks} from '../data';
 import {channels,witnesses,newsletters,practicalServices} from '../extra';
+import {legacyEpisode} from './legacy-programming';
 import type {MediaItem,Program} from '../extra';
 import type {DataSource,Paginated,NewsletterRow,ContactRow} from './types';
 type Wrapped<T>={data:T;source:DataSource;error?:string};
@@ -36,7 +37,7 @@ export type PublicArticle = Story & {
 };
 
 
-export type PublicEpisode={id:string;programId:string|null;title:string;description:string;videoUrl:string;thumbnail:string;duration:string;publishedAt:string};
+export type PublicEpisode={id:string;programId:string|null;title:string;description:string;videoUrl:string;thumbnail:string;duration:string;publishedAt:string;legacyPage?:string};
 export const listArticles=(options:Parameters<typeof v2.listV2Articles>[0]={}):Promise<Paginated<Story>>=>v2.listV2Articles(options);
 export const getArticleBySlug=v2.getV2ArticleBySlug;
 export const getArticleByShortId=v2.getV2ArticleByShortCode;
@@ -47,7 +48,7 @@ export const getSiteTopics=v2.getV2Topics;
 export const getPrograms=():Promise<Wrapped<Program[]>>=>v2.getV2Programs();
 export const getEpisodes=(limit=24):Promise<Wrapped<PublicEpisode[]>>=>v2.getV2Episodes(limit);
 export const getTvSchedule=v2.getV2Schedule;
-export async function getEpisodeById(id:string):Promise<PublicEpisode|null>{if(!/^[0-9a-f-]{36}$/i.test(id))return null;const {data}=await getLwsEpisodes(1,id);return data[0]??null;}
+export async function getEpisodeById(id:string):Promise<PublicEpisode|null>{if(id.startsWith('legacy-'))return legacyEpisode(id);if(!/^[0-9a-f-]{36}$/i.test(id))return null;const {data}=await getLwsEpisodes(1,id);return data[0]??null;}
 async function media(kind:MediaKind):Promise<Wrapped<MediaItem[]>>{const r=await listCatalog(kind);return {source:'mysql',data:r.items.map(m=>({id:m.id,title:m.title,category:m.category,image:m.thumbnail_url,duration:m.duration_seconds==null?'':Math.ceil(Number(m.duration_seconds)/60)+' min',time:relativeTime(m.published_at),description:m.description,href:m.source_url})),...(r.available?{}:{error:'Catalogue indisponible'})};}
 export const getVideos=()=>media('reportage');
 export const getPodcasts=()=>media('podcast');

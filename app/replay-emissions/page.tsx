@@ -14,7 +14,7 @@ export default async function ReplayPage() {
     category: p.category,
     image: p.image,
     meta: p.slot,
-    description: p.host + ' · ' + p.description,
+    description: [p.host,p.description].filter(Boolean).join(' · '),
     href: p.slug ? `/emissions/${p.slug}` : undefined,
   }));
 
@@ -26,7 +26,7 @@ export default async function ReplayPage() {
         Retrouvez vos émissions préférées en replay : information, décryptage, sport, culture et entretiens.
       </p>
       <div className="section-head has-rule"><h2>Toutes les émissions</h2></div>
-      {error ? <p className="empty-state">{error}</p> : <MediaBrowser items={items} variant="program" pageSize={6} />}
+      {error ? <p className="empty-state">{error}</p> : <MediaBrowser items={items} variant="program" pageSize={8} />}
       <p className="program-replay-cta"><Link href="/replays" className="direct-cta">Voir tous les épisodes disponibles</Link></p>
       <Newsletter
         title="Ne manquez plus une émission"

@@ -30,14 +30,14 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  const articles=result?.items??[];
  if(q)return <main className="shell"><section className="search-results"><SectionHeading title={'Résultats pour « '+q+' »'}/>{articles.length?<div className="selection-grid">{articles.map(s=><StoryCard story={s} key={s.slug}/>)}</div>:<p className="empty-state">Aucune actualité disponible pour cette recherche.</p>}</section></main>;
  const [wire,cats,ads,media,programs,episodes,layout]=await Promise.all([
-  getNewsFeed(20).catch(()=>({items:[]})),getCategories().catch(()=>({data:[]})),getHomepageAds(),listCatalog(undefined,60),getPrograms().catch(()=>({data:[]})),getEpisodes(100).catch(()=>({data:[]})),readHomeConfig()
+  getNewsFeed(20).catch(()=>({items:[]})),getCategories().catch(()=>({data:[]})),getHomepageAds(),listCatalog(undefined,60),getPrograms().catch(()=>({data:[]})),getEpisodes(500).catch(()=>({data:[]})),readHomeConfig()
  ]);
  const categories=cats.data;
  const {alert,hero,selection,feed,blocks,videoArticles}=distributeHomepageStories(articles,categories);
  const excluded=[alert?.slug,hero?.slug].filter((s):s is string=>!!s);
  const catalog=(kind:'reel'|'reportage'|'podcast')=>media.items.filter(m=>m.kind===kind).map(m=>({id:m.id,title:m.title,image:m.thumbnail_url,href:'/media/'+m.id,meta:m.category}));
  const line=programs.data.find(p=>p.slug==='ligne-rouge'||p.name.toLowerCase().trim()==='ligne rouge');
- const replay=(isLine:boolean)=>episodes.data.filter(e=>!!e.videoUrl&&(isLine?!!line&&e.programId===line.id:!line||e.programId!==line.id)).map(e=>({id:e.id,title:e.title,image:e.thumbnail,href:'/replays/'+e.id,meta:e.duration}));
+ const replay=(isLine:boolean)=>episodes.data.filter(e=>(!!e.videoUrl||!!e.legacyPage)&&(isLine?!!line&&e.programId===line.id:!line||e.programId!==line.id)).map(e=>({id:e.id,title:e.title,image:e.thumbnail,href:'/replays/'+e.id,meta:e.duration}));
  const reels=catalog('reel'),lineItems=replay(true),replays=replay(false),reports=catalog('reportage'),podcasts=catalog('podcast');
  const stripMap: Record<HomeBlock,{title:string;href:string;items:ReturnType<typeof catalog>;vertical?:boolean;red?:boolean;audio?:boolean}>={
   reels:{title:'TV+ Reels',href:'/reels',items:reels,vertical:true},

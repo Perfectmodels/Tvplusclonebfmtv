@@ -3,6 +3,7 @@ import { editorialAuthorName } from '../articles/author-names';
 import { canonicalCategoryLabel, categorySlug } from '../categories';
 import { relativeTime } from './format';
 import { videoWatchUrl } from '../video/providers';
+import {legacyShows,legacyEpisodes,legacyEnabled} from './legacy-programming';
 import type { programs } from '../extra';
 import type { PublicEpisode, PublicArticle } from './repository';
 
@@ -92,15 +93,16 @@ export async function getLwsCategories() {
 
 type Program = (typeof programs)[number];
 export async function getLwsPrograms() {
-  try {const {items}=await read<{items:Program[]}>('programs',{},['public-programs']);return {data:items,source:'mysql' as const};}
-  catch {return {data:[] as Program[],source:'mysql' as const,error:'Le catalogue des émissions est en cours de configuration.'};}
+  try {const {items}=await read<{items:Program[]}>('programs',{},['public-programs']);return {data:items.length||!legacyEnabled()?items:legacyShows,source:'mysql' as const};}
+  catch {return {data:legacyEnabled()?legacyShows:[] as Program[],source:'mysql' as const,...(legacyEnabled()?{}:{error:'Le catalogue des émissions est en cours de configuration.'})};}
 }
 type Episode = {id:string;show_id:string;title:string;description:string;platform:string|null;external_id:string|null;source_url:string;thumbnail_url:string;duration_seconds:number|null;aired_at:string};
 export async function getLwsEpisodes(limit=24,id?:string) {
   try {
     const {items}=await read<{items:Episode[]}>('episodes',{limit:String(limit),...(id?{id}:{})},['public-episodes']);
+    if(!id&&!items.length&&legacyEnabled())return {data:legacyEpisodes.slice(0,limit),source:'mysql' as const};
     return {source:'mysql' as const,data:items.map((e):PublicEpisode=>({id:e.id,programId:e.show_id,title:e.title,description:e.description||'',videoUrl:videoWatchUrl(e.platform,e.external_id,e.source_url),thumbnail:e.thumbnail_url||(e.platform==='youtube'&&/^[a-zA-Z0-9_-]{11}$/.test(e.external_id||'')?'https://i.ytimg.com/vi/'+e.external_id+'/hqdefault.jpg':''),duration:e.duration_seconds==null?'':Math.ceil(Number(e.duration_seconds)/60)+' min',publishedAt:e.aired_at.replace(' ','T')+'Z'}))};
-  } catch {return {data:[] as PublicEpisode[],source:'mysql' as const,error:'Le catalogue des replays est en cours de configuration.'};}
+  } catch {return {data:!id&&legacyEnabled()?legacyEpisodes.slice(0,limit):[] as PublicEpisode[],source:'mysql' as const,...(!id&&legacyEnabled()?{}:{error:'Le catalogue des replays est en cours de configuration.'})};}
 }
 export async function getLwsVideoArticles() {
  const {items}=await read<{items:Article[]}>('articles',{video:'1',limit:'100'},['public-articles']);

@@ -1,42 +1,10 @@
 import Link from 'next/link';
 import Breadcrumb from '../../components/Breadcrumb';
-import QuestionSection from '../../components/QuestionSection';
-import ReplayEmbed from '../../components/video/ReplayEmbed';
-import { getEpisodes } from '../../lib/db/repository';
-
-export const revalidate = 60;
-
-export default async function ReplaysPage() {
-  const { data: episodes, error } = await getEpisodes(24);
-
-  return (
-    <main className="shell listing-page">
-      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Replays' }]} />
-      <h1 className="page-title">Replays</h1>
-      <p className="page-intro">
-        Retrouvez les émissions et les reportages déjà diffusés sur TV Plus Afrique.
-      </p>
-
-      {episodes.length ? (
-        <div className="media-grid">
-          {episodes.map((episode) => (
-            <article className="media-card" key={episode.id}>
-              <ReplayEmbed title={episode.title} url={episode.videoUrl} thumbnail={episode.thumbnail} />
-              <span className="media-body">
-                <span className="media-meta">REPLAY · {new Date(episode.publishedAt).toLocaleDateString('fr-FR')}</span>
-                <span className="media-title">{episode.title}</span>
-                {episode.description && <span className="media-description">{episode.description}</span>}
-              </span>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <p className="empty-state">{error || 'Aucun replay disponible pour le moment.'}</p>
-      )}
-
-      <div className="section-head has-rule"><h2>Une question ?</h2></div>
-      <QuestionSection />
-      <p className="photo-credit"><Link href="/replay-emissions">Voir toutes les émissions →</Link></p>
-    </main>
-  );
+import MediaBrowser from '../../components/MediaBrowser';
+import {getEpisodes,getPrograms} from '../../lib/db/repository';
+export const revalidate=60;
+export default async function ReplaysPage(){
+ const [{data:episodes,error},{data:programs}]=await Promise.all([getEpisodes(500),getPrograms()]);
+ const items=episodes.map(e=>({id:e.id,title:e.title,category:programs.find(p=>p.id===e.programId)?.name||'Replay',image:e.thumbnail||'/logo.png',meta:new Date(e.publishedAt).toLocaleDateString('fr-FR',{timeZone:'Africa/Libreville'}),description:e.legacyPage?'Archive TV+ Afrique · conditions de lecture du site historique':e.description,href:'/replays/'+encodeURIComponent(e.id)}));
+ return <main className="shell listing-page"><Breadcrumb items={[{label:'Accueil',href:'/'},{label:'Replays'}]}/><h1 className="page-title">Replays</h1><p className="page-intro">Retrouvez les émissions déjà diffusées sur TV+ Afrique.</p>{items.length?<><p>{items.length} épisodes disponibles au catalogue</p><MediaBrowser items={items} variant="video" pageSize={12}/></>:<p className="empty-state">{error||'Aucun replay disponible pour le moment.'}</p>}<p><Link href="/replay-emissions" className="direct-cta">Toutes les émissions →</Link></p></main>;
 }
