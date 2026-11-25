@@ -1,39 +1,11 @@
-
-import { NextRequest,NextResponse } from 'next/server';
-import { unstable_cache } from 'next/cache';
-import { resolveLivePlayback } from '../../../lib/video/live-platforms';
-import { readLwsResource } from '../../../lib/db/lws-public';
-
+import {NextResponse} from 'next/server';
+import {premiumAccess,issuePlayback} from '../../../lib/video/premium';
 export const dynamic='force-dynamic';
-const empty={enabled:false,title:'TV+ Afrique en direct',description:'',hlsUrl:'',platform:'restream',embedUrl:'',playbackUrl:'',standbyMessage:'TV+ Afrique — le direct sera disponible prochainement.'};
-// Courte mise en cache CDN : moins de calculs et requêtes Supabase, régie reste la source unique.
-const headers={'Cache-Control':'public, max-age=60, s-maxage=300, stale-while-revalidate=300'};
-
-// Même petite configuration publique partagée entre les visiteurs. Le contenu est invalidé
-// par la régie quand un lecteur est changé ; Restream gère seul OFFLINE / LIVE.
-const getCachedLiveSettings = unstable_cache(async () => {
-  {
-    return await readLwsResource<{
-      title:string; description:string; standby_message:string; playback_url:string;
-      player_platform:string; enabled:boolean; starts_at:string|null; ends_at:string|null;
-    }>('live', {}, ['tvplus-public-live-settings']);
-  }
-},['tvplus-public-live-settings-v1'],{tags:['tvplus-public-live-settings'],revalidate:900});
-export async function GET(request:NextRequest){
- try{
-  const data=await getCachedLiveSettings();
-  const now=Date.now();
-  const enabled=Boolean(data?.enabled&&(!data?.starts_at||Date.parse(data.starts_at)<=now)&&(!data?.ends_at||Date.parse(data.ends_at)>now));
-  // Restream produit le signal, et le site n'affiche que Restream Embed ou le YouTube Live diffusé par Restream.
-  // Aucune source HLS historique n'est autorisée.
-  const platform=(data?.player_platform==='youtube'||data?.player_platform==='restream')?data.player_platform:'restream';
-  const player=resolveLivePlayback(platform,data?.playback_url||'',request.nextUrl.hostname);
-  const onAir=enabled&&player.supported&&Boolean(player.embedUrl);
-  return NextResponse.json({success:true,data:{
-   enabled:onAir,title:data?.title||empty.title,description:data?.description||'',
-   hlsUrl:'',platform,
-   embedUrl:onAir?player.embedUrl:'',playbackUrl:onAir?player.externalUrl:'',
-   standbyMessage:data?.standby_message||empty.standbyMessage
-  }},{headers});
- }catch{return NextResponse.json({success:true,data:empty},{headers:{'Cache-Control':'no-store'}})}
+const headers={'Cache-Control':'private, no-store, max-age=0'};
+export async function GET(){
+ const access=await premiumAccess();
+ if(!access.authenticated||!access.entitled||!access.configured||!access.userId)return NextResponse.json({success:false,error:'Accès Premium requis'},{status:access.authenticated?403:401,headers});
+ const source=await issuePlayback(access.userId);
+ if(!source)return NextResponse.json({success:false,error:'Lecteur sécurisé indisponible'},{status:503,headers});
+ return NextResponse.json({success:true,data:{enabled:true,title:'TV+ Afrique en direct',description:'',hlsUrl:'',embedUrl:source.embedUrl,playbackUrl:'',expiresAt:source.expiresAt,standbyMessage:'Le direct reprendra prochainement.'}},{headers});
 }

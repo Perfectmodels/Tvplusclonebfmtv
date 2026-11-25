@@ -137,6 +137,7 @@ export async function listArticles({
 
 export type PublicArticle = Story & {
   articleId?: string;
+  videoUrl?:string|null;
   body?: string | null;
   chapter?: string | null;
   contentHtml?: string | null;
@@ -576,4 +577,5 @@ export async function getEpisodes(limit = 24): Promise<Wrapped<PublicEpisode[]>>
   return { data: [], source: 'static', error: result.error };
 }
 
+export async function getEpisodeById(id:string):Promise<PublicEpisode|null>{if(!/^[0-9a-f-]{36}$/i.test(id))return null;const {data}=await getLwsEpisodes(1,id);return data[0]??null;}
 export { topics, topicLinks };

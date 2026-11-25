@@ -27,7 +27,7 @@ type Article = {
   featured: number; is_alert: number; is_video_article: number; tags_json: string | null;
   seo_title: string | null; seo_description: string | null; country_code: string;
   author_name?: string | null; article_reads?: number;
-  content_html?: string; cover_alt?: string; cover_credit?: string; cover_caption?: string; province_slug?: string;
+  video_source_url?:string|null;content_html?: string; cover_alt?: string; cover_credit?: string; cover_caption?: string; province_slug?: string;
 };
 
 function mapArticle(row: Article): PublicArticle {
@@ -41,7 +41,7 @@ function mapArticle(row: Article): PublicArticle {
     featured: Boolean(Number(row.featured)), kind: Number(row.is_alert) ? 'alert' : Number(row.is_video_article) ? 'video' : undefined,
     time: relativeTime(publishedAt), publishedAt, updatedAt: row.updated_at?.replace(' ', 'T').concat('Z'),
     countryCode: row.country_code, province: row.province_slug, tags, keywords: tags,
-    seoTitle: row.seo_title, seoDescription: row.seo_description, contentHtml: row.content_html,
+    seoTitle: row.seo_title, seoDescription: row.seo_description, contentHtml: row.content_html,videoUrl:row.video_source_url??null,
     wordCount, readingTime: wordCount ? Math.ceil(wordCount / 220) : undefined,
     author: editorialAuthorName(row.author_name) || 'La rédaction TV+', reads: Number(row.article_reads) || 0,
   };
@@ -78,9 +78,9 @@ export async function getLwsPrograms() {
   catch {return {data:[] as Program[],source:'mysql' as const,error:'Le catalogue des émissions est en cours de configuration.'};}
 }
 type Episode = {id:string;show_id:string;title:string;description:string;platform:string|null;external_id:string|null;source_url:string;thumbnail_url:string;duration_seconds:number|null;aired_at:string};
-export async function getLwsEpisodes(limit=24) {
+export async function getLwsEpisodes(limit=24,id?:string) {
   try {
-    const {items}=await read<{items:Episode[]}>('episodes',{limit:String(limit)},['public-episodes']);
+    const {items}=await read<{items:Episode[]}>('episodes',{limit:String(limit),...(id?{id}:{})},['public-episodes']);
     return {source:'mysql' as const,data:items.map((e):PublicEpisode=>({id:e.id,programId:e.show_id,title:e.title,description:e.description||'',videoUrl:videoWatchUrl(e.platform,e.external_id,e.source_url),thumbnail:e.thumbnail_url||(e.platform==='youtube'&&/^[a-zA-Z0-9_-]{11}$/.test(e.external_id||'')?'https://i.ytimg.com/vi/'+e.external_id+'/hqdefault.jpg':''),duration:e.duration_seconds==null?'':Math.ceil(Number(e.duration_seconds)/60)+' min',publishedAt:e.aired_at.replace(' ','T')+'Z'}))};
   } catch {return {data:[] as PublicEpisode[],source:'mysql' as const,error:'Le catalogue des replays est en cours de configuration.'};}
 }
