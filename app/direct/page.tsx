@@ -16,6 +16,7 @@ export default async function DirectPage() {
     listArticles({ pageSize: 4 }),
   ]);
 
+  const today=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(new Intl.DateTimeFormat('en-US',{weekday:'short',timeZone:'Africa/Libreville'}).format(new Date()))+1;
   return (
     <main className="shell direct-page">
       <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Le direct' }]} />
@@ -32,7 +33,7 @@ export default async function DirectPage() {
           <p className="direct-schedule-intro">Les horaires renseignés par la rédaction.</p>
           {schedule.length ? (
             <ul>
-              {schedule.slice(0, 5).map((slot) => (
+              {schedule.filter(slot=>slot.weekday==null||slot.weekday===today||(today===7&&slot.weekday===0)).slice(0,5).map((slot) => (
                 <li key={slot.time + slot.title}><strong>{slot.time}</strong><span>{slot.title}</span></li>
               ))}
             </ul>
