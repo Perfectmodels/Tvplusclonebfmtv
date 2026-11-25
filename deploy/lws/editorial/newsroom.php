@@ -31,7 +31,7 @@ function newsroom(PDO $pdo, array $config): void {
     $read = in_array('articles.read_all', $permissions, true);
     $id = $request['id'] ?? '';
     $data = $request['data'] ?? [];
-    if (preg_match('/^(ads|catalog|layout|entitlements|forms|schedule)\\./',$op)) {
+    if (preg_match('/^(ads|catalog|layout|entitlements|forms|schedule|restream)\\./',$op)) {
         require_once __DIR__.'/extras.php'; adminExtras($pdo,$op,$request);
     }
     if (preg_match('/^(auth|profile|users|roles|lookups|categories|media|live|reads)(\.|$)/', $op) || strpos($op, 'dashboard.') === 0) {

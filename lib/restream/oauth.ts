@@ -1,6 +1,7 @@
 import 'server-only';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type {V2Actor} from '../auth/v2-admin';
+import {newsroom} from '../admin-v2/lws';
 
 export type RestreamTokenSet = { access_token: string; refresh_token: string; expires_at: number };
 export type RestreamRow = {
@@ -85,25 +86,8 @@ export async function restreamGet<T>(path: string, accessToken: string): Promise
   return await response.json() as T;
 }
 
-export async function getSavedConnection(db: SupabaseClient): Promise<RestreamRow | null> {
-  const { data, error } = await db.from('restream_connections')
-    .select('id,account_id,account_name,token_ciphertext,expires_at,connected_by')
-    .eq('id',1).maybeSingle();
-  if (error) throw new Error('Stockage de connexion Restream indisponible.');
-  return data as RestreamRow | null;
-}
-
-export async function getValidToken(db: SupabaseClient, row: RestreamRow) {
-  const tokens = decryptTokens(row.token_ciphertext);
-  if (tokens.expires_at > Date.now()/1000 + 120) return tokens.access_token;
-  const updated = await tokenRequest(new URLSearchParams({
-    grant_type: 'refresh_token', refresh_token: tokens.refresh_token,
-  }));
-  const { error } = await db.from('restream_connections').update({
-    token_ciphertext: encryptTokens(updated),
-    expires_at: new Date(updated.expires_at * 1000).toISOString(),
-    updated_at: new Date().toISOString(),
-  }).eq('id',1).eq('token_ciphertext',row.token_ciphertext);
-  if (error) throw new Error('Impossible de renouveler la connexion Restream.');
-  return updated.access_token;
-}
+export async function getSavedConnection(actor:V2Actor):Promise<RestreamRow|null>{const {item}=await newsroom<{item:RestreamRow|null}>(actor,'restream.get');return item;}
+export async function getValidToken(actor:V2Actor,row:RestreamRow){const tokens=decryptTokens(row.token_ciphertext);if(tokens.expires_at>Date.now()/1000+120)return tokens.access_token;
+ const updated=await tokenRequest(new URLSearchParams({grant_type:'refresh_token',refresh_token:tokens.refresh_token}));
+ await newsroom(actor,'restream.refresh',{data:{expected:row.token_ciphertext,token_ciphertext:encryptTokens(updated),expires_at:new Date(updated.expires_at*1000).toISOString()}});
+ return updated.access_token;}

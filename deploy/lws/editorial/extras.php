@@ -31,8 +31,17 @@ function adminExtras(PDO $pdo,string $op,array $request): void {
  if($op==='entitlements.check'){
   $q=$pdo->prepare("SELECT id FROM tvp_live_entitlements WHERE user_id=? AND status='active' AND starts_at<=UTC_TIMESTAMP() AND ends_at>UTC_TIMESTAMP() LIMIT 1");$q->execute([$actor]);respond(200,['entitled'=>(bool)$q->fetchColumn()]);
  }
- $permission=str_starts_with($op,'catalog.')?'shows.manage':(str_starts_with($op,'schedule.')?'schedule.manage':'settings.manage');
+ $permission=str_starts_with($op,'catalog.')?'shows.manage':((str_starts_with($op,'schedule.')||str_starts_with($op,'restream.'))?'schedule.manage':'settings.manage');
  if(!in_array($permission,$permissions,true))respond(403,['error'=>'Permission insuffisante']);
+ if($op==='restream.get'){$row=$pdo->query('SELECT id,account_id,account_name,token_ciphertext,expires_at,connected_by FROM tvp_restream_connections WHERE id=1')->fetch();respond(200,['item'=>$row?:null]);}
+ if($op==='restream.delete'){$pdo->exec('DELETE FROM tvp_restream_connections WHERE id=1');respond(200,['deleted'=>true]);}
+ if($op==='restream.save'||$op==='restream.refresh'){
+  $cipher=(string)($data['token_ciphertext']??'');if(strlen($cipher)>16000||!preg_match('/^[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+$/',$cipher))respond(400,['error'=>'Jeton chiffré invalide']);
+  $expires=(new DateTimeImmutable($data['expires_at']))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+  if($op==='restream.save'){$q=$pdo->prepare('INSERT INTO tvp_restream_connections(id,account_id,account_name,token_ciphertext,expires_at,connected_by,updated_at) VALUES(1,?,?,?,?,?,UTC_TIMESTAMP(6)) ON DUPLICATE KEY UPDATE account_id=VALUES(account_id),account_name=VALUES(account_name),token_ciphertext=VALUES(token_ciphertext),expires_at=VALUES(expires_at),connected_by=VALUES(connected_by),updated_at=UTC_TIMESTAMP(6)');$q->execute([(string)$data['account_id'],(string)$data['account_name'],$cipher,$expires,$actor]);}
+  else{$q=$pdo->prepare('UPDATE tvp_restream_connections SET token_ciphertext=?,expires_at=?,updated_at=UTC_TIMESTAMP(6) WHERE id=1 AND token_ciphertext=?');$q->execute([$cipher,$expires,(string)($data['expected']??'')]);if($q->rowCount()!==1)respond(409,['error'=>'Connexion modifiée simultanément']);}
+  respond(200,['saved'=>true]);
+ }
  if($op==='ads.list')respond(200,['items'=>$pdo->query('SELECT * FROM tvp_homepage_ad_slots ORDER BY banner,slot')->fetchAll()]);
  if($op==='ads.save'){
   $b=(int)($data['banner']??0);$s=(int)($data['slot']??0);if($b<1||$b>5||$s<1||$s>5)respond(400,['error'=>'Emplacement invalide']);
