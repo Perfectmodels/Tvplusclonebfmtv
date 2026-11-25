@@ -1,15 +1,18 @@
 import Link from 'next/link';
+import PremiumGate from '../../components/video/PremiumGate';
+import {premiumAccess} from '../../lib/video/premium';
 import { ChevronRight } from 'lucide-react';
 import Breadcrumb from '../../components/Breadcrumb';
 import StoryCard from '../../components/StoryCard';
 import DirectLiveStage from '../../components/video/DirectLiveStage';
 import { getTvSchedule, listArticles } from '../../lib/db/repository';
 
-export const revalidate = 60;
+export const dynamic='force-dynamic';
+export const metadata={title:'Direct Premium — TV+ Afrique',alternates:{canonical:'/direct'}};
 
 export default async function DirectPage() {
-  const [{ data: schedule }, { items: stories }] = await Promise.all([
-    getTvSchedule(),
+  const [access,{ data: schedule }, { items: stories }] = await Promise.all([
+    premiumAccess(),getTvSchedule(),
     listArticles({ pageSize: 4 }),
   ]);
 
@@ -19,11 +22,11 @@ export default async function DirectPage() {
       <div className="editorial-page-intro">
         <span className="editorial-eyebrow">TV+ AFRIQUE · ESPACE LIVE</span>
         <h1 className="page-title">L'espace Live TV+ Afrique</h1>
-        <p className="page-intro">Regardez les émissions de TV+ Afrique depuis le lecteur officiel Restream, sur tous vos écrans.</p>
+        <p className="page-intro">Accédez au direct de TV+ Afrique avec votre abonnement Premium.</p>
       </div>
 
       <div className="direct-main-player">
-        <DirectLiveStage />
+        {access.entitled&&access.configured?<DirectLiveStage/>:<PremiumGate {...access}/>}
         <div className="direct-schedule">
           <h2>Programme TV+</h2>
           <p className="direct-schedule-intro">Les horaires renseignés par la rédaction.</p>
