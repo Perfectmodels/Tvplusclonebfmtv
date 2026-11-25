@@ -8,8 +8,9 @@ function publicExtras(PDO $pdo,string $resource): void {
   $where=["status='published'","published_at<=UTC_TIMESTAMP()"];$params=[];
   if(isset($_GET['kind'])){if(!in_array($_GET['kind'],['reel','reportage','podcast'],true))respond(400,['error'=>'Format invalide']);$where[]='kind=?';$params[]=$_GET['kind'];}
   if($resource==='media_detail'){$id=(string)($_GET['id']??'');if(!preg_match('/^[0-9a-f-]{36}$/i',$id))respond(400,['error'=>'Identifiant invalide']);$where[]='id=?';$params[]=$id;}
-  $limit=max(1,min(100,(int)($_GET['limit']??60)));
-  $q=$pdo->prepare('SELECT id,kind,title,description,category,source_url,thumbnail_url,duration_seconds,published_at,studio_meta FROM tvp_editorial_media WHERE '.implode(' AND ',$where)." ORDER BY published_at DESC LIMIT $limit");$q->execute($params);respond(200,['items'=>$q->fetchAll()]);
+  $limit=max(1,min(100,(int)($_GET['limit']??60)));$offset=max(0,min(1000000,(int)($_GET['offset']??0)));
+  $w=implode(' AND ',$where);$q=$pdo->prepare('SELECT COUNT(*) FROM tvp_editorial_media WHERE '.$w);$q->execute($params);$total=(int)$q->fetchColumn();
+  $q=$pdo->prepare('SELECT id,kind,title,description,category,source_url,thumbnail_url,duration_seconds,published_at,studio_meta FROM tvp_editorial_media WHERE '.$w." ORDER BY published_at DESC,id LIMIT $limit OFFSET $offset");$q->execute($params);respond(200,['items'=>$q->fetchAll(),'total'=>$total]);
  }
  respond(404,['error'=>'Ressource inconnue']);
 }

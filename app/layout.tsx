@@ -8,6 +8,7 @@ import './globals.css';
 import './editorial.css';
 import './replay-embeds.css';
 import './home-refresh.css';
+import './studio-public.css';
 import './chatbot.css';
 
 export const metadata: Metadata = {

@@ -1,0 +1,11 @@
+'use client';
+import {useRef,useState} from 'react';
+import Link from 'next/link';
+import {ChevronDown,ChevronUp,PlayCircle,Share2} from 'lucide-react';
+import type {CatalogItem} from '../lib/media/catalog';
+import MediaPlayback from './video/MediaPlayback';
+export default function ReelsViewer({items}:{items:CatalogItem[]}){const [active,setActive]=useState(0),[notice,setNotice]=useState('');const list=useRef<HTMLDivElement>(null);const item=items[active];if(!item)return null;
+ function select(n:number){if(n<0||n>=items.length)return;setActive(n);setNotice('');list.current?.querySelector('[data-index="'+n+'"]')?.scrollIntoView({block:'nearest',inline:'nearest'});}
+ async function share(){const url=new URL('/media/'+item.id,window.location.origin).href;try{if(navigator.share)await navigator.share({title:item.title,url});else{await navigator.clipboard.writeText(url);setNotice('Lien copié.');}}catch{setNotice('Partage indisponible. Ouvrez le lien du Reel.');}}
+ return <div className="av-reels-layout"><section className="av-reels-active" aria-label="Reel sélectionné"><MediaPlayback key={item.id} kind="reel" title={item.title} source={item.source_url} cover={item.thumbnail_url}/><div className="av-reel-nav"><button disabled={active===0} onClick={()=>select(active-1)} aria-label="Reel précédent"><ChevronUp size={18}/> Précédent</button><span aria-live="polite">{active+1} / {items.length}</span><button disabled={active===items.length-1} onClick={()=>select(active+1)} aria-label="Reel suivant">Suivant <ChevronDown size={18}/></button></div><h2>{item.title}</h2><p>{item.studio_meta?.caption||item.description}</p><div className="av-page-nav"><Link href={'/media/'+item.id}>Lien du Reel</Link><button type="button" onClick={()=>void share()}><Share2 size={16}/> Partager</button></div>{notice&&<p role="status">{notice}</p>}</section><div className="av-reels-list" ref={list} role="region" aria-label="Vidéos courtes"><h2>À regarder</h2>{items.map((v,i)=><button type="button" data-index={i} aria-current={i===active} key={v.id} onClick={()=>select(i)}>{v.thumbnail_url?<img src={v.thumbnail_url} alt="" loading="lazy"/>:<span className="av-reel-fallback"><PlayCircle size={22}/></span>}<span><strong>{v.title}</strong><small>{v.category}</small></span></button>)}</div></div>;
+}
