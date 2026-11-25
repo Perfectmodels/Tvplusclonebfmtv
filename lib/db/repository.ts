@@ -71,6 +71,7 @@ export async function listArticles({
   category,
   country,
   province,
+  excludeSlugs = [],
   search,
   page = 1,
   pageSize = 12,
@@ -78,11 +79,12 @@ export async function listArticles({
   category?: string;
   country?: string;
   province?: string;
+  excludeSlugs?: string[];
   search?: string;
   page?: number;
   pageSize?: number;
 } = {}): Promise<Paginated<Story>> {
-  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, country, province, search, page, pageSize });
+  if (v2.usesTvplusV2()) return v2.listV2Articles({ category, country, province, excludeSlugs, search, page, pageSize });
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -91,16 +93,18 @@ export async function listArticles({
     if (category) q = q.eq('category_slug', category.toLowerCase());
     if (country) q = q.eq('country_code', country);
     if (province) q = q.eq('province', province);
+    for(const slug of excludeSlugs)q=q.neq('slug',slug);
     if (search) {
       const term = `%${search}%`;
       q = q.or(`title.ilike.${term},summary.ilike.${term},category_slug.ilike.${term}`);
     }
-    return q.order('published_at', { ascending: false }).range(from, to);
+    return q.order('published_at', { ascending: false }).order('id',{ascending:false}).range(from, to);
   }, []);
 
   const fallback = staticStories
     .filter(s => !country || s.countryCode === country)
     .filter(s => !province || s.province === province)
+    .filter(s=>!excludeSlugs.includes(s.slug))
     .filter((s) => !category || s.category.toLowerCase() === category.toLowerCase())
     .filter(
       (s) =>
@@ -117,6 +121,7 @@ export async function listArticles({
       if (category) countQuery = countQuery.eq('category_slug', category.toLowerCase());
       if (country) countQuery = countQuery.eq('country_code', country);
       if (province) countQuery = countQuery.eq('province', province);
+      for(const slug of excludeSlugs)countQuery=countQuery.neq('slug',slug);
       if (search) {
         const term = `%${search}%`;
         countQuery = countQuery.or(`title.ilike.${term},summary.ilike.${term},category_slug.ilike.${term}`);
