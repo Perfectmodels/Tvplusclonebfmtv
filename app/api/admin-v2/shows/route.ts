@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { ApiError, handleRoute,ok,created } from '../../../../lib/api/response';
+import {parseVideoUrl} from '../../../../lib/video/providers';
 import { revalidateTag } from 'next/cache';
 export const dynamic='force-dynamic';
 const schema=z.object({
@@ -14,12 +15,13 @@ const schema=z.object({
   frequency:z.string().trim().max(130).default(''),
   category_id:z.string().uuid().nullable().optional(),
   cover_media_id:z.string().uuid().nullable().optional(),
+  intro_video_url:z.string().trim().max(1300).refine(v=>!v||!!parseVideoUrl(v)||/^https:\/\/[^\s]+\.(mp4|webm)(?:\?.*)?$/i.test(v),'Générique vidéo HTTPS valide requis').nullable().optional(),
   is_active:z.boolean().default(false),
   position:z.number().int().min(0).max(32000).default(0)
 });
 export const GET=handleRoute(async()=>{
  const {db}=await requireV2Api('shows.manage');
- const {data,error}=await db.from('shows').select('id,slug,title,tagline,description,schedule_label,host_name,frequency,category_id,cover_media_id,is_active,position,updated_at').order('position');
+ const {data,error}=await db.from('shows').select('id,slug,title,tagline,description,schedule_label,host_name,frequency,category_id,cover_media_id,intro_video_url,is_active,position,updated_at').order('position');
  if(error)throw new ApiError('Émissions indisponibles.',503,'UNAVAILABLE');
  return ok({items:data??[]});
 });
