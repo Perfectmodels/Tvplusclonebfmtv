@@ -1,9 +1,8 @@
 
 import { NextRequest,NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
-import { getPublicServerSupabase } from '../../../lib/supabase/server';
 import { resolveLivePlayback } from '../../../lib/video/live-platforms';
-import { readLwsResource, usesLwsCatalog } from '../../../lib/db/lws-public';
+import { readLwsResource } from '../../../lib/db/lws-public';
 
 export const dynamic='force-dynamic';
 const empty={enabled:false,title:'TV+ Afrique en direct',description:'',hlsUrl:'',platform:'restream',embedUrl:'',playbackUrl:'',standbyMessage:'TV+ Afrique — le direct sera disponible prochainement.'};
@@ -13,17 +12,12 @@ const headers={'Cache-Control':'public, max-age=60, s-maxage=300, stale-while-re
 // Même petite configuration publique partagée entre les visiteurs. Le contenu est invalidé
 // par la régie quand un lecteur est changé ; Restream gère seul OFFLINE / LIVE.
 const getCachedLiveSettings = unstable_cache(async () => {
-  if (usesLwsCatalog()) {
+  {
     return await readLwsResource<{
       title:string; description:string; standby_message:string; playback_url:string;
       player_platform:string; enabled:boolean; starts_at:string|null; ends_at:string|null;
     }>('live', {}, ['tvplus-public-live-settings']);
   }
-  const {data,error}=await getPublicServerSupabase().from('site_live_settings')
-   .select('title,description,standby_message,playback_url,player_platform,enabled,starts_at,ends_at')
-   .eq('id',1).maybeSingle();
-  if(error)throw error;
-  return data;
 },['tvplus-public-live-settings-v1'],{tags:['tvplus-public-live-settings'],revalidate:900});
 export async function GET(request:NextRequest){
  try{
