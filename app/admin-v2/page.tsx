@@ -1,12 +1,13 @@
 import { isPanfilEbo } from '../../lib/articles/author-names';
 import Link from 'next/link';
+import {redirect} from 'next/navigation';
 import V2ArticleThumb from '../../components/admin/V2ArticleThumb';
 import {
   Activity, Archive, ArrowUpRight, BarChart3, CalendarClock,
   CheckCircle2, ChevronRight, Clock3, FilePenLine, FileText,
   Images, Layers3, Plus, ShieldCheck, UsersRound,
 } from 'lucide-react';
-import { requireV2Page } from '../../lib/auth/v2-admin';
+import { getV2Actor, requireV2Page } from '../../lib/auth/v2-admin';
 import { createAuthClient } from '../../lib/auth/server';
 import { enrichArticleRows, enrichArticleRowsFromMysql, type ArticleAdminRow } from '../../lib/admin-v2/article-records';
 import { newsroom, usesLwsCatalog } from '../../lib/admin-v2/lws';
@@ -37,6 +38,8 @@ const number=(value:number|null|undefined)=>typeof value==='number'?value.toLoca
 const dateText=(value:string|null|undefined)=>value?datetime.format(new Date(value)):'Date inconnue';
 
 export default async function DashboardV2() {
+  const current=await getV2Actor();
+  if(current&&!current.permissions.includes('articles.read_all')){if(current.permissions.includes('settings.manage'))redirect('/admin-v2/premium');if(current.permissions.includes('shows.manage'))redirect('/admin-v2/studio');if(current.permissions.includes('schedule.manage'))redirect('/admin-v2/live');if(current.permissions.includes('users.manage')||current.permissions.includes('roles.manage'))redirect('/admin-v2/utilisateurs');if(current.permissions.includes('studio.reel_manage'))redirect('/admin-v2/studio/reels');if(current.permissions.includes('studio.podcast_manage'))redirect('/admin-v2/studio/podcasts');if(current.permissions.includes('studio.reportage_manage'))redirect('/admin-v2/studio/reportages');}
   const actor=await requireV2Page();
   const mysql=usesLwsCatalog();
   const full=mysql?await newsroom<DashboardFull>(actor,'dashboard.full'):null;

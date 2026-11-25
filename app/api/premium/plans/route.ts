@@ -1,11 +1,10 @@
-import {newsroom} from '../../../../lib/admin-v2/lws';
+import {premiumCatalog} from '../../../../lib/payments/catalog';
 import {playbackConfig} from '../../../../lib/video/premium';
 import {paymentConfig} from '../../../../lib/payments/singpay';
 import {handleRoute,ok} from '../../../../lib/api/response';
 export const dynamic='force-dynamic';
 export const GET=handleRoute(async()=>{
- const c=paymentConfig();
- const enabled=c.enabled&&(c.mode==='sandbox'||playbackConfig().ready)&&!(c.mode==='sandbox'&&process.env.VERCEL_ENV==='production');
- const {plans}=await newsroom<{plans:{slug:string;name:string;amount:number|string;duration_minutes:number|string}[]}>({id:'public',permissions:[]},'payments.plans');
- return ok({enabled,mode:c.mode,plans:plans.map(p=>({...p,amount:Number(p.amount),duration_minutes:Number(p.duration_minutes)}))});
+ try{const {plans,settings}=await premiumCatalog();const c=paymentConfig(settings);
+ return ok({available:true,enabled:c.enabled&&(c.mode==='sandbox'||playbackConfig().ready),mode:c.mode,plans});}
+ catch{return ok({available:false,enabled:false,mode:paymentConfig().mode,plans:[],message:'Les offres ne sont pas encore accessibles depuis le serveur. Vous pouvez consulter le parcours, aucun débit ne sera effectué.'});}
 });

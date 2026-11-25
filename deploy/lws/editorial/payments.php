@@ -1,5 +1,12 @@
 <?php
 declare(strict_types=1);
+function premiumSettings(PDO $pdo):array {
+ $r=$pdo->query('SELECT checkout_enabled,golive_confirmed,checkout_hosts,return_origin FROM tvp_premium_settings WHERE id=1')->fetch();
+ return ['checkout_enabled'=>(bool)($r['checkout_enabled']??false),'golive_confirmed'=>(bool)($r['golive_confirmed']??false),'checkout_hosts'=>(string)($r['checkout_hosts']??''),'return_origin'=>(string)($r['return_origin']??'')];
+}
+function premiumCatalog(PDO $pdo):array {
+ return ['plans'=>$pdo->query('SELECT slug,name,amount,duration_minutes FROM tvp_live_plans WHERE active=1 ORDER BY duration_minutes,amount')->fetchAll(),'settings'=>premiumSettings($pdo)];
+}
 function paymentRow(PDO $pdo,string $reference):array {
  $q=$pdo->prepare('SELECT * FROM tvp_live_payments WHERE reference=?');$q->execute([$reference]);$row=$q->fetch();
  if(!$row)respond(404,['error'=>'Transaction introuvable']);
@@ -13,13 +20,13 @@ function payments(PDO $pdo,string $op,array $req):void {
  if($system&&$actor!=='payment-service')respond(403,['error'=>'Accès refusé']);
  if($op==='payments.plans'){
   if($actor!=='public')respond(403,['error'=>'Accès refusé']);
-  respond(200,['plans'=>$pdo->query('SELECT slug,name,amount,duration_minutes FROM tvp_live_plans WHERE active=1 ORDER BY duration_minutes,amount')->fetchAll()]);
+  respond(200,premiumCatalog($pdo));
  }
  if(!$system){
   if(!preg_match('/^[0-9a-f-]{36}$/i',$actor))respond(403,['error'=>'Accès refusé']);
   $q=$pdo->prepare('SELECT role FROM tvp_profiles WHERE id=? AND is_active=1');$q->execute([$actor]);$role=$q->fetchColumn();
   if(!$role)respond(403,['error'=>'Compte inactif']);
-  if(in_array($op,['payments.admin','payments.plan_save','payments.admin_get'],true)){
+  if(in_array($op,['payments.admin','payments.plan_save','payments.admin_get','payments.settings_save'],true)){
    $q=$pdo->prepare('SELECT permissions FROM tvp_roles WHERE role_key=?');$q->execute([$role]);$perms=json_decode((string)$q->fetchColumn(),true);
    if(!is_array($perms)||!in_array('settings.manage',$perms,true))respond(403,['error'=>'Permission insuffisante']);
   }
@@ -28,7 +35,16 @@ function payments(PDO $pdo,string $op,array $req):void {
   $plans=$pdo->query('SELECT * FROM tvp_live_plans ORDER BY duration_minutes')->fetchAll();
   $orders=$pdo->query('SELECT reference,user_id,plan_name,amount,state,mode,provider_id,created_at,entitlement_ends_at,last_checked_at,next_check_at,check_attempts,last_check_result FROM tvp_live_payments ORDER BY created_at DESC LIMIT 100')->fetchAll();
   $stats=$pdo->query('SELECT state,COUNT(*) AS count,SUM(amount) AS total FROM tvp_live_payments GROUP BY state')->fetchAll();
-  respond(200,['plans'=>$plans,'orders'=>$orders,'stats'=>$stats]);
+  respond(200,['plans'=>$plans,'orders'=>$orders,'stats'=>$stats,'settings'=>premiumSettings($pdo)]);
+ }
+ if($op==='payments.settings_save'){
+  $enabled=$d['checkout_enabled']??null;$confirmed=$d['golive_confirmed']??null;$hosts=trim((string)($d['checkout_hosts']??''));$origin=trim((string)($d['return_origin']??''));
+  if(!is_bool($enabled)||!is_bool($confirmed)||strlen($hosts)>1500||strlen($origin)>300)respond(400,['error'=>'Paramètres invalides']);
+  foreach(explode(',',$hosts) as $h)if(trim($h)!==''&&!preg_match('/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/D',trim($h)))respond(400,['error'=>'Hôte invalide']);
+  if($origin!==''&&!preg_match('#^https://[a-zA-Z0-9.-]+$#D',$origin))respond(400,['error'=>'Origine HTTPS invalide']);
+  if($enabled&&(!$confirmed||$hosts===''||$origin===''))respond(400,['error'=>'Confirmez GoLive et renseignez les hôtes et l’origine']);
+  $q=$pdo->prepare('INSERT INTO tvp_premium_settings(id,checkout_enabled,golive_confirmed,checkout_hosts,return_origin,updated_at) VALUES(1,?,?,?,?,UTC_TIMESTAMP(6)) ON DUPLICATE KEY UPDATE checkout_enabled=VALUES(checkout_enabled),golive_confirmed=VALUES(golive_confirmed),checkout_hosts=VALUES(checkout_hosts),return_origin=VALUES(return_origin),updated_at=VALUES(updated_at)');
+  $q->execute([(int)$enabled,(int)$confirmed,$hosts,$origin]);respond(200,['settings'=>premiumSettings($pdo)]);
  }
  if($op==='payments.plan_save'){
   $slug=(string)($d['slug']??'');$name=trim((string)($d['name']??''));$amount=$d['amount']??null;$duration=$d['duration_minutes']??null;
@@ -56,6 +72,7 @@ function payments(PDO $pdo,string $op,array $req):void {
   $q=$pdo->prepare('SELECT id FROM tvp_profiles WHERE id=? AND is_active=1 FOR UPDATE');$q->execute([$actor]);if(!$q->fetchColumn()){$pdo->rollBack();respond(403,['error'=>'Compte inactif']);}
   $q=$pdo->prepare("SELECT reference FROM tvp_live_payments WHERE user_id=? AND mode=? AND (state IN ('reserved','pending','review') OR (state='failed' AND (checkout_expires_at IS NULL OR checkout_expires_at>UTC_TIMESTAMP(6)))) ORDER BY created_at DESC LIMIT 1 FOR UPDATE");$q->execute([$actor,$mode]);$existing=$q->fetchColumn();
   if($existing){$row=paymentRow($pdo,$existing);$pdo->commit();respond(200,['order'=>$row,'fresh'=>false]);}
+  if($mode==='production'){$gate=$pdo->query('SELECT checkout_enabled,golive_confirmed FROM tvp_premium_settings WHERE id=1 FOR UPDATE')->fetch();if(!$gate||!$gate['checkout_enabled']||!$gate['golive_confirmed']){$pdo->rollBack();respond(409,['error'=>'Les encaissements ne sont pas ouverts']);}}
   $q=$pdo->prepare('SELECT * FROM tvp_live_plans WHERE slug=? AND active=1 FOR UPDATE');$q->execute([$slug]);$plan=$q->fetch();
   if(!$plan){$pdo->rollBack();respond(404,['error'=>'Offre indisponible']);}
   if((int)$plan['amount']!==($d['amount']??null)||(int)$plan['duration_minutes']!==($d['durationMinutes']??null)){$pdo->rollBack();respond(409,['error'=>'L’offre a changé. Actualisez la page.']);}

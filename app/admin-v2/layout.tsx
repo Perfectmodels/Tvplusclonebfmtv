@@ -10,6 +10,6 @@ export const metadata = { title: 'Administration — TV+ Afrique', robots: { ind
 export default async function AdminV2Layout({children}:{children:React.ReactNode}) {
   const actor = await getV2Actor();
   if (!actor) redirect('/connexion?next=/admin-v2');
-  if (!hasV2Permission(actor,'articles.read_all')) redirect('/acces-refuse');
+  if (!['articles.read_all','settings.manage','shows.manage','schedule.manage','users.manage','roles.manage','studio.reel_manage','studio.podcast_manage','studio.reportage_manage'].some(p=>hasV2Permission(actor,p))) redirect('/acces-refuse');
   return <ToastProvider><V2AdminShell role={actor.role} email={actor.email} permissions={actor.permissions}>{children}</V2AdminShell></ToastProvider>;
 }

@@ -4,6 +4,7 @@ import {getUser} from '../../../../lib/auth/server';
 import {newsroom} from '../../../../lib/admin-v2/lws';
 import {ApiError,handleRoute,ok} from '../../../../lib/api/response';
 import {rateLimit} from '../../../../lib/api/rate-limit';
+import {premiumCatalog} from '../../../../lib/payments/catalog';
 import {playbackConfig} from '../../../../lib/video/premium';
 import {reconcileOrder} from '../../../../lib/payments/reconcile';
 import {paymentConfig,createCheckout,checkoutUrl,type PaymentOrder} from '../../../../lib/payments/singpay';
@@ -22,16 +23,17 @@ export const POST=handleRoute(async(req:NextRequest)=>{
  if(req.headers.get('origin')!==req.nextUrl.origin)throw new ApiError('Origine refusée.',403,'UNAUTHORIZED');
  rateLimit(req,{prefix:'premium-payments',limit:12,windowMs:60000});
  const p=schema.safeParse(await req.json().catch(()=>null));if(!p.success)throw new ApiError('Demande invalide.',400);
- const v=p.data,c=paymentConfig();
+ const v=p.data;
  if(v.action==='checkout'){
+  const catalog=await premiumCatalog(),c=paymentConfig(catalog.settings);
   if(!c.enabled||req.nextUrl.origin!==c.origin||(c.mode==='sandbox'&&process.env.VERCEL_ENV==='production')||(c.mode==='production'&&!playbackConfig().ready))throw new ApiError('Le paiement du direct n’est pas encore activé.',503,'UNAVAILABLE');
   const {order,fresh}=await newsroom<{order:PaymentOrder;fresh:boolean}>(a,'payments.reserve',{data:{plan:v.plan,wallet:c.wallet,mode:c.mode,amount:v.amount,durationMinutes:v.durationMinutes}});
   if(!fresh){
-   if(order.plan_slug===v.plan&&order.mode===c.mode&&order.wallet_id===c.wallet&&Number(order.amount)===v.amount&&Number(order.duration_minutes)===v.durationMinutes&&order.state==='pending'&&order.checkout_url&&(!order.checkout_expires_at||Date.parse(order.checkout_expires_at)>Date.now()))return ok({...publicOrder(order),url:checkoutUrl(order.checkout_url)});
+   if(order.plan_slug===v.plan&&order.mode===c.mode&&order.wallet_id===c.wallet&&Number(order.amount)===v.amount&&Number(order.duration_minutes)===v.durationMinutes&&order.state==='pending'&&order.checkout_url&&(!order.checkout_expires_at||Date.parse(order.checkout_expires_at)>Date.now()))return ok({...publicOrder(order),url:checkoutUrl(order.checkout_url,c)});
    return ok({...publicOrder(order),url:null,message:'Une transaction est déjà en cours. Vérifiez son état avant un nouvel achat.'});
   }
   try{
-   const link=await createCheckout(order);
+   const link=await createCheckout(order,c);
    await newsroom(system,'payments.link',{data:{reference:order.reference,url:link.url,expiresAt:link.expiresAt}});
    return ok({...publicOrder(order),state:'pending',url:link.url});
   }catch{

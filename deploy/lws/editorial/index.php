@@ -29,6 +29,10 @@ try {
         require_once __DIR__ . '/newsroom.php';
         newsroom($pdo, $config);
     }
+    if ($resource === 'premium_plans') {
+        require_once __DIR__.'/payments.php';
+        respond(200,premiumCatalog($pdo));
+    }
     if ($resource === 'health') {
         $pdo->query('SELECT id FROM tvp_articles LIMIT 1');
         respond(200, ['status' => 'ok']);

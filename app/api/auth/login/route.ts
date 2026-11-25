@@ -13,7 +13,7 @@ export const POST=handleRoute(async(request:NextRequest)=>{
  rateLimit(request,{limit:10,windowMs:60000,prefix:'login'});
  const {email,password}=parseJson(schema,await request.json());
  let profile:LoginProfile|null=null;
- try{profile=await newsroom<LoginProfile>({id:'public',permissions:[]},'auth.login',{data:{email}});}catch{}
+ try{profile=await newsroom<LoginProfile>({id:'public',permissions:[]},'auth.login',{data:{email}});}catch(e){if(e instanceof ApiError&&e.status===401)throw new ApiError('Adresse e-mail ou mot de passe incorrect.',401,'UNAUTHORIZED');throw new ApiError('Le service de connexion est momentanément indisponible. Réessayez après le rétablissement de l’API LWS.',503,'UNAVAILABLE');}
  if(!profile?.is_active||!verifyPassword(password,profile.password_hash??''))throw new ApiError('Adresse e-mail ou mot de passe incorrect.',401,'UNAUTHORIZED');
  await setSession(profile.id);return ok({id:profile.id,email:profile.email});
 });
