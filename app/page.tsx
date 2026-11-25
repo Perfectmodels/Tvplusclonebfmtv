@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { getSiteUrl } from '../lib/articles/site-url';
 import AlertBar from '../components/AlertBar';
 import HomeLiveDock from '../components/video/HomeLiveDock';
 import Newsletter from '../components/Newsletter';
@@ -17,6 +19,12 @@ import { categoryHref, categorySlug } from '../lib/categories';
 import { getNewsFeed } from '../lib/rss/news';
 
 export const revalidate = 60;
+
+export async function generateMetadata({searchParams}: {searchParams: Promise<{q?: string}>}): Promise<Metadata> {
+  const {q} = await searchParams;
+  if (q?.trim()) return {title: 'Recherche — TV+ Afrique', robots: {index: false, follow: true}};
+  return {alternates: {canonical: await getSiteUrl(), types: {'application/rss+xml': '/rss.xml'}}};
+}
 
 export default async function Home({
   searchParams,
