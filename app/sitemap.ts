@@ -3,9 +3,21 @@ import { listArticles, getCategories, getPrograms } from '../lib/db/repository';
 import { getSiteUrl } from '../lib/articles/site-url';
 import { categoryHref } from '../lib/categories';
 import { articlePath } from '../lib/articles/urls';
+import { absoluteUrl, validDate } from '../lib/seo/public-feeds';
+import { unstable_cache } from 'next/cache';
 
 export const revalidate = 3600;
 const PAGE_SIZE = 200;
+const cachedArticles = unstable_cache(async () => {
+  const articles: Awaited<ReturnType<typeof listArticles>>['items'] = [];
+  for (let page = 1; page <= 245; page++) {
+    const result = await listArticles({page,pageSize:PAGE_SIZE});
+    if (result.source === 'static') throw new Error('Source éditoriale indisponible');
+    articles.push(...result.items);
+    if (result.items.length < PAGE_SIZE || page * PAGE_SIZE >= result.total) break;
+  }
+  return articles;
+}, ['seo-general-sitemap-v1'], {revalidate:3600,tags:['public-articles']});
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = await getSiteUrl();
@@ -13,16 +25,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getCategories(), getPrograms(),
   ]);
 
-  // Ne pas limiter le sitemap aux 48 premiers articles.
-  const articles: Awaited<ReturnType<typeof listArticles>>['items'] = [];
-  for (let page = 1; page <= 250; page++) {
-    const { items } = await listArticles({ page, pageSize: PAGE_SIZE });
-    articles.push(...items);
-    if (items.length < PAGE_SIZE) break;
-  }
+  const articles = await cachedArticles();
 
   const staticRoutes = [
-    '', '/news-24-7', '/direct', '/videos', '/replay-emissions', '/replays',
+    '', '/actualites', '/rubriques', '/direct', '/videos', '/replay-emissions', '/replays',
     '/podcasts', '/programme-tv', '/newsletters',
   ].map((route) => ({
     url: `${base}${route}`,
@@ -30,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route ? 0.6 : 1,
   }));
 
-  return [
+  const entries: MetadataRoute.Sitemap = [
     ...staticRoutes,
     ...categories.map((name) => ({
       url: `${base}${categoryHref(name)}`,
@@ -42,11 +48,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.6,
     })),
-    ...articles.map((article) => ({
+    ...articles.filter(article => !article.publishedAt || (validDate(article.publishedAt)?.getTime() ?? Infinity) <= Date.now()).map((article) => ({
       url: `${base}${articlePath(article)}`,
-      lastModified: article.updatedAt || article.publishedAt ? new Date(article.updatedAt ?? article.publishedAt!) : undefined,
+      lastModified: validDate(article.updatedAt ?? article.publishedAt),
+      images: article.image ? [absoluteUrl(article.image, base)].filter((url): url is string => Boolean(url)) : undefined,
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     })),
   ];
+  return Array.from(new Map(entries.map(entry => [entry.url, entry])).values()).slice(0, 50000);
 }
