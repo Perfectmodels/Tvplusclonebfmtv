@@ -31,6 +31,7 @@ function newsroom(PDO $pdo, array $config): void {
     $read = in_array('articles.read_all', $permissions, true);
     $id = $request['id'] ?? '';
     $data = $request['data'] ?? [];
+    if (strpos($op,'payments.')===0) {require_once __DIR__.'/payments.php';payments($pdo,$op,$request);}
     if (strpos($op,'whatsapp.')===0) {require_once __DIR__.'/whatsapp.php';whatsapp($pdo,$op,$request);}
     if (preg_match('/^(ads|catalog|layout|entitlements|forms|schedule|restream)\\./',$op)) {
         require_once __DIR__.'/extras.php'; adminExtras($pdo,$op,$request);
