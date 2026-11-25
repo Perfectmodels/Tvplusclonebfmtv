@@ -34,6 +34,10 @@ export function mapArticle(row: ArticleRow): Story {
     readingTime: row.reading_time,
     kind: row.is_alert ? 'alert' : (row.kind ?? undefined),
     featured: row.featured,
+    countryCode: row.country_code,
+    seoTitle: row.seo_title,
+    seoDescription: row.seo_description,
+    tags: row.tags ?? [],
   };
 }
 
