@@ -33,6 +33,9 @@ try {
         $pdo->query('SELECT id FROM tvp_articles LIMIT 1');
         respond(200, ['status' => 'ok']);
     }
+    if (in_array($resource,['schedule','ads','media_catalog','media_detail','home_layout'],true)) {
+        require_once __DIR__.'/extras.php'; publicExtras($pdo,$resource);
+    }
     if ($resource === 'categories') {
         $rows = $pdo->query('SELECT id, name, slug FROM tvp_categories ORDER BY position, name')->fetchAll();
         respond(200, ['items' => $rows]);
@@ -40,10 +43,12 @@ try {
     if ($resource === 'programs' || $resource === 'episodes') {
         try {
             if ($resource==='programs') {
-                $rows=$pdo->query("SELECT s.id,s.slug,s.title AS name,s.host_name AS host,s.schedule_label AS slot,COALESCE(c.name,'Émission') AS category,COALESCE(m.media_url,'') AS image,COALESCE(NULLIF(s.description,''),s.tagline) AS description FROM tvp_shows s LEFT JOIN tvp_categories c ON c.id=s.category_id LEFT JOIN tvp_media m ON m.id=s.cover_media_id WHERE s.is_active=1 ORDER BY s.position,s.title")->fetchAll();
+                $rows=$pdo->query("SELECT s.id,s.slug,s.title AS name,s.host_name AS host,s.schedule_label AS slot,COALESCE(c.name,'Émission') AS category,COALESCE(m.media_url,'') AS image,COALESCE(NULLIF(s.description,''),s.tagline) AS description,s.intro_video_url AS introVideoUrl FROM tvp_shows s LEFT JOIN tvp_categories c ON c.id=s.category_id LEFT JOIN tvp_media m ON m.id=s.cover_media_id WHERE s.is_active=1 ORDER BY s.position,s.title")->fetchAll();
             } else {
-                $limit=max(1,min(200,(int)($_GET['limit']??24)));
-                $rows=$pdo->query("SELECT e.id,e.show_id,e.title,e.description,e.platform,e.external_id,e.source_url,e.thumbnail_url,e.duration_seconds,e.aired_at FROM tvp_episodes e JOIN tvp_shows s ON s.id=e.show_id WHERE s.is_active=1 AND (e.status='published' OR (e.status='draft' AND e.publish_at IS NOT NULL AND e.publish_at<=UTC_TIMESTAMP(6))) AND (e.publish_at IS NULL OR e.publish_at<=UTC_TIMESTAMP(6)) ORDER BY e.aired_at DESC LIMIT $limit")->fetchAll();
+                $limit=max(1,min(500,(int)($_GET['limit']??24)));
+                $episodeId=$_GET['id']??null;
+                if($episodeId!==null&&!preg_match('/^[0-9a-f-]{36}$/i',(string)$episodeId))respond(400,['error'=>'Identifiant invalide']);
+                $query=$pdo->prepare("SELECT e.id,e.show_id,e.title,e.description,e.platform,e.external_id,e.source_url,e.thumbnail_url,e.duration_seconds,e.aired_at FROM tvp_episodes e JOIN tvp_shows s ON s.id=e.show_id WHERE s.is_active=1 AND (e.status='published' OR (e.status='draft' AND e.publish_at IS NOT NULL AND e.publish_at<=UTC_TIMESTAMP(6))) AND (e.publish_at IS NULL OR e.publish_at<=UTC_TIMESTAMP(6)) ".($episodeId!==null?" AND e.id=?":"")." ORDER BY e.aired_at DESC LIMIT $limit");$query->execute($episodeId!==null?[$episodeId]:[]);$rows=$query->fetchAll();
             }
             respond(200,['items'=>$rows]);
         } catch(PDOException $e) {
@@ -51,7 +56,8 @@ try {
             throw $e;
         }
     }
-    if ($resource === 'live') {
+    if ($resource === 'live') { respond(403,['error'=>'Direct Premium : accès privé uniquement']); }
+    if (false && $resource === 'live') {
         try {
             $row = $pdo->query('SELECT title,description,standby_message,player_platform,playback_url,hls_url,enabled,starts_at,ends_at FROM tvp_live_settings WHERE id=1')->fetch();
             if (!$row) respond(503, ['error' => 'Réglages du direct à initialiser dans la V3.']);
@@ -69,11 +75,18 @@ try {
     $params = [];
     if (($_GET['video']??'')==='1') $criteria[]='a.is_video_article=1';
     if (($_GET['highlights']??'')==='1') $criteria[]='(a.featured=1 OR a.is_alert=1)';
-    foreach (['code' => 'a.short_code', 'slug' => 'a.slug', 'category' => 'c.slug', 'country' => 'a.country_code'] as $key => $column) {
+    foreach (['code' => 'a.short_code', 'slug' => 'a.slug', 'category' => 'c.slug', 'country' => 'a.country_code', 'province' => 'a.province_slug'] as $key => $column) {
         if (isset($_GET[$key])) {
             if (!is_string($_GET[$key]) || strlen($_GET[$key]) > 255) respond(400, ['error' => 'Filtre invalide']);
             $criteria[] = $column . ' = ?';
             $params[] = $_GET[$key];
+        }
+    }
+    if (isset($_GET['exclude'])) {
+        $slugs = array_slice(explode(',', (string)$_GET['exclude']),0,2);
+        foreach($slugs as $slug) {
+            if (!preg_match('/^[a-z0-9-]{1,120}$/i',$slug)) respond(400,['error'=>'Exclusion invalide']);
+            $criteria[]='a.slug <> ?'; $params[]=$slug;
         }
     }
     if (isset($_GET['search'])) {
@@ -87,9 +100,9 @@ try {
     $from = ' FROM tvp_articles a LEFT JOIN tvp_categories c ON c.id = a.category_id LEFT JOIN tvp_media m ON m.id = a.cover_media_id LEFT JOIN tvp_profiles p ON p.id = a.author_id LEFT JOIN tvp_article_read_stats rs ON rs.article_id = a.id WHERE ' . implode(' AND ', $criteria);
     $count = $pdo->prepare('SELECT COUNT(*)' . $from);
     $count->execute($params);
-    $fields = 'a.id, a.title, a.slug, a.short_code, a.excerpt, a.published_at, a.created_at, a.updated_at, a.is_video_article, a.tags_json, a.seo_title, a.seo_description, a.country_code, a.featured, a.is_alert, c.name AS category, c.slug AS category_slug, m.media_url AS cover_url, m.alt_text AS cover_alt, p.full_name AS author_name, COALESCE(rs.read_count,0) AS article_reads';
+    $fields = 'a.id, a.title, a.slug, a.short_code, a.excerpt, a.published_at, a.created_at, a.updated_at, a.is_video_article, a.tags_json, a.seo_title, a.seo_description, a.country_code, a.province_slug, a.featured, a.is_alert, c.name AS category, c.slug AS category_slug, m.media_url AS cover_url, m.alt_text AS cover_alt, p.full_name AS author_name, COALESCE(rs.read_count,0) AS article_reads';
     if (isset($_GET['code']) || isset($_GET['slug'])) {
-        $fields .= ', a.content_html, a.province_slug, m.caption AS cover_caption, m.credit AS cover_credit';
+        $fields .= ', a.content_html, a.video_source_url, m.caption AS cover_caption, m.credit AS cover_credit';
     }
     $query = $pdo->prepare("SELECT $fields $from ORDER BY a.published_at DESC, a.id ASC LIMIT $limit OFFSET $offset");
     $query->execute($params);

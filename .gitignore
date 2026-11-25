@@ -6,3 +6,6 @@ out
 *.log
 *.tsbuildinfo
 .DS_Store
+
+# Secrets privés LWS (jamais commités, hors public_html sur le serveur)
+tvplus-v3-private.php

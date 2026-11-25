@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '../../../components/Breadcrumb';
+import ShowIntro from '../../../components/video/ShowIntro';
 import ReplayEmbed from '../../../components/video/ReplayEmbed';
 import { getPrograms, getEpisodes } from '../../../lib/db/repository';
 
@@ -31,6 +32,7 @@ export default async function EmissionPage({ params }: { params: Promise<{ slug:
           {program.slot && <span>Programmation : {program.slot}</span>}
         </div>
       </div>
+      <ShowIntro title={program.name} url={program.introVideoUrl} poster={program.image}/>
       <section className="editorial-section" aria-label="Épisodes de l'émission">
         <div className="section-head has-rule"><h2>Les épisodes</h2></div>
         {episodes.length ? (
@@ -40,7 +42,7 @@ export default async function EmissionPage({ params }: { params: Promise<{ slug:
                 <ReplayEmbed title={episode.title} url={episode.videoUrl} thumbnail={episode.thumbnail}/>
                 <span className="media-body">
                   <span className="media-meta">{new Date(episode.publishedAt).toLocaleDateString('fr-FR')}</span>
-                  <strong className="media-title">{episode.title}</strong>
+                  <Link className="media-title" href={'/replays/'+encodeURIComponent(episode.id)}>{episode.title}</Link>
                   {episode.description && <span className="media-description">{episode.description}</span>}
 
                 </span>

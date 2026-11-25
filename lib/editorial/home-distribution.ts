@@ -5,8 +5,8 @@ type CategoryBlock = { name: string; items: Story[] };
 
 /**
  * Une actualité n'est attribuée qu'à un seul bloc éditorial de l'accueil.
- * Ordre : alerte > article publié le plus récemment > titres secondaires
- * > sélection > fil d'actualité > rubriques. L'alerte conserve son bandeau.
+ * Ordre : alerte > article publié le plus récemment > fil d'actualité
+ * > vidéo > sélection > rubriques. L'alerte conserve son bandeau.
  * Les mises en avant éditoriales sont conservées pour la sélection.
  */
 export function distributeHomepageStories(articles: Story[], categories: string[]) {
@@ -27,8 +27,13 @@ export function distributeHomepageStories(articles: Story[], categories: string[
   const hero = articles.find(available);
   claim(hero);
 
-  const rail = articles.filter(available).slice(0, 3);
-  rail.forEach(claim);
+  const feed = articles.filter(available).slice(0, 10);
+  feed.forEach(claim);
+  const videoArticles=articles.filter(story=>available(story)&&story.kind==='video').slice(0,6);
+  videoArticles.forEach(claim);
+  // L’ancienne colonne d’articles secondaires est remplacée par le Direct Premium.
+  // Ne pas réserver ces articles : ils restent disponibles pour les rubriques.
+  const rail: Story[] = [];
 
   const selection: Story[] = [];
   const selectedCategories = new Set<string>();
@@ -49,8 +54,6 @@ export function distributeHomepageStories(articles: Story[], categories: string[
     chooseForSelection(articles.find(story => available(story) && categorySlug(story.category) === slug));
   }
 
-  const feed = articles.filter(available).slice(0, 8);
-  feed.forEach(claim);
 
   // Les rubriques conservent leur composant « 1 grande + mini-articles ».
   const blocks: CategoryBlock[] = [];
@@ -62,5 +65,5 @@ export function distributeHomepageStories(articles: Story[], categories: string[
     blocks.push({ name, items });
   }
 
-  return { alert, hero, rail, selection, feed, blocks };
+  return { alert, hero, rail, selection, feed, blocks, videoArticles };
 }

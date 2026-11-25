@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getServerSupabase } from '../../../lib/supabase/server';
+import {newsroom} from '../../../lib/admin-v2/lws';
 import { rateLimit } from '../../../lib/api/rate-limit';
 import { handleRoute, created, ApiError } from '../../../lib/api/response';
 import { parseJson, emailSchema } from '../../../lib/api/validate';
@@ -16,8 +16,6 @@ const schema = z.object({
 export const POST = handleRoute(async (request: NextRequest) => {
   rateLimit(request, { limit: 4, windowMs: 300_000, prefix: 'questions' });
   const payload = parseJson(schema, await request.json());
-  const db = getServerSupabase();
-  const { data, error } = await db.from('questions').insert(payload).select('id, created_at').single();
-  if (error) throw new Error(error.message);
-  return created({ id: data.id });
+  const data=await newsroom<{id:string}>({id:'public',permissions:[]},'forms.question',{data:payload});
+  return created({id:data.id});
 });

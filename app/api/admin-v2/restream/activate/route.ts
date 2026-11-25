@@ -1,3 +1,4 @@
+import {newsroom} from '../../../../../lib/admin-v2/lws';
 import { NextRequest } from 'next/server';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
@@ -13,7 +14,7 @@ const bodySchema=z.object({mode:z.enum(['restream','youtube'])});
 /** Bind public TV+ playback to an actual, verified external player from the
  * authenticated Restream account. No ingest keys or private video URLs. */
 export const POST=handleRoute(async(request:NextRequest)=>{
- const {db}=await requireV2Api('schedule.manage');
+ const {actor}=await requireV2Api('schedule.manage');
  const origin=request.headers.get('origin');
  if (!origin || origin!==request.nextUrl.origin) {
   throw new ApiError('Origine de la requête refusée.',403,'UNAUTHORIZED');
@@ -22,9 +23,9 @@ export const POST=handleRoute(async(request:NextRequest)=>{
  try {payload=await request.json();} catch {throw new ApiError('Requête invalide.',400,'BAD_REQUEST');}
  const parsed=bodySchema.safeParse(payload);
  if(!parsed.success)throw new ApiError('Mode de lecteur inconnu.',400,'BAD_REQUEST');
- const connected=await getSavedConnection(db);
+ const connected=await getSavedConnection(actor);
  if(!connected)throw new ApiError('Connectez d’abord votre compte Restream.',409,'CONFLICT');
- const accessToken=await getValidToken(db,connected);
+ const accessToken=await getValidToken(actor,connected);
  const discovery=await discoverRestreamSources(accessToken);
  const platform=parsed.data.mode;
  const playbackUrl=platform==='restream'?discovery.embedPlayerUrl:discovery.youtubeLiveUrl;
@@ -38,13 +39,7 @@ export const POST=handleRoute(async(request:NextRequest)=>{
   );
  }
  const title='TV+ Afrique en direct';
- const {data,error}=await db.from('site_live_settings').update({
-  title,description:'Direct TV+ Afrique diffusé via Restream',
-  player_platform:platform,playback_url:playbackUrl,
-  hls_url:'',enabled:true,starts_at:null,ends_at:null,
-  updated_at:new Date().toISOString(),
- }).eq('id',1).select('id,title,player_platform,playback_url,enabled').maybeSingle();
- if(error||!data)throw new ApiError('Impossible de publier le lecteur sur le site. Vérifiez les autorisations de la régie.',503,'UNAVAILABLE');
+ await newsroom(actor,'live.save',{data:{title,description:'Direct TV+ Afrique diffusé via Restream',standby_message:'Le direct reprendra prochainement.',player_platform:platform,playback_url:playbackUrl,hls_url:'',enabled:true,starts_at:null,ends_at:null}});
  revalidateTag('tvplus-public-live-settings');
  revalidatePath('/');
  revalidatePath('/direct');

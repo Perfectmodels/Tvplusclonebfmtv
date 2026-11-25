@@ -1,108 +1,39 @@
-# Déploiement de TV+ Afrique sur LWS cPanel (Node.js / Passenger)
+# TV+ Afrique Next.js sur LWS cPanel — recette MySQL V3
+Source : Perfectmodels/Tvplusclonebfmtv, branche feat/mysql-only. Ne pas utiliser main pour cette recette. Le serveur MariaDB 11.4.10 et les dernières migrations ont été contrôlés : 16 tables / 16, 21 colonnes / 21. Ces comptages ne prouvent pas la compatibilité des types ni des données de toutes les tables.
 
-Ce guide concerne le dépôt `Perfectmodels/Tvplusclonebfmtv`, branche `main`.
-Il déploie **l'application web Next.js**. L'hébergement d'un flux RTMP/SRT permanent est une prestation séparée (service vidéo ou VPS).
+## 1. Isolation de la recette
+- Conserver le site Laravel historique sur tvplusafrique.com et le site Vercel actuel en ligne.
+- Proposer v3.tvplusafrique.com (vérifier sa disponibilité dans Domains, ne pas remplacer un sous-domaine existant). Créer le certificat HTTPS.
+- Dans Setup Node.js App : version 22, mode Production (runtime Node), Application root tvplus-next-v3 hors public_html, Application URL sous-domaine de recette, startup app.js.
+- Conserver l'API PHP sur son URL HTTPS actuelle. PHP et Node peuvent coexister. Ne pas rediriger le domaine racine ou le chemin de l'API PHP vers Passenger.
+- Préférer une copie de recette de MySQL et une instance PHP distincte avec secrets dédiés. La base V3 contient des données réelles : ne pas effectuer de tests d'écriture, d'authentification créatrice ou de publication dessus sans accord et sauvegarde. Le lecteur utilise un broker/lecteur externe ; aucun transit vidéo RTMP/HLS par Next.js.
 
-## 1. Vérifier la formule et créer le sous-domaine
-
-1. Dans LWS cPanel, vérifier la présence de **Setup Node.js App** et d'une version **Node.js 22** compatible avec l'application.
-2. Dans **Domains / Sous-domaines**, créer le sous-domaine prévu pour ce site, sans remplacer le site PHP déjà en ligne.
-3. Activer le certificat TLS/HTTPS du sous-domaine.
-4. Conserver le répertoire Node.js **hors de `public_html`**.
-
-Ne pas utiliser le domaine de production actuel tant que le site Next.js n'a pas été testé.
-
-## 2. Transférer le projet
-
-### Depuis le terminal cPanel (si disponible)
-
-À partir du répertoire personnel du compte cPanel :
-
-```bash
-git clone https://github.com/Perfectmodels/Tvplusclonebfmtv.git tvplusclonebfmtv
-cd tvplusclonebfmtv
+## 2. Sources
+Après création de l'application, arrêter le processus de recette s'il tourne. Dans le Terminal cPanel :
+```sh
+cd "$HOME"
+git clone --single-branch --branch feat/mysql-only https://github.com/Perfectmodels/Tvplusclonebfmtv.git tvplus-next-v3-src
 ```
-
-Si Git/SSH n'est pas disponible : télécharger le ZIP de la branche `main` depuis GitHub et l'extraire dans `~/tvplusclonebfmtv` via le Gestionnaire de fichiers.
-
-Ne jamais copier `node_modules`, `.next` généré sur un autre système, `.env`, les clés privées ou les données de connexion vers le dépôt GitHub.
-
-## 3. Créer l'application dans Setup Node.js App
-
-| Paramètre | Valeur |
-|---|---|
-| Node.js version | 22, si proposé par la formule et compatible avec le build |
-| Application mode | Production |
-| Application root | `tvplusclonebfmtv` (chemin relatif au compte cPanel) |
-| Application URL | Sous-domaine HTTPS créé à l'étape 1 |
-| Application startup file | `app.js` |
-
-Le dépôt contient un fichier `app.js` utilisant le serveur Next.js et `http.createServer().listen()`. **Passenger** exécute ce fichier et gère le processus. Il n'est pas nécessaire de maintenir `npm run start` ouvert dans un terminal.
-
-Si cPanel a généré un exemple `app.js` (« It works! »), remplacer cet exemple par celui du dépôt.
-
-## 4. Configurer les variables d'environnement
-
-Dans **Environment variables** de Setup Node.js App, saisir les valeurs de l'environnement Supabase actuel. Ne pas recopier la clé fictive de `.env.example`.
-
-```dotenv
-SUPABASE_URL=https://<projet>.supabase.co
-SUPABASE_PUBLISHABLE_KEY=<cle-publique>
-SUPABASE_JWKS_URL=https://<projet>.supabase.co/auth/v1/.well-known/jwks.json
-SUPABASE_SCHEMA_MODE=tvplus-v2
+Si le dépôt est privé, utiliser Git Version Control et une clé de déploiement en lecture seule ou télécharger l'archive de la branche via GitHub. Ne pas mettre de jeton dans la commande ou l'URL. Le dossier source est distinct de la racine Passenger existante. Transférer les fichiers source dans la racine de recette sans écraser le lien node_modules du sélecteur Node, la configuration ou les autres applications. Exemple depuis le dossier personnel, après avoir vérifié les deux chemins :
+```sh
+rsync -a --exclude=.git --exclude=node_modules --exclude=.next --exclude='.env*' "$HOME/tvplus-next-v3-src/" "$HOME/tvplus-next-v3/"
 ```
+Ne pas copier .next ou node_modules depuis macOS ou Vercel.
 
-**Important :** la partie publique peut fonctionner avec la clé publishable et les règles RLS. Mais certaines API administrateur du dépôt, notamment `/api/admin-v2/live/targets`, utilisent `getAdminSupabase()` et requièrent `SUPABASE_SECRET_KEY`. La consigne « laisser vide » de `.env.example` est donc incompatible avec ces fonctions. Résoudre et tester ce point de sécurité/fonctionnement avant d'activer ces API en production. Ne jamais mettre une clé secrète dans une variable `NEXT_PUBLIC_*` ou dans GitHub.
+## 3. Configuration
+Utiliser deploy/lws/nextjs.env.example comme référence, sans copier de secret dans le dépôt. Renseigner les variables dans Setup Node.js App et, pour le build, dans .env.local privé de l'application (chmod 600) si l'environnement du terminal ne les transmet pas. Utiliser l'URL HTTPS réelle de l'API PHP, le secret du service, une clé de session de 32 caractères minimum, l'origine de recette et les variables Blob/Groq nécessaires. NEXT_PUBLIC_SITE_URL est une donnée publique figée lors de la compilation. Le stockage Blob et le quota IA utilisent encore Vercel Blob : conserver le jeton serveur si souhaité, cela n'exige pas un hébergement Next.js sur Vercel. Les paiements et envois doivent rester désactivés sur la recette. Aucun transfert automatique des secrets Vercel.
+Les fichiers PHP de l'API à mettre à niveau sont deploy/lws/editorial/{index.php,newsroom.php,admin.php,programming.php,extras.php,whatsapp.php,payments.php}. Sauvegarder la version actuellement en ligne. Vérifier les sept fichiers par php -l avant de les publier ensemble sur l'API de recette. Ne pas mettre ces fichiers PHP dans phpMyAdmin. Ne pas réexécuter les migrations validées sans raison.
 
-Les variables exposées au navigateur sont construites dans `next.config.ts` : les variables Supabase doivent déjà être renseignées **lors de `npm run build`**.
-
-## 5. Installer et compiler
-
-1. Utiliser **Run NPM Install** dans Setup Node.js App.
-2. Dans cPanel Terminal, activer l'environnement Node.js avec la commande exacte fournie par Setup Node.js App.
-3. Se placer dans le dossier du projet et exécuter :
-
-```bash
-npm run typecheck
-npm run build
+## 4. Compilation
+Dans Setup Node.js App, utiliser Run NPM Install. Copier la commande exacte d'activation de l'environnement virtuel affichée par cPanel puis l'exécuter dans Terminal. Installer aussi les dépendances de développement requises pour TypeScript/build (ne pas supprimer le lien node_modules de CloudLinux). Puis :
+```sh
+cd "$HOME/tvplus-next-v3"
+node --version
+node scripts/lws-preflight.cjs
+npm run typecheck && npm run build
 ```
+Si le préflight ou la compilation échoue, ne pas redémarrer la recette en tant que site de production. Corriger le message exact avant la suite. Ne pas désactiver les contrôles TypeScript. En cas de limite mémoire, compiler sur Linux compatible avec la version Node et les modules natifs du serveur, ou envisager un VPS. Ne pas lancer pm2, npm start ou un serveur permanent séparé : Passenger appelle app.js et intercepte listen. Cliquer Restart dans Setup Node.js App uniquement après un build valide.
 
-En cas d'échec lié à la mémoire/CPU du mutualisé, construire sur un environnement Linux compatible avec la version de Node.js du serveur et transférer les artefacts adaptés après vérification des modules natifs (notamment `sharp`).
-
-4. Cliquer **Restart** dans Setup Node.js App.
-
-## 6. Vérifier l'application
-
-Contrôler sur le sous-domaine :
-- l'accueil et les articles ;
-- `/connexion` et `/admin-v2`, avec un compte autorisé ;
-- `/api/live-stream` : réponse JSON sans secret ;
-- `/direct` et le lecteur flottant de l'accueil ;
-- les images, le SEO, les routes API et les journaux cPanel.
-
-Pour les erreurs HTTP 500/503, consulter les **Journaux / Errors** de cPanel (logs Apache et Passenger) : vérifier d'abord le fichier `app.js`, la présence d'un build `.next`, les dépendances et les variables d'environnement.
-
-## 7. Direct vidéo et migration future vers VPS
-
-La régie d'administration est accessible via `/admin-v2/live`.
-
-- `/api/admin-v2/live` enregistre la configuration du **lecteur public** dans `site_live_settings`.
-- `/api/live-stream` résout cette configuration.
-- `DirectLiveStage` et `HomeLiveDock` consomment tous deux `usePublicLiveSource`, actualisé toutes les 30 secondes.
-- Les **profils d'ingestion** RTMP/RTMPS/SRT/WHIP ne constituent pas eux-mêmes un serveur de streaming : OBS, Restream, un prestataire vidéo ou un VPS doit effectivement recevoir et distribuer le signal.
-- Pour un flux HLS, fournir un lien HTTPS `.m3u8` accessible depuis le navigateur, avec autorisations CORS adaptées si nécessaire.
-
-Le site peut rester sur LWS pendant que la distribution vidéo est externalisée, puis migrer vers un VPS sans changer le modèle de données du lecteur.
-
-## 8. Mises à jour ultérieures
-
-Si l'installation vient d'un clone Git :
-
-```bash
-cd ~/tvplusclonebfmtv
-git pull --ff-only origin main
-```
-
-Puis réinstaller les dépendances si elles ont changé, exécuter `npm run typecheck` et `npm run build`, et enfin **Restart** dans cPanel. Prévoir une sauvegarde et un retour arrière avant chaque mise à jour de production.
-
-**État :** ce guide et `app.js` préparent le dépôt ; ils ne prouvent pas que le build ait réussi sur l'hébergement LWS. Il faut encore accéder à cPanel pour créer l'application et la tester.
+## 5. Recette et retour arrière
+Vérifier /, les pages article, /api/health, /direct (accès verrouillé), /api/live-stream (401/403 sans droit), /connexion, /admin-v2, catalogue et SEO. Vérifier /api/premium/plans, /admin-v2/premium et /admin-v2/whatsapp avec des droits et une API de test. Les tests d'écriture requièrent une base isolée. Mettre en place le cron LWS pour les articles programmés après validation, avec secret serveur, éviter deux crons concurrents. Pour revenir en arrière, arrêter uniquement l'application de recette, ne pas modifier DNS ni Laravel. Ne déplacer le domaine principal qu'après validation des fonctions, de la sécurité du flux, des quotas, du plan de rollback et autorisation de bascule.
+État : préparation du dépôt. Aucun transfert, build LWS, installation API, bascule DNS ni activation de paiement n'est prouvé par ce document.

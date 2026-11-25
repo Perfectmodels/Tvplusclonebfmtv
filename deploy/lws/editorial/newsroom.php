@@ -31,6 +31,11 @@ function newsroom(PDO $pdo, array $config): void {
     $read = in_array('articles.read_all', $permissions, true);
     $id = $request['id'] ?? '';
     $data = $request['data'] ?? [];
+    if (strpos($op,'payments.')===0) {require_once __DIR__.'/payments.php';payments($pdo,$op,$request);}
+    if (strpos($op,'whatsapp.')===0) {require_once __DIR__.'/whatsapp.php';whatsapp($pdo,$op,$request);}
+    if (preg_match('/^(ads|catalog|layout|entitlements|forms|schedule|restream)\\./',$op)) {
+        require_once __DIR__.'/extras.php'; adminExtras($pdo,$op,$request);
+    }
     if (preg_match('/^(auth|profile|users|roles|lookups|categories|media|live|reads)(\.|$)/', $op) || strpos($op, 'dashboard.') === 0) {
         require_once __DIR__.'/admin.php';
         lwsAdmin($pdo, $op, $request);
@@ -83,7 +88,7 @@ function newsroom(PDO $pdo, array $config): void {
         $q=$pdo->prepare('SELECT author_id,status,updated_at FROM tvp_articles WHERE id=? FOR UPDATE'); $q->execute([$id]);
         $old=$q->fetch();
         if (!$old) respond(404,['error'=>'Article introuvable']);
-        $own=in_array('articles.edit_own',$permissions,true) && $old['author_id'] === ($actor['id'] ?? '') && in_array($old['status'],['draft','in_review'],true);
+        $own=in_array('articles.edit_own',$permissions,true) && $old['author_id'] === ($actor['id'] ?? '') && in_array($old['status'],['draft','in_review','published'],true);
         if (!$review && (!$own || ($op==='transition' && ($data['status'] ?? '')!=='in_review'))) respond(403,['error'=>'Modification refusée']);
         if (articleVersion($old['updated_at'])!==($request['expected'] ?? '')) respond(409,['error'=>'Article modifié depuis son ouverture']);
     }
@@ -93,7 +98,7 @@ function newsroom(PDO $pdo, array $config): void {
             $values[$key]=(new DateTimeImmutable($values[$key]))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
         }
     } else {
-        $values=array_intersect_key($data,array_flip(['title','slug','excerpt','content_html','seo_title','seo_description','category_id','cover_media_id','country_code','province_slug']));
+        $values=array_intersect_key($data,array_flip(['title','slug','excerpt','content_html','seo_title','seo_description','category_id','cover_media_id','country_code','province_slug','video_source_url']));
         $values['content_json']=json_encode($data['content_json'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE);
         $values['tags_json']=json_encode($data['tags'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE);
         $values['is_alert']=(int)$data['is_alert']; $values['featured']=(int)$data['featured'];

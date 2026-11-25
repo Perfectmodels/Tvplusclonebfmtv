@@ -6,7 +6,7 @@ import { categoryHref } from '../lib/categories';
 
 const watchLinks = [
   { label: 'Émissions et replays', href: '/replay-emissions' },
-  { label: 'Programme TV', href: '/programme-tv' },
+  { label: 'Grille des programmes', href: '/programme-tv' }, {label:'TV+ Reels',href:'/reels'},{label:'Ligne Rouge',href:'/ligne-rouge'},
   { label: 'Vidéos', href: '/videos' },
   { label: 'Podcasts', href: '/podcasts' },
 ];
@@ -61,7 +61,7 @@ export default function Footer({ categories = staticCategories }: { categories?:
             <h2 id="footer-actualites">L’actualité</h2>
             <FooterLinks links={[
               { label: 'Dernières actualités', href: '/actualites' },
-              { label: 'Fil info 24/7', href: '/news-24-7' },
+              { label: 'Toutes les actualités', href: '/actualites' },
               ...topics,
             ]} />
             <Link className="footer-all-topics" href="/rubriques">

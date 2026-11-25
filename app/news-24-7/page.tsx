@@ -1,4 +1,5 @@
 import AlertBar from '../../components/AlertBar';
+import NewsTicker from '../../components/NewsTicker';
 import Breadcrumb from '../../components/Breadcrumb';
 import FilActuFeed from '../../components/FilActuFeed';
 import { getFilActu, getCategories, listArticles } from '../../lib/db/repository';
@@ -31,27 +32,13 @@ export default async function FilInfoPage() {
 
   return (
     <main className="shell listing-page">
-      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Fil info' }]} />
+      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Alerte Info' }]} />
       {alert && <AlertBar title={alert.title} href={alert.shortId ? `/a/${alert.shortId}` : `/article/${alert.slug}`} time={alert.time} />}
-      <h1 className="page-title">Fil info — News 24/7</h1>
+      <h1 className="page-title">Alerte Info</h1>
       <p className="page-intro">
-        Toute l’actualité du Gabon et du monde, minute par minute. Les informations sont publiées
-        et mises à jour en continu par la rédaction TV Plus.
+        Toute l’actualité du Gabon et du monde, minute par minute. Le flux de veille externe est distinct des articles de la rédaction TV+ Afrique.
       </p>
-      <div className="section-head has-rule">
-        <h2>News 24/7 — en direct</h2>
-        <span className="section-live-tag"><span /> Flux continu</span>
-      </div>
-      <div className="wire-grid">
-        {wire.length === 0 && <p className="empty-state">Le fil RSS est temporairement indisponible. Les autres rubriques restent accessibles.</p>}
-        {wire.map((item) => (
-          <a href={item.href} className="wire-item" key={item.id} target="_blank" rel="noopener noreferrer">
-            <span className="wire-time">{item.time}</span>
-            <strong>{item.title}</strong>
-          </a>
-        ))}
-      </div>
-
+      <NewsTicker items={wire.map(({id,time,title})=>({id,time,title}))} limit={20}/>
       <div className="section-head has-rule">
         <h2>Le fil de la rédaction</h2>
       </div>

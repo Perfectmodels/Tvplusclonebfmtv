@@ -1,149 +1,72 @@
 import Link from 'next/link';
+import type {Metadata} from 'next';
+import {getSiteUrl} from '../lib/articles/site-url';
 import AlertBar from '../components/AlertBar';
-import HomeLiveDock from '../components/video/HomeLiveDock';
 import Newsletter from '../components/Newsletter';
 import QuestionSection from '../components/QuestionSection';
 import FilActuFeed from '../components/FilActuFeed';
 import NewsTicker from '../components/NewsTicker';
+import HomePremiumCard from '../components/video/HomePremiumCard';
 import AdvertisingCarousel from '../components/AdvertisingCarousel';
-import { getHomepageAds } from '../lib/ads/v2';
+import {getHomepageAds} from '../lib/ads/v2';
 import SectionHeading from '../components/SectionHeading';
 import StoryCard from '../components/StoryCard';
 import CategoryNewsCarousel from '../components/CategoryNewsCarousel';
-import { listArticles, getCategories } from '../lib/db/repository';
-import { distributeHomepageStories } from '../lib/editorial/home-distribution';
-import { articlePath } from '../lib/articles/urls';
-import { categoryHref, categorySlug } from '../lib/categories';
-import { getNewsFeed } from '../lib/rss/news';
-
-export const revalidate = 60;
-
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string }>;
-}) {
-  const { q } = await searchParams;
-  // Les erreurs d'un service n'empêchent pas les autres blocs de s'afficher.
-  // La recherche n'a pas besoin des flux RSS ni de charger la navigation des rubriques.
-  const results = await Promise.allSettled([
-    listArticles({ search: q, pageSize: q ? 30 : 200 }),
-    q ? Promise.resolve({ items: [] }) : getNewsFeed(20),
-    q ? Promise.resolve({ data: [] }) : getCategories(),
-    q ? Promise.resolve(null) : getHomepageAds(),
-  ]);
-  const filtered = results[0].status === 'fulfilled' ? results[0].value.items : [];
-  const wire = results[1].status === 'fulfilled' ? results[1].value.items : [];
-  const categories = results[2].status === 'fulfilled' ? results[2].value.data : [];
-  const ads = results[3].status === 'fulfilled' ? results[3].value : null;
-
-  // Les articles sont déjà triés du plus récent au plus ancien par published_at.
-  // Les plus récents sont attribués d'abord au bloc « À la une ».
-  const { alert, hero, rail, feed, blocks } = distributeHomepageStories(filtered, categories);
-
-  // Le filtre du fil d'actu ne propose que les rubriques réellement présentes,
-  // classées par nombre d'articles puis par ordre alphabétique français.
-  const feedCounts = new Map<string, number>();
-  for (const item of feed) {
-    const name = item.category || 'Actualité';
-    feedCounts.set(name, (feedCounts.get(name) ?? 0) + 1);
-  }
-  const feedCategories = [...feedCounts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'fr'))
-    .map(([name]) => name);
-
-  return (
-    <>
-      {!q && alert && (
-        <AlertBar title={alert.title} href={articlePath(alert)} time={alert.time} />
-      )}
-
-      <main className="shell">
-        {q ? (
-          <section className="search-results">
-            <SectionHeading title={`Résultats pour « ${q} »`} />
-            {filtered.length > 0 ? (
-              <div className="selection-grid">
-                {filtered.map((story) => <StoryCard key={story.slug} story={story} />)}
-              </div>
-            ) : (
-              <p className="empty-state">Aucune actualité ne correspond à votre recherche.</p>
-            )}
-          </section>
-        ) : (
-          <>
-            <section className="home-live-first" aria-labelledby="home-live-title">
-              <div className="home-live-first-heading">
-                <span className="home-live-first-mark">TV+ AFRIQUE · LE DIRECT</span>
-                <h1 id="home-live-title">Regardez TV+ Afrique</h1>
-              </div>
-              <HomeLiveDock />
-            </section>
-
-            <AdvertisingCarousel placement="after-live" ads={ads?.["after-live"] ?? []} />
-
-            <div className="home-top-stories" aria-labelledby="home-top-stories-title">
-              <SectionHeading id="home-top-stories-title" title="À la une" moreHref="/actualites" moreLabel="Toutes les actualités" />
-              <section className="hero-layout" aria-label="Les titres à la une">
-              <div className="hero-main">
-                {hero ? <StoryCard story={hero} variant="hero" /> : (
-                  <p className="empty-state">Les actualités à la une seront bientôt disponibles.</p>
-                )}
-              </div>
-              <div className="hero-rail">
-                <NewsTicker items={wire} variant="rail" limit={20} />
-                {rail.map((story) => <StoryCard key={story.slug} story={story} variant="rail" />)}
-              </div>
-              </section>
-            </div>
-
-            <AdvertisingCarousel placement="after-hero" ads={ads?.["after-hero"] ?? []} />
-
-            <AdvertisingCarousel placement="after-selection" ads={ads?.["after-selection"] ?? []} />
-
-            <section id="fil-info" className="home-news-feed" aria-labelledby="fil-title">
-              <SectionHeading
-                id="fil-title"
-                title="Fil actu"
-                moreHref="/news-24-7"
-                moreLabel="Toute l'actualité"
-              />
-              <FilActuFeed items={feed} categories={feedCategories} />
-            </section>
-
-            <AdvertisingCarousel placement="after-feed" ads={ads?.["after-feed"] ?? []} />
-
-            <section className="home-question-section" aria-label="Questions du public">
-              <QuestionSection />
-            </section>
-
-            <div className="home-category-stack">
-              {blocks.map(block => (
-                <CategoryNewsCarousel
-                  key={block.name}
-                  title={block.name}
-                  sectionId={'cat-' + categorySlug(block.name)}
-                  items={block.items}
-                  moreHref={categoryHref(block.name)}
-                />
-              ))}
-
-              <section className="category-block" aria-label="Toutes les rubriques">
-                <SectionHeading title="Toutes les rubriques" />
-                <div className="rubrique-chips">
-                  {categories.map(category => (
-                    <Link key={category} href={categoryHref(category)}>{category}</Link>
-                  ))}
-                </div>
-              </section>
-            </div>
-
-            <AdvertisingCarousel placement="before-newsletter" ads={ads?.["before-newsletter"] ?? []} />
-
-            <Newsletter />
-          </>
-        )}
-      </main>
-    </>
-  );
+import HomeMediaStrip from '../components/HomeMediaStrip';
+import {listArticles,getCategories,getPrograms,getEpisodes} from '../lib/db/repository';
+import {readHomeConfig,type HomeBlock} from '../lib/editorial/home-config';
+import {listCatalog} from '../lib/media/catalog';
+import {distributeHomepageStories} from '../lib/editorial/home-distribution';
+import {articlePath} from '../lib/articles/urls';
+import {categoryHref,categorySlug} from '../lib/categories';
+import {getNewsFeed} from '../lib/rss/news';
+export const revalidate=60;
+export async function generateMetadata({searchParams}:{searchParams:Promise<{q?:string}>}):Promise<Metadata>{
+ const {q}=await searchParams;return q?.trim()?{title:'Recherche — TV+ Afrique',robots:{index:false,follow:true}}:{alternates:{canonical:await getSiteUrl(),types:{'application/rss+xml':'/rss.xml'}}};
+}
+export default async function Home({searchParams}:{searchParams:Promise<{q?:string}>}){
+ const {q}=await searchParams;
+ const result=await listArticles({search:q,pageSize:q?30:200}).catch(()=>null);
+ const articles=result?.items??[];
+ if(q)return <main className="shell"><section className="search-results"><SectionHeading title={'Résultats pour « '+q+' »'}/>{articles.length?<div className="selection-grid">{articles.map(s=><StoryCard story={s} key={s.slug}/>)}</div>:<p className="empty-state">Aucune actualité disponible pour cette recherche.</p>}</section></main>;
+ const [wire,cats,ads,media,programs,episodes,layout]=await Promise.all([
+  getNewsFeed(20).catch(()=>({items:[]})),getCategories().catch(()=>({data:[]})),getHomepageAds(),listCatalog(undefined,60),getPrograms().catch(()=>({data:[]})),getEpisodes(100).catch(()=>({data:[]})),readHomeConfig()
+ ]);
+ const categories=cats.data;
+ const {alert,hero,selection,feed,blocks,videoArticles}=distributeHomepageStories(articles,categories);
+ const excluded=[alert?.slug,hero?.slug].filter((s):s is string=>!!s);
+ const catalog=(kind:'reel'|'reportage'|'podcast')=>media.items.filter(m=>m.kind===kind).map(m=>({id:m.id,title:m.title,image:m.thumbnail_url,href:'/media/'+m.id,meta:m.category}));
+ const line=programs.data.find(p=>p.slug==='ligne-rouge'||p.name.toLowerCase().trim()==='ligne rouge');
+ const replay=(isLine:boolean)=>episodes.data.filter(e=>!!e.videoUrl&&(isLine?!!line&&e.programId===line.id:!line||e.programId!==line.id)).map(e=>({id:e.id,title:e.title,image:e.thumbnail,href:'/replays/'+e.id,meta:e.duration}));
+ const reels=catalog('reel'),lineItems=replay(true),replays=replay(false),reports=catalog('reportage'),podcasts=catalog('podcast');
+ const stripMap: Record<HomeBlock,{title:string;href:string;items:ReturnType<typeof catalog>;vertical?:boolean;red?:boolean;audio?:boolean}>={
+  reels:{title:'TV+ Reels',href:'/reels',items:reels,vertical:true},
+  'ligne-rouge':{title:'Ligne Rouge',href:'/ligne-rouge',items:lineItems,red:true},
+  replays:{title:'À revoir en replay',href:'/replays',items:replays},
+  reportages:{title:'Reportages TV+',href:'/videos',items:reports},
+  podcasts:{title:'Podcasts TV+',href:'/podcasts',items:podcasts,audio:true}
+ };
+ const strips=layout.order.filter(id=>!layout.hidden.includes(id)).map(id=>stripMap[id]).filter(s=>s.items.length);
+ return <>{alert&&<AlertBar title={alert.title} href={articlePath(alert)} time={alert.time}/>}
+ <main className="shell">
+ <SectionHeading id="home-top-stories-title" title="À la une" moreHref="/actualites" moreLabel="Toutes les actualités"/>
+ <div className="tvplus-home-lead">
+  <div className="tvplus-home-main">
+   {hero?<StoryCard story={hero} variant="hero"/>:<p className="empty-state">Les actualités à la une seront bientôt disponibles.</p>}
+   <section className="tvplus-home-feed" id="fil-info"><SectionHeading title="Fil actu"/><FilActuFeed items={feed} total={Math.max(0,(result?.total??articles.length)-excluded.length)} excludeSlugs={excluded}/></section>
+  </div>
+  <aside className="tvplus-home-aside"><HomePremiumCard/><NewsTicker items={wire.items.map(({id,time,title})=>({id,time,title}))} variant="rail" limit={20}/><AdvertisingCarousel placement="after-live" ads={ads['after-live']}/></aside>
+ </div>
+ <AdvertisingCarousel placement="after-hero" ads={ads['after-hero']}/>
+ {videoArticles.length>0&&<HomeMediaStrip title="L’actualité en vidéo" href="/articles-video" items={videoArticles.map(s=>({id:s.slug,title:s.title,image:s.image,href:articlePath(s),meta:s.category}))}/>}
+ {selection.length>0&&<CategoryNewsCarousel title="Sélection de la rédaction" sectionId="selection-title" items={selection} moreHref="/actualites" selection/>}
+ <AdvertisingCarousel placement="after-selection" ads={ads['after-selection']}/>
+ <div className="home-category-stack">{blocks.map((block,i)=><section key={block.name}><CategoryNewsCarousel title={block.name} sectionId={'cat-'+categorySlug(block.name)} items={block.items} moreHref={categoryHref(block.name)}/>{strips[i]&&<HomeMediaStrip {...strips[i]}/>}{i===1&&<AdvertisingCarousel placement="after-feed" ads={ads['after-feed']}/>}</section>)}
+ {strips.slice(blocks.length).map(s=><HomeMediaStrip key={s.href} {...s}/>)}
+ {blocks.length<2&&<AdvertisingCarousel placement="after-feed" ads={ads['after-feed']}/>}
+ </div>
+ <section className="category-block" aria-label="Explorer les contenus"><SectionHeading title="Toutes les actualités" moreHref="/actualites" moreLabel="Voir tous les articles"/><div className="rubrique-chips">{categories.map(c=><Link key={c} href={categoryHref(c)}>{c}</Link>)}</div><div className="rubrique-chips">{[['Articles vidéo','/articles-video'],['Reels','/reels'],['Reportages','/videos'],['Ligne Rouge','/ligne-rouge'],['Podcasts','/podcasts'],['Émissions et replays','/replay-emissions'],['Grille des programmes','/programme-tv'],['Direct Premium','/direct']].map(([name,url])=><Link key={url} href={url}>{name}</Link>)}</div></section>
+ <section className="home-question-section" aria-label="Questions du public"><QuestionSection/></section>
+ <AdvertisingCarousel placement="before-newsletter" ads={ads['before-newsletter']}/><Newsletter/>
+ </main></>;
 }

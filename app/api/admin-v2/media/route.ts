@@ -87,12 +87,12 @@ export const POST=handleRoute(async(request:NextRequest)=>{
   } catch { throw new ApiError('Image illisible ou format non compatible.',400); }
   if (!processed) throw new ApiError('Image trop volumineuse après optimisation (1 Mo maximum).',400);
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-  if (process.env.VERCEL && !blobToken) {
+  if (!blobToken) {
     throw new ApiError('Stockage des médias indisponible.', 503, 'UNAVAILABLE');
   }
 
   const filename = randomUUID() + '.webp';
-  const bucket = blobToken ? BLOB_MEDIA_BUCKET : 'media';
+  const bucket = BLOB_MEDIA_BUCKET;
   let path = 'article-covers/' + actor.id + '/' + filename;
   if (blobToken) {
     try {
@@ -106,15 +106,8 @@ export const POST=handleRoute(async(request:NextRequest)=>{
     } catch {
       throw new ApiError('Envoi vers le stockage des médias impossible.', 503, 'UNAVAILABLE');
     }
-  } else {
-    const { error: uploadError } = await db.storage.from(bucket).upload(path, processed, {
-      contentType: 'image/webp',
-      upsert: false,
-      cacheControl: '31536000',
-    });
-    if (uploadError) throw new ApiError('Envoi du fichier refusé.', 403, 'UNAUTHORIZED');
   }
-  const mediaUrl = blobToken ? path : db.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  const mediaUrl = path;
   if (usesLwsCatalog()) {
     try {
       const item = await newsroom<MysqlMedia>(actor,'media.create',{data:{
@@ -126,7 +119,7 @@ export const POST=handleRoute(async(request:NextRequest)=>{
     } catch (error) {
       try {
         if (blobToken) await del(path, { token: blobToken });
-        else await db.storage.from(bucket).remove([path]);
+
       } catch {
         console.error('Impossible de nettoyer un média après un échec d’enregistrement.');
       }
@@ -140,7 +133,7 @@ export const POST=handleRoute(async(request:NextRequest)=>{
   if(error){
     try {
       if (blobToken) await del(path, { token: blobToken });
-      else await db.storage.from(bucket).remove([path]);
+
     } catch {
       console.error('Impossible de nettoyer un média après un échec d’enregistrement.');
     }

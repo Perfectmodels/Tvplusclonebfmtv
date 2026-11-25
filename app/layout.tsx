@@ -7,9 +7,12 @@ import { navigationCategories } from '../lib/public-navigation';
 import './globals.css';
 import './editorial.css';
 import './replay-embeds.css';
+import './home-refresh.css';
+import './chatbot.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tvplusv2.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tvplusclonebfmtv.vercel.app'),
+  alternates:{types:{'application/rss+xml':'/rss.xml'}},
   applicationName: 'TV+ Afrique',
   openGraph: { siteName: 'TV+ Afrique', locale: 'fr_GA', type: 'website' },
   title: 'TV+ Afrique — L’actualité du Gabon en continu',

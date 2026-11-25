@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Newspaper, Images, ListTree, Tv, PlayCircle, MonitorPlay,
-  RectangleHorizontal, Menu, X, LogOut, ExternalLink, Plus, ChevronRight, Rss, ShieldCheck, Shield,
+  RectangleHorizontal, MessageCircle, Menu, X, LogOut, ExternalLink, Plus, ChevronRight, Rss, ShieldCheck, Shield,
 } from 'lucide-react';
 import TvPlusLogo from '../TvPlusLogo';
 
 const GROUPS=[
-  { label:'Pilotage', links:[
+  { label:'Pilotage', links:[{href:'/admin-v2/seo',label:'SEO & Visibilité',icon:Newspaper,permission:'articles.read_all'},
     {href:'/admin-v2',label:'Vue générale',icon:LayoutDashboard,permission:''},
     {href:'/admin-v2/controle',label:'Contrôle & rapports',icon:ShieldCheck,permission:'articles.review'},
     {href:'/admin-v2/utilisateurs',label:'Utilisateurs et rôles',icon:Shield,permission:'users.manage', alternatePermission:'roles.manage'},
@@ -21,10 +21,14 @@ const GROUPS=[
     {href:'/admin-v2/media',label:'Médiathèque',icon:Images,permission:'media.upload'},
     {href:'/admin-v2/categories',label:'Rubriques',icon:ListTree,permission:'categories.manage'},
   ] },
+  { label:'Communication', links:[{href:'/admin-v2/whatsapp',label:'Centre WhatsApp',icon:MessageCircle,permission:'settings.manage'}] },
   { label:'Diffusion', links:[
     {href:'/admin-v2/shows',label:'Émissions',icon:Tv,permission:'shows.manage'},
+    {href:'/admin-v2/editorial-media',label:'Reels, reportages, podcasts',icon:PlayCircle,permission:'shows.manage'},
     {href:'/admin-v2/replays',label:'Replays',icon:PlayCircle,permission:'shows.manage'},
     {href:'/admin-v2/live',label:'Direct',icon:MonitorPlay,permission:'schedule.manage'},
+    {href:'/admin-v2/premium',label:'Abonnements Premium',icon:ShieldCheck,permission:'settings.manage'},
+    {href:'/admin-v2/homepage',label:'Organisation accueil',icon:ListTree,permission:'settings.manage'},
     {href:'/admin-v2/advertising',label:'Publicités',icon:RectangleHorizontal,permission:'settings.manage'},
   ] },
 ];

@@ -1,3 +1,4 @@
+import {newsroom} from '../../../../../lib/admin-v2/lws';
 import { timingSafeEqual } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireV2Api } from '../../../../../lib/auth/v2-admin';
@@ -15,7 +16,7 @@ export async function GET(request:NextRequest) {
     return response;
   };
   try {
-    const { actor, db } = await requireV2Api('schedule.manage');
+    const { actor } = await requireV2Api('schedule.manage');
     const app = getRestreamApp();
     const code = request.nextUrl.searchParams.get('code');
     const state = request.nextUrl.searchParams.get('state');
@@ -28,14 +29,13 @@ export async function GET(request:NextRequest) {
       grant_type:'authorization_code',redirect_uri:app.redirectUri,code,
     }));
     const profile = await restreamGet<{id:number|string;username?:string;email?:string}>('/v2/user/profile',tokens.access_token);
-    const { error } = await db.from('restream_connections').upsert({
+    await newsroom(actor,'restream.save',{data:{
       id:1, account_id:String(profile.id),
       account_name:profile.username || profile.email || 'Compte Restream',
       token_ciphertext:encryptTokens(tokens),
       expires_at:new Date(tokens.expires_at*1000).toISOString(),
       connected_by:actor.id, updated_at:new Date().toISOString(),
-    },{onConflict:'id'});
-    if (error) return responseFor('storage-error');
+    }});
     return responseFor('connected');
   } catch {
     return responseFor('error');

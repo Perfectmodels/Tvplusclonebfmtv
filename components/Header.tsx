@@ -14,12 +14,15 @@ const menuGroups = [
   { label: 'L’actualité', links: [
     ['Dernières actualités', '/actualites'],
     ['Gabon', '/pays/ga'],
-    ['Fil info 24/7', '/news-24-7'],
+    ['Toutes les actualités','/actualites'],
+    ['TV+ Reels','/reels'],
+    ['Articles vidéo','/articles-video'],
+    ['Ligne Rouge','/ligne-rouge'],
   ] },
   { label: 'À regarder et à écouter', links: [
     ['Le direct', '/direct'],
     ['Émissions et replays', '/replay-emissions'],
-    ['Programme TV', '/programme-tv'],
+    ['Grille des programmes', '/programme-tv'],
     ['Vidéos', '/videos'],
     ['Podcasts', '/podcasts'],
   ] },
@@ -60,7 +63,7 @@ export default function Header({ categories = [] }: { categories?: string[] }) {
             <Link href="/direct" className="direct-btn" aria-current={active('/direct')} onClick={close}>
               <span className="direct-dot" /> Direct
             </Link>
-            <button className="header-search-btn" type="button"
+            <button hidden className="header-search-btn" type="button"
               aria-label={panel === 'search' ? 'Fermer la recherche' : 'Rechercher'}
               aria-expanded={panel === 'search'} aria-controls="site-search-form" onClick={() => toggle('search')}>
               {panel === 'search' ? <X size={19} /> : <Search size={19} />}

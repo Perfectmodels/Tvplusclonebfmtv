@@ -1,7 +1,6 @@
 import 'server-only';
 import type { V2Actor } from '../auth/v2-admin';
 import type { createAuthClient } from '../auth/server';
-import { getExternalMediaUrl } from '../media-url';
 import { ApiError } from '../api/response';
 
 import { usesLwsCatalog } from '../db/lws-public';
@@ -10,7 +9,8 @@ export { usesLwsCatalog };
 export async function newsroom<T>(actor: Pick<V2Actor,'id'|'permissions'>, operation: string, params: Record<string, unknown> = {}): Promise<T> {
   const key = process.env.LWS_EDITORIAL_SERVICE_KEY;
   if (!key) throw new ApiError('Connexion à la rédaction indisponible.', 503, 'UNAVAILABLE');
-  const url = new URL(process.env.LWS_EDITORIAL_API_URL!);
+  const endpoint=process.env.LWS_EDITORIAL_API_URL;if(!endpoint)throw new ApiError('API MySQL non configurée.',503,'UNAVAILABLE');
+  const url=new URL(endpoint);if(url.protocol!=='https:'||url.username||url.password)throw new ApiError('API LWS HTTPS requise.',503,'UNAVAILABLE');
   url.searchParams.set('resource', 'newsroom');
   const response = await fetch(url, {
     method: 'POST', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(12000),
@@ -37,7 +37,7 @@ export async function getReferences(
   categoryId: string | null | undefined,
   mediaId?: string | null,
 ) {
-  if (usesLwsCatalog()) {
+  {
     if (!categoryId && !mediaId) return { category: null, media: null };
     const result = await newsroom<{ categories: LwsCategoryRef[]; media: LwsMediaRef[] }>(actor, 'lookups', {
       ids: { categories: categoryId ? [categoryId] : [], media: mediaId ? [mediaId] : [] },
@@ -53,15 +53,4 @@ export async function getReferences(
       } : null,
     };
   }
-  const [category, media] = await Promise.all([
-    categoryId ? db.from('categories').select('id,slug,name,description,position,parent_id').eq('id',categoryId).maybeSingle() : Promise.resolve({data:null,error:null}),
-    mediaId ? db.from('media').select('id,path,bucket,imgbb_url,alt,caption,credit,mime_type,width,height').eq('id',mediaId).maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
-  ]);
-  if (category.error || media.error) throw new ApiError('Rubrique ou média inaccessible.', 400);
-  const m = media.data;
-  return { category: category.data, media: m ? {
-    id:m.id, original_path:m.path, media_url:getExternalMediaUrl(m) || db.storage.from(m.bucket).getPublicUrl(m.path).data.publicUrl,
-    alt_text:m.alt, caption:m.caption, credit:m.credit, mime_type:m.mime_type, width_px:m.width, height_px:m.height,
-  } : null };
 }

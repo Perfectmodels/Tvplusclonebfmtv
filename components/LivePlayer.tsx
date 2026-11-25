@@ -19,13 +19,13 @@ export default function LivePlayer({
 }) {
   return (
     <section className={compact ? 'direct-strip is-compact' : 'direct-strip'} aria-label="Le direct TV Plus">
-      <button type="button" className="direct-player" data-open-live aria-label="Ouvrir le lecteur du direct">
+      <Link href="/direct" className="direct-player" aria-label="Accéder au direct Premium">
         {image ? <img className="direct-player-image" src={image} alt="" /> : (
           <span className="direct-player-placeholder tvplus-video-placeholder"><TvPlusLogo /></span>
         )}
         <span className="direct-player-badge"><span /> Direct TV+</span>
         <span className="play-button"><Play size={28} fill="currentColor" /></span>
-      </button>
+      </Link>
       <div className="direct-strip-info">
         <h3>{title}</h3>
         <p>{description}</p>
