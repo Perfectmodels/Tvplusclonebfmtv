@@ -9,6 +9,6 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       allow: '/',
       disallow: ['/admin', '/admin-v2', '/api/', '/compte', '/connexion', '/inscription'],
     },
-    sitemap: [`${base}/sitemap.xml`, `${base}/sitemap-news.xml`],
+    sitemap: [`${base}/sitemap.xml`, `${base}/sitemap-news.xml`, `${base}/sitemap-videos.xml`],
   };
 }
