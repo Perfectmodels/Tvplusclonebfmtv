@@ -239,3 +239,10 @@ export const getV2ArticleReadCount = unstable_cache(async (articleId:string):Pro
   if(error)return 0;
   return Math.max(0,Number(data?.reads)||0);
 },['tvplus-v2-read-count'],{revalidate:120});
+
+export const getV2EpisodeById = unstable_cache(async (id:string):Promise<PublicEpisode|null> => {
+ const {data:e,error}=await client().from('episodes').select('id,show_id,title,description,platform,external_id,source_url,thumbnail_url,duration_seconds,aired_at,created_at').eq('status','published').eq('id',id).maybeSingle();
+ if(error) throw new Error(error.message);
+ if(!e)return null;
+ return {id:e.id,programId:e.show_id,title:e.title,description:e.description??'',videoUrl:videoWatchUrl(e.platform,e.external_id,e.source_url),thumbnail:e.thumbnail_url||(e.platform==='youtube'&&/^[a-zA-Z0-9_-]{11}$/.test(e.external_id||'')?'https://i.ytimg.com/vi/'+e.external_id+'/hqdefault.jpg':''),duration:e.duration_seconds!=null?Math.ceil(e.duration_seconds/60)+' min':'',publishedAt:e.aired_at??e.created_at};
+},['seo-public-episode-detail'],{revalidate:120,tags:['public-episodes']});
