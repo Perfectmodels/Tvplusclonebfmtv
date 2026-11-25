@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Breadcrumb from '../../components/Breadcrumb';
 import { getCategories } from '../../lib/db/repository';
 import { categoryHref } from '../../lib/categories';
+import { navigationCategories } from '../../lib/public-navigation';
 
 export const revalidate = 60;
 
@@ -43,7 +44,7 @@ export default async function PlanDuSitePage() {
         <section id="rubriques">
           <h2>Toutes les rubriques</h2>
           <div className="footer-links">
-            {categories.map((category) => (
+            {navigationCategories(categories).map((category) => (
               <Link key={category} href={categoryHref(category)}>{category}</Link>
             ))}
           </div>

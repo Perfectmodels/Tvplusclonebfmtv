@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SiteFrame from '../components/SiteFrame';
-import { getCategories, getHeaderTopics } from '../lib/db/repository';
+import { getCategories } from '../lib/db/repository';
+import { navigationCategories } from '../lib/public-navigation';
 import './globals.css';
 import './editorial.css';
 import './replay-embeds.css';
@@ -17,16 +18,14 @@ export const metadata: Metadata = {
 };
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
-  const [{ data: categories }, { data: topics }] = await Promise.all([
-    getCategories().catch(() => ({ data: [] as string[] })),
-    getHeaderTopics().catch(() => ({ data: [] as { label: string; link: string }[] })),
-  ]);
+  const { data } = await getCategories().catch(() => ({ data: [] as string[] }));
+  const categories = navigationCategories(data);
 
   return (
     <html lang="fr">
       <body>
         <SiteFrame
-          header={<Header categories={categories} topics={topics} />}
+          header={<Header categories={categories} />}
           footer={<Footer categories={categories} />}
         >
           {children}
