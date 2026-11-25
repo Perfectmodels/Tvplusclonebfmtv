@@ -40,7 +40,7 @@ export default async function EmissionPage({ params }: { params: Promise<{ slug:
                 <ReplayEmbed title={episode.title} url={episode.videoUrl} thumbnail={episode.thumbnail}/>
                 <span className="media-body">
                   <span className="media-meta">{new Date(episode.publishedAt).toLocaleDateString('fr-FR')}</span>
-                  <strong className="media-title">{episode.title}</strong>
+                  <Link className="media-title" href={'/replays/'+encodeURIComponent(episode.id)}>{episode.title}</Link>
                   {episode.description && <span className="media-description">{episode.description}</span>}
 
                 </span>
