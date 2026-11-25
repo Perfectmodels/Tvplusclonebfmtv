@@ -8,13 +8,15 @@ export function paymentConfig(){
  const allowedHosts=(process.env.SINGPAY_CHECKOUT_HOSTS||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
  let origin:string|undefined;
  try{const u=new URL(returnOrigin||'');if(u.protocol==='https:'&&!u.username&&!u.password&&u.pathname==='/'&&!u.search&&!u.hash)origin=u.origin;}catch{}
- const configured=!!(clientId&&clientSecret&&wallet&&origin&&allowedHosts.length&&(process.env.SINGPAY_MODE==='sandbox'||(process.env.SINGPAY_MODE==='production'&&disbursement)));
+ const credentialsReady=!!(clientId&&clientSecret&&wallet&&(process.env.SINGPAY_MODE==='sandbox'||(process.env.SINGPAY_MODE==='production'&&disbursement)));
+ const configured=!!(credentialsReady&&origin&&allowedHosts.length);
  const mode=process.env.SINGPAY_MODE||'unconfigured';
  const environmentMatches=process.env.VERCEL_ENV==='preview'?mode==='sandbox':process.env.VERCEL_ENV==='production'?mode==='production':true;
- return {clientId,clientSecret,wallet,disbursement,origin,allowedHosts,configured,enabled:configured&&environmentMatches&&process.env.SINGPAY_ENABLED==='true',mode};
+ const goLiveConfirmed=process.env.SINGPAY_GOLIVE_CONFIRMED==='true';
+ return {clientId,clientSecret,wallet,disbursement,origin,allowedHosts,credentialsReady,environmentMatches,goLiveConfirmed,configured,enabled:configured&&environmentMatches&&process.env.SINGPAY_ENABLED==='true'&&(mode!=='production'||goLiveConfirmed),mode};
 }
 async function request(path:string,body?:unknown){
- const c=paymentConfig();if(!c.configured)throw new ApiError('Configuration SingPay incomplète.',503,'UNAVAILABLE');
+ const c=paymentConfig();if(!c.credentialsReady||!c.environmentMatches)throw new ApiError('Configuration SingPay incomplète.',503,'UNAVAILABLE');
  let response:Response;
  try{response=await fetch(BASE+path,{method:body===undefined?'GET':'POST',headers:{'x-client-id':c.clientId!,'x-client-secret':c.clientSecret!,'x-wallet':c.wallet!,'Content-Type':'application/json',Accept:'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',redirect:'error',signal:AbortSignal.timeout(12000)});}catch{throw new ApiError('SingPay ne répond pas. Vérifiez la transaction avant toute nouvelle tentative.',503,'UNAVAILABLE');}
  if(response.status===404&&body===undefined)return null;

@@ -27,11 +27,14 @@ function adminExtras(PDO $pdo,string $op,array $request): void {
   respond(201,['id'=>$id,'created_at'=>gmdate('c')]);
  }
  if(!preg_match('/^[0-9a-f-]{36}$/i',$actor))respond(403,['error'=>'Accès refusé']);
+ // Les abonnés ne sont pas obligés d'avoir un rôle de rédaction.
+ if($op==='entitlements.check'){
+  $q=$pdo->prepare("SELECT MAX(e.ends_at) FROM tvp_live_entitlements e JOIN tvp_profiles p ON p.id=e.user_id AND p.is_active=1 WHERE e.user_id=? AND e.status='active' AND e.starts_at<=UTC_TIMESTAMP(6) AND e.ends_at>UTC_TIMESTAMP(6)");
+  $q->execute([$actor]);$end=$q->fetchColumn();respond(200,['entitled'=>!empty($end),'endsAt'=>$end?str_replace(' ','T',$end).'Z':null]);
+ }
  $q=$pdo->prepare('SELECT r.permissions FROM tvp_profiles p JOIN tvp_roles r ON r.role_key=p.role WHERE p.id=? AND p.is_active=1');$q->execute([$actor]);$raw=$q->fetchColumn();
  if(!$raw)respond(403,['error'=>'Accès refusé']);$permissions=json_decode($raw,true)?:[];
- if($op==='entitlements.check'){
-  $q=$pdo->prepare("SELECT id FROM tvp_live_entitlements WHERE user_id=? AND status='active' AND starts_at<=UTC_TIMESTAMP() AND ends_at>UTC_TIMESTAMP() LIMIT 1");$q->execute([$actor]);respond(200,['entitled'=>(bool)$q->fetchColumn()]);
- }
+
  $permission=str_starts_with($op,'catalog.')?'shows.manage':((str_starts_with($op,'schedule.')||str_starts_with($op,'restream.'))?'schedule.manage':'settings.manage');
  if(!in_array($permission,$permissions,true))respond(403,['error'=>'Permission insuffisante']);
  if($op==='restream.get'){$row=$pdo->query('SELECT id,account_id,account_name,token_ciphertext,expires_at,connected_by FROM tvp_restream_connections WHERE id=1')->fetch();respond(200,['item'=>$row?:null]);}

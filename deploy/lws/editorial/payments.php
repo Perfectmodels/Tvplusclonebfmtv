@@ -9,7 +9,7 @@ function paymentRow(PDO $pdo,string $reference):array {
 function payments(PDO $pdo,string $op,array $req):void {
  $actor=(string)($req['actor']['id']??'');$d=$req['data']??[];
  $ref=(string)($d['reference']??'');
- $system=in_array($op,['payments.link','payments.review','payments.settle'],true);
+ $system=in_array($op,['payments.link','payments.review','payments.settle','payments.claim_due','payments.record_check'],true);
  if($system&&$actor!=='payment-service')respond(403,['error'=>'Accès refusé']);
  if($op==='payments.plans'){
   if($actor!=='public')respond(403,['error'=>'Accès refusé']);
@@ -19,14 +19,14 @@ function payments(PDO $pdo,string $op,array $req):void {
   if(!preg_match('/^[0-9a-f-]{36}$/i',$actor))respond(403,['error'=>'Accès refusé']);
   $q=$pdo->prepare('SELECT role FROM tvp_profiles WHERE id=? AND is_active=1');$q->execute([$actor]);$role=$q->fetchColumn();
   if(!$role)respond(403,['error'=>'Compte inactif']);
-  if(in_array($op,['payments.admin','payments.plan_save'],true)){
+  if(in_array($op,['payments.admin','payments.plan_save','payments.admin_get'],true)){
    $q=$pdo->prepare('SELECT permissions FROM tvp_roles WHERE role_key=?');$q->execute([$role]);$perms=json_decode((string)$q->fetchColumn(),true);
    if(!is_array($perms)||!in_array('settings.manage',$perms,true))respond(403,['error'=>'Permission insuffisante']);
   }
  }
  if($op==='payments.admin'){
   $plans=$pdo->query('SELECT * FROM tvp_live_plans ORDER BY duration_minutes')->fetchAll();
-  $orders=$pdo->query('SELECT reference,user_id,plan_name,amount,state,mode,provider_id,created_at,entitlement_ends_at FROM tvp_live_payments ORDER BY created_at DESC LIMIT 100')->fetchAll();
+  $orders=$pdo->query('SELECT reference,user_id,plan_name,amount,state,mode,provider_id,created_at,entitlement_ends_at,last_checked_at,next_check_at,check_attempts,last_check_result FROM tvp_live_payments ORDER BY created_at DESC LIMIT 100')->fetchAll();
   $stats=$pdo->query('SELECT state,COUNT(*) AS count,SUM(amount) AS total FROM tvp_live_payments GROUP BY state')->fetchAll();
   respond(200,['plans'=>$plans,'orders'=>$orders,'stats'=>$stats]);
  }
@@ -36,6 +36,16 @@ function payments(PDO $pdo,string $op,array $req):void {
   $q=$pdo->prepare('INSERT INTO tvp_live_plans(slug,name,amount,duration_minutes,active,updated_at) VALUES(?,?,?,?,?,UTC_TIMESTAMP(6)) ON DUPLICATE KEY UPDATE name=VALUES(name),amount=VALUES(amount),duration_minutes=VALUES(duration_minutes),active=VALUES(active),updated_at=VALUES(updated_at)');
   $q->execute([$slug,$name,$amount,$duration,(int)$d['active']]);respond(200,['saved'=>true]);
  }
+ if($op==='payments.claim_due'){
+  $wallet=(string)($d['wallet']??'');$mode=(string)($d['mode']??'');
+  if(!$wallet||strlen($wallet)>200||!in_array($mode,['sandbox','production'],true))respond(400,['error'=>'Configuration invalide']);
+  $pdo->beginTransaction();
+  $q=$pdo->prepare("SELECT reference FROM tvp_live_payments WHERE wallet_id=? AND mode=? AND state IN ('reserved','pending','review') AND created_at<=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 60 SECOND) AND (next_check_at IS NULL OR next_check_at<=UTC_TIMESTAMP(6)) ORDER BY COALESCE(next_check_at,created_at),reference LIMIT 3 FOR UPDATE");
+  $q->execute([$wallet,$mode]);$refs=$q->fetchAll(PDO::FETCH_COLUMN);$orders=[];
+  $claim=$pdo->prepare("UPDATE tvp_live_payments SET next_check_at=DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 5 MINUTE) WHERE reference=?");
+  foreach($refs as $reference){$claim->execute([$reference]);$orders[]=paymentRow($pdo,$reference);}
+  $pdo->commit();respond(200,['orders'=>$orders]);
+ }
  if($op==='payments.mine'){
   $q=$pdo->prepare('SELECT reference,plan_name,amount,state,mode,entitlement_ends_at FROM tvp_live_payments WHERE user_id=? ORDER BY created_at DESC LIMIT 30');$q->execute([$actor]);$orders=$q->fetchAll();foreach($orders as &$item){if(!empty($item['entitlement_ends_at']))$item['entitlement_ends_at']=str_replace(' ','T',$item['entitlement_ends_at']).'Z';}unset($item);respond(200,['orders'=>$orders]);
  }
@@ -44,7 +54,7 @@ function payments(PDO $pdo,string $op,array $req):void {
   if(!in_array($mode,['sandbox','production'],true)||!$wallet||strlen($wallet)>200||!preg_match('/^[a-z0-9-]{1,50}$/',$slug))respond(400,['error'=>'Demande invalide']);
   $pdo->beginTransaction();
   $q=$pdo->prepare('SELECT id FROM tvp_profiles WHERE id=? AND is_active=1 FOR UPDATE');$q->execute([$actor]);if(!$q->fetchColumn()){$pdo->rollBack();respond(403,['error'=>'Compte inactif']);}
-  $q=$pdo->prepare("SELECT reference FROM tvp_live_payments WHERE user_id=? AND (state IN ('reserved','pending','review') OR (state='failed' AND (checkout_expires_at IS NULL OR checkout_expires_at>UTC_TIMESTAMP(6)))) ORDER BY created_at DESC LIMIT 1 FOR UPDATE");$q->execute([$actor]);$existing=$q->fetchColumn();
+  $q=$pdo->prepare("SELECT reference FROM tvp_live_payments WHERE user_id=? AND wallet_id=? AND mode=? AND (state IN ('reserved','pending','review') OR (state='failed' AND (checkout_expires_at IS NULL OR checkout_expires_at>UTC_TIMESTAMP(6)))) ORDER BY created_at DESC LIMIT 1 FOR UPDATE");$q->execute([$actor,$wallet,$mode]);$existing=$q->fetchColumn();
   if($existing){$row=paymentRow($pdo,$existing);$pdo->commit();respond(200,['order'=>$row,'fresh'=>false]);}
   $q=$pdo->prepare('SELECT * FROM tvp_live_plans WHERE slug=? AND active=1 FOR UPDATE');$q->execute([$slug]);$plan=$q->fetch();
   if(!$plan){$pdo->rollBack();respond(404,['error'=>'Offre indisponible']);}
@@ -54,6 +64,13 @@ function payments(PDO $pdo,string $op,array $req):void {
   $q->execute([$ref,$actor,$slug,$plan['name'],$plan['amount'],$plan['duration_minutes'],$wallet,$mode]);$row=paymentRow($pdo,$ref);$pdo->commit();respond(200,['order'=>$row,'fresh'=>true]);
  }
  if(!preg_match('/^[0-9a-f-]{36}$/i',$ref))respond(400,['error'=>'Référence invalide']);
+ if($op==='payments.record_check'){
+  $result=(string)($d['result']??'');
+  if(!in_array($result,['pending','paid','failed','review','provider_error'],true))respond(400,['error'=>'Résultat invalide']);
+  $q=$pdo->prepare("UPDATE tvp_live_payments SET last_checked_at=UTC_TIMESTAMP(6),last_check_result=?,check_attempts=check_attempts+1,next_check_at=CASE WHEN state IN ('paid','failed') THEN NULL WHEN check_attempts<6 THEN DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 5 MINUTE) ELSE DATE_ADD(UTC_TIMESTAMP(6),INTERVAL 1 HOUR) END WHERE reference=?");
+  $q->execute([$result,$ref]);respond(200,['recorded'=>true]);
+ }
+ if($op==='payments.admin_get')respond(200,['order'=>paymentRow($pdo,$ref)]);
  if($op==='payments.get'){$row=paymentRow($pdo,$ref);if($row['user_id']!==$actor)respond(404,['error'=>'Transaction introuvable']);respond(200,['order'=>$row]);}
  if($op==='payments.link'){
   $url=(string)($d['url']??'');if(strlen($url)>2500||!str_starts_with($url,'https://'))respond(400,['error'=>'Lien invalide']);
