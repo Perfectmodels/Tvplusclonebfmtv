@@ -29,6 +29,7 @@ export default function Header({
   const [searchOpen, setSearchOpen] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
   const pathname = usePathname();
+  const visibleTopics=topics.filter(t=>!/(news|fil info|alerte info|recherch)/i.test(t.label)&&!['/news-24-7','/recherche'].includes(t.link));
 
   useEffect(() => {
     setMenuOpen(false);
@@ -76,6 +77,7 @@ export default function Header({
               Direct
             </Link>
             <button
+              hidden
               className="header-search-btn"
               aria-label={searchOpen ? 'Fermer la recherche' : 'Rechercher'}
               aria-expanded={searchOpen}
@@ -92,11 +94,11 @@ export default function Header({
       <nav className="nav-primary" aria-label="Navigation principale">
         <div className="shell nav-primary-inner">
           <div className="nav-topics">
-            {topics.map((topic, i) => (
+            {visibleTopics.map((topic, i) => (
               <Link
                 key={topic.label}
                 href={topic.link}
-                className={i === topics.length - 1 ? 'topic-last' : ''}
+                className={i === visibleTopics.length - 1 ? 'topic-last' : ''}
               >
                 {topic.label}
               </Link>
@@ -149,7 +151,7 @@ export default function Header({
               <span className="mega-label">Navigation</span>
               <Link href="/actualites" onClick={() => setMenuOpen(false)}>Toutes les actualités <ChevronRight size={15}/></Link>
               <Link href="/pays/ga" onClick={() => setMenuOpen(false)}>Gabon et pays <ChevronRight size={15}/></Link>
-              {topics.map((topic) => (
+              {visibleTopics.map((topic) => (
                 <Link key={topic.label} href={topic.link} onClick={() => setMenuOpen(false)}>
                   {topic.label} <ChevronRight size={15} />
                 </Link>
@@ -183,12 +185,16 @@ export default function Header({
               <span className="mega-label">Services</span>
               {[
                 ['Le direct', '/direct'],
-                ['Le fil info', '/news-24-7'],
-                ['Les vidéos', '/videos'],
+                ['Toutes les actualités', '/actualites'],
+                ['Articles vidéo','/articles-video'],
+                ['TV+ Reels','/reels'],
+                ['Ligne Rouge','/ligne-rouge'],
+                ['Recherche','/recherche'],
+                ['Reportages & vidéos', '/videos'],
                 ['Émissions & replays', '/replay-emissions'],
                 ['Replays', '/replays'],
                 ['Podcasts', '/podcasts'],
-                ['Programme TV', '/programme-tv'],
+                ['Grille des programmes', '/programme-tv'],
                 ['Plan du site', '/plan-du-site'],
               ].map(([label, href]) => (
                 <Link key={label} href={href} onClick={() => setMenuOpen(false)}>
