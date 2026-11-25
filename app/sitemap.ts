@@ -48,6 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.6,
     })),
+    ...Array.from(new Set(articles.map(a=>a.countryCode).filter((code):code is string=>!!code&&/^[A-Z]{2}$/.test(code)))).map(code=>({url:base+'/pays/'+code.toLowerCase(),changeFrequency:'daily' as const})),
     ...articles.filter(article => !article.publishedAt || (validDate(article.publishedAt)?.getTime() ?? Infinity) <= Date.now()).map((article) => ({
       url: `${base}${articlePath(article)}`,
       lastModified: validDate(article.updatedAt ?? article.publishedAt),
