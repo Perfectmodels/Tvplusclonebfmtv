@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import {searchConsoleReport} from '../../../lib/seo/search-console';
 import { requireV2Page } from '../../../lib/auth/v2-admin';
 import { listArticles } from '../../../lib/db/repository';
 import { articlePath } from '../../../lib/articles/urls';
@@ -8,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function SeoDashboard() {
   await requireV2Page('articles.read_all');
   const base = await getSiteUrl();
-  const result = await listArticles({pageSize: 100}).catch(() => null);
+  const [result,google] = await Promise.all([listArticles({pageSize:100}).catch(()=>null),searchConsoleReport()]);
   const articles = result?.source === 'static' ? [] : result?.items ?? [];
   const checks = articles.map(article => ({
     article,
@@ -37,7 +38,11 @@ export default async function SeoDashboard() {
     <section className="v2-dashboard-panel"><header><div><h2>Optimisation des articles</h2><p>Contrôles internes, non assimilables à un score Google.</p></div></header>
       {checks.length ? <ul style={{listStyle:'none',padding:0,display:'grid',gap:12}}>{checks.map(({article,missing})=><li key={articlePath(article)} style={{borderBottom:'1px solid #dce1e7',paddingBottom:12,overflowWrap:'anywhere'}}><a href={articlePath(article)} target="_blank" rel="noreferrer"><strong>{article.title}</strong></a><p>{missing.length ? 'À compléter : '+missing.join(', ') : 'Tous les champs examinés sont renseignés'}</p></li>)}</ul> : <p>Aucun article à examiner.</p>}
     </section>
-    <section className="v2-dashboard-panel"><header><div><h2>Mesure externe</h2><p>Google Search Console, Google Actualités, Discover, Bing, analytics et GEO : données non connectées à ce module.</p></div></header>
+    <section className="v2-dashboard-panel"><header><div><h2>Mesure externe</h2><p>Google Search, Images, Vidéos, Actualités et Discover : données réelles lorsque Search Console est configurée.</p></div></header>
+      {google.status==='unconfigured'?<p>Search Console : non configuré (accès en lecture seule requis).</p>:google.status==='error'?<p role="alert">Échec de connexion à Search Console. Vérifier la configuration et les droits.</p>:<>
+      <p>Période : {google.startDate} — {google.endDate} · cache 1 heure.</p>
+      <div className="v2-dashboard-kpis">{google.reports.map(r=><div className="v2-dashboard-kpi" key={r.channel}><strong>{r.channel}</strong>{r.status==='ok'&&r.metrics?<><span>{r.metrics.clicks.toLocaleString('fr-FR')} clics</span><span>{r.metrics.impressions.toLocaleString('fr-FR')} impressions</span><span>CTR {(r.metrics.ctr*100).toFixed(2)} %</span>{r.metrics.position!==undefined&&<span>Position {r.metrics.position.toFixed(1)}</span>}</>:<span>{r.status==='empty'?'Aucune donnée renvoyée':'Données indisponibles'}</span>}</div>)}</div></>}
+      <p>Bing Webmaster Tools, GA4, GEO, backlinks et plateformes publicitaires : non connectés.</p>
       <a href="https://search.google.com/search-console" target="_blank" rel="noreferrer">Ouvrir Google Search Console</a>
     </section>
   </div>;
