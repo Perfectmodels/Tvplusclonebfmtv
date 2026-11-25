@@ -34,6 +34,6 @@ export const PATCH=handleRoute(async (request:NextRequest,{params}:Context)=>{
   if(error)throw new ApiError('Enregistrement refusé ou impossible.',403,'UNAUTHORIZED');
   if(!data)throw new ApiError('Conflit de modification. Actualisez cet article.',409,'CONFLICT');
   invalidatePublicArticle(existing.slug);
-  invalidatePublicArticle(data.slug);
+  invalidatePublicArticle(data.slug,data.short_code);
   return ok(data);
 });
