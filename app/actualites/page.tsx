@@ -6,7 +6,7 @@ import ArticlePagination from '../../components/ArticlePagination';
 import {listArticles} from '../../lib/db/repository';
 
 export const revalidate = 60;
-const PAGE_SIZE=24;
+const PAGE_SIZE=10;
 
 function normalizePage(raw?: string) {
  const requested=Number(raw);
