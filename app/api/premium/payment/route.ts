@@ -10,10 +10,10 @@ export const maxDuration=60;
 const system={id:'payment-service',permissions:[]};
 async function actor(){const user=await getUser();if(!user)throw new ApiError('Connectez-vous pour accéder à vos paiements.',401,'UNAUTHORIZED');return {id:user.id,permissions:[]};}
 const schema=z.discriminatedUnion('action',[
- z.object({action:z.literal('checkout'),plan:z.string().regex(/^[a-z0-9-]{1,50}$/),confirmed:z.literal(true)}),
+ z.object({action:z.literal('checkout'),plan:z.string().regex(/^[a-z0-9-]{1,50}$/),amount:z.number().int().positive(),durationMinutes:z.number().int().positive(),confirmed:z.literal(true)}),
  z.object({action:z.literal('verify'),reference:z.string().uuid()})
 ]);
-function publicOrder(o:PaymentOrder){return {reference:o.reference,plan:o.plan_name,amount:Number(o.amount),state:o.state,expiresAt:o.entitlement_ends_at||null};}
+function publicOrder(o:PaymentOrder){return {reference:o.reference,plan:o.plan_name,amount:Number(o.amount),state:o.state,mode:o.mode,expiresAt:o.entitlement_ends_at||null};}
 export const GET=handleRoute(async()=>{const a=await actor();const data=await newsroom<{orders:PaymentOrder[]}>(a,'payments.mine');return ok({orders:data.orders.map(publicOrder)});});
 export const POST=handleRoute(async(req:NextRequest)=>{
  const a=await actor();
@@ -22,8 +22,8 @@ export const POST=handleRoute(async(req:NextRequest)=>{
  const p=schema.safeParse(await req.json().catch(()=>null));if(!p.success)throw new ApiError('Demande invalide.',400);
  const v=p.data,c=paymentConfig();
  if(v.action==='checkout'){
-  if(!c.enabled||!process.env.LIVE_TOKEN_BROKER_URL||!process.env.LIVE_TOKEN_BROKER_SECRET||!process.env.LIVE_EMBED_HOSTS)throw new ApiError('Le paiement du direct n’est pas encore activé.',503,'UNAVAILABLE');
-  const {order,fresh}=await newsroom<{order:PaymentOrder;fresh:boolean}>(a,'payments.reserve',{data:{plan:v.plan,wallet:c.wallet}});
+  if(!c.enabled||req.nextUrl.origin!==c.origin||(c.mode==='sandbox'&&process.env.VERCEL_ENV==='production')||!process.env.LIVE_TOKEN_BROKER_URL||!process.env.LIVE_TOKEN_BROKER_SECRET||!process.env.LIVE_EMBED_HOSTS)throw new ApiError('Le paiement du direct n’est pas encore activé.',503,'UNAVAILABLE');
+  const {order,fresh}=await newsroom<{order:PaymentOrder;fresh:boolean}>(a,'payments.reserve',{data:{plan:v.plan,wallet:c.wallet,mode:c.mode,amount:v.amount,durationMinutes:v.durationMinutes}});
   if(!fresh){
    if(order.plan_slug===v.plan&&order.state==='pending'&&order.checkout_url&&(!order.checkout_expires_at||Date.parse(order.checkout_expires_at)>Date.now()))return ok({...publicOrder(order),url:checkoutUrl(order.checkout_url)});
    return ok({...publicOrder(order),url:null,message:'Une transaction est déjà en cours. Vérifiez son état avant un nouvel achat.'});

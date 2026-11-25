@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS tvp_live_entitlements (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS tvp_live_payments (
  reference CHAR(36) PRIMARY KEY,user_id CHAR(36) NOT NULL,plan_slug VARCHAR(50) NOT NULL,plan_name VARCHAR(100) NOT NULL,
- amount INT UNSIGNED NOT NULL,duration_minutes INT UNSIGNED NOT NULL,wallet_id VARCHAR(200) NOT NULL,
+ amount INT UNSIGNED NOT NULL,duration_minutes INT UNSIGNED NOT NULL,wallet_id VARCHAR(200) NOT NULL,mode ENUM('sandbox','production') NOT NULL,
  state ENUM('reserved','pending','paid','failed','review') NOT NULL DEFAULT 'reserved',
  provider_id VARCHAR(200) NULL UNIQUE,checkout_url VARCHAR(2500) NULL,checkout_expires_at DATETIME(6) NULL,
  entitlement_ends_at DATETIME(6) NULL,created_at DATETIME(6) NOT NULL,updated_at DATETIME(6) NOT NULL,

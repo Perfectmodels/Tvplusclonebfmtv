@@ -19,10 +19,10 @@ async function request(path:string,body?:unknown){
  if(!response.ok)throw new ApiError('SingPay a refusé la requête. Vérifiez la transaction avant toute nouvelle tentative.',502,'UNAVAILABLE');
  try{return await response.json();}catch{throw new ApiError('Réponse SingPay illisible.',502,'UNAVAILABLE');}
 }
-export type PaymentOrder={reference:string;plan_slug:string;plan_name:string;amount:number|string;duration_minutes:number|string;wallet_id:string;state:'reserved'|'pending'|'paid'|'failed'|'review';checkout_url?:string|null;checkout_expires_at?:string|null;entitlement_ends_at?:string|null;provider_id?:string|null};
+export type PaymentOrder={reference:string;plan_slug:string;plan_name:string;amount:number|string;duration_minutes:number|string;wallet_id:string;mode:'sandbox'|'production';state:'reserved'|'pending'|'paid'|'failed'|'review';checkout_url?:string|null;checkout_expires_at?:string|null;entitlement_ends_at?:string|null;provider_id?:string|null};
 export function checkoutUrl(value:string){const u=new URL(value);const c=paymentConfig();if(u.protocol!=='https:'||u.username||u.password||u.port||!c.allowedHosts.includes(u.hostname.toLowerCase()))throw new ApiError('Hôte de paiement non autorisé. Contactez le support.',502,'UNAVAILABLE');return u.href;}
 export async function createCheckout(order:PaymentOrder){
- const c=paymentConfig();if(!c.enabled||order.wallet_id!==c.wallet)throw new ApiError('Paiements indisponibles.',503,'UNAVAILABLE');
+ const c=paymentConfig();if(!c.enabled||(order.wallet_id!==c.wallet||order.mode!==c.mode))throw new ApiError('Paiements indisponibles.',503,'UNAVAILABLE');
  const back=c.origin+'/direct/paiement?reference='+encodeURIComponent(order.reference);
  const data=await request('/ext',{portefeuille:c.wallet,reference:order.reference,amount:Number(order.amount),redirect_success:back,redirect_error:back,...(c.disbursement?{disbursement:c.disbursement}:{}),isTransfer:false});
  const r=z.object({link:z.string().min(1).max(2500),exp:z.string().optional()}).safeParse(data);

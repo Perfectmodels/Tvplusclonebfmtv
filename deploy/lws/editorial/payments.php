@@ -26,7 +26,7 @@ function payments(PDO $pdo,string $op,array $req):void {
  }
  if($op==='payments.admin'){
   $plans=$pdo->query('SELECT * FROM tvp_live_plans ORDER BY duration_minutes')->fetchAll();
-  $orders=$pdo->query('SELECT reference,user_id,plan_name,amount,state,provider_id,created_at,entitlement_ends_at FROM tvp_live_payments ORDER BY created_at DESC LIMIT 100')->fetchAll();
+  $orders=$pdo->query('SELECT reference,user_id,plan_name,amount,state,mode,provider_id,created_at,entitlement_ends_at FROM tvp_live_payments ORDER BY created_at DESC LIMIT 100')->fetchAll();
   $stats=$pdo->query('SELECT state,COUNT(*) AS count,SUM(amount) AS total FROM tvp_live_payments GROUP BY state')->fetchAll();
   respond(200,['plans'=>$plans,'orders'=>$orders,'stats'=>$stats]);
  }
@@ -37,20 +37,21 @@ function payments(PDO $pdo,string $op,array $req):void {
   $q->execute([$slug,$name,$amount,$duration,(int)$d['active']]);respond(200,['saved'=>true]);
  }
  if($op==='payments.mine'){
-  $q=$pdo->prepare('SELECT reference,plan_name,amount,state,entitlement_ends_at FROM tvp_live_payments WHERE user_id=? ORDER BY created_at DESC LIMIT 30');$q->execute([$actor]);respond(200,['orders'=>$q->fetchAll()]);
+  $q=$pdo->prepare('SELECT reference,plan_name,amount,state,mode,entitlement_ends_at FROM tvp_live_payments WHERE user_id=? ORDER BY created_at DESC LIMIT 30');$q->execute([$actor]);respond(200,['orders'=>$q->fetchAll()]);
  }
  if($op==='payments.reserve'){
-  $wallet=(string)($d['wallet']??'');$slug=(string)($d['plan']??'');
-  if(!$wallet||strlen($wallet)>200||!preg_match('/^[a-z0-9-]{1,50}$/',$slug))respond(400,['error'=>'Demande invalide']);
+  $wallet=(string)($d['wallet']??'');$mode=(string)($d['mode']??'');$slug=(string)($d['plan']??'');
+  if(!in_array($mode,['sandbox','production'],true)||!$wallet||strlen($wallet)>200||!preg_match('/^[a-z0-9-]{1,50}$/',$slug))respond(400,['error'=>'Demande invalide']);
   $pdo->beginTransaction();
   $q=$pdo->prepare('SELECT id FROM tvp_profiles WHERE id=? AND is_active=1 FOR UPDATE');$q->execute([$actor]);if(!$q->fetchColumn()){$pdo->rollBack();respond(403,['error'=>'Compte inactif']);}
-  $q=$pdo->prepare("SELECT reference FROM tvp_live_payments WHERE user_id=? AND state IN ('reserved','pending','review') ORDER BY created_at DESC LIMIT 1 FOR UPDATE");$q->execute([$actor]);$existing=$q->fetchColumn();
+  $q=$pdo->prepare("SELECT reference FROM tvp_live_payments WHERE user_id=? AND (state IN ('reserved','pending','review') OR (state='failed' AND (checkout_expires_at IS NULL OR checkout_expires_at>UTC_TIMESTAMP(6)))) ORDER BY created_at DESC LIMIT 1 FOR UPDATE");$q->execute([$actor]);$existing=$q->fetchColumn();
   if($existing){$row=paymentRow($pdo,$existing);$pdo->commit();respond(200,['order'=>$row,'fresh'=>false]);}
   $q=$pdo->prepare('SELECT * FROM tvp_live_plans WHERE slug=? AND active=1 FOR UPDATE');$q->execute([$slug]);$plan=$q->fetch();
   if(!$plan){$pdo->rollBack();respond(404,['error'=>'Offre indisponible']);}
+  if((int)$plan['amount']!==($d['amount']??null)||(int)$plan['duration_minutes']!==($d['durationMinutes']??null)){$pdo->rollBack();respond(409,['error'=>'L’offre a changé. Actualisez la page.']);}
   $ref=$pdo->query('SELECT UUID()')->fetchColumn();
-  $q=$pdo->prepare("INSERT INTO tvp_live_payments(reference,user_id,plan_slug,plan_name,amount,duration_minutes,wallet_id,state,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'reserved',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))");
-  $q->execute([$ref,$actor,$slug,$plan['name'],$plan['amount'],$plan['duration_minutes'],$wallet]);$row=paymentRow($pdo,$ref);$pdo->commit();respond(200,['order'=>$row,'fresh'=>true]);
+  $q=$pdo->prepare("INSERT INTO tvp_live_payments(reference,user_id,plan_slug,plan_name,amount,duration_minutes,wallet_id,mode,state,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,'reserved',UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))");
+  $q->execute([$ref,$actor,$slug,$plan['name'],$plan['amount'],$plan['duration_minutes'],$wallet,$mode]);$row=paymentRow($pdo,$ref);$pdo->commit();respond(200,['order'=>$row,'fresh'=>true]);
  }
  if(!preg_match('/^[0-9a-f-]{36}$/i',$ref))respond(400,['error'=>'Référence invalide']);
  if($op==='payments.get'){$row=paymentRow($pdo,$ref);if($row['user_id']!==$actor)respond(404,['error'=>'Transaction introuvable']);respond(200,['order'=>$row]);}
@@ -71,7 +72,9 @@ function payments(PDO $pdo,string $op,array $req):void {
   $q=$pdo->prepare('SELECT * FROM tvp_live_payments WHERE reference=? FOR UPDATE');$q->execute([$ref]);$row=$q->fetch();
   if(!$row||$row['wallet_id']!==($d['wallet']??null)||(int)$row['amount']!==($d['amount']??null)||($row['provider_id']&&$row['provider_id']!==$providerId)){$pdo->rollBack();respond(409,['error'=>'Transaction incohérente']);}
   if($row['state']==='paid'){$saved=paymentRow($pdo,$ref);$pdo->commit();respond(200,['order'=>$saved]);}
-  if($state==='paid'){
+  if($state==='paid'&&$row['mode']==='sandbox'){
+   $pdo->prepare("UPDATE tvp_live_payments SET state='paid',provider_id=?,updated_at=UTC_TIMESTAMP(6) WHERE reference=?")->execute([$providerId,$ref]);
+  }elseif($state==='paid'){
    $q=$pdo->prepare("SELECT GREATEST(UTC_TIMESTAMP(6),COALESCE(MAX(ends_at),UTC_TIMESTAMP(6))) FROM tvp_live_entitlements WHERE user_id=? AND status='active'");$q->execute([$row['user_id']]);$start=$q->fetchColumn();
    $end=(new DateTimeImmutable($start,new DateTimeZone('UTC')))->modify('+'.(int)$row['duration_minutes'].' minutes')->format('Y-m-d H:i:s.u');
    $id=$pdo->query('SELECT UUID()')->fetchColumn();
