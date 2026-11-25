@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import ReplayEmbed from '../video/ReplayEmbed';
+import {parseVideoUrl} from '../../lib/video/providers';
 import Breadcrumb from '../Breadcrumb';
 import ShareButtons from '../ShareButtons';
 import StoryCard from '../StoryCard';
@@ -80,6 +82,7 @@ export default function ArticleView({
               <ShareButtons url={shortUrl} title={story.title} />
             </div>
 
+            {story.videoUrl&&parseVideoUrl(story.videoUrl)&&<section aria-label="Reportage vidéo"><ReplayEmbed title={story.title} url={story.videoUrl} thumbnail={story.image}/></section>}
             <div className="article-body">
               {story.contentHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: story.contentHtml }} />
