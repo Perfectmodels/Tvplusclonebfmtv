@@ -109,13 +109,14 @@ function mapFull(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Publ
 }
 
 export const listV2Articles = unstable_cache(async ({
-  category, country, province, excludeSlugs = [], search, page = 1, pageSize = 12,
-}: {category?: string; country?: string; province?: string; excludeSlugs?: string[]; search?: string; page?: number; pageSize?: number} = {}) => {
+  category, country, province, excludeSlugs = [], videoOnly = false, search, page = 1, pageSize = 12,
+}: {category?: string; country?: string; province?: string; excludeSlugs?: string[]; videoOnly?: boolean; search?: string; page?: number; pageSize?: number} = {}) => {
   const db = client();
   let q = db.from('articles').select(SELECT_ARTICLE_LIST, { count: 'exact' }).eq('status', 'published');
   if(country) q=q.eq('country_code',country);
   if(province) q=q.eq('province_slug',province);
   for(const slug of excludeSlugs)q=q.neq('slug',slug);
+  if(videoOnly)q=q.eq('is_video_article',true);
   if (category) {
     const { data: cat, error } = await db.from('categories').select('id').eq('slug', categorySlug(category)).maybeSingle();
     if (error) throw new Error(error.message);
@@ -221,7 +222,7 @@ export const getV2Schedule = unstable_cache(async () => {
     .select('weekday,start_time,title,kind').order('weekday').order('start_time').limit(60);
   if (error) throw new Error(error.message);
   return { data: (data ?? []).map((p) => ({
-    time: String(p.start_time).slice(0, 5), title: p.title,
+    weekday: Number(p.weekday), time: String(p.start_time).slice(0, 5), title: p.title,
     category: p.kind, live: false,
   })), source: 'supabase' as const };
 }, ['v2-public-schedule'], { revalidate: 600, tags: ['public-schedule'] });
