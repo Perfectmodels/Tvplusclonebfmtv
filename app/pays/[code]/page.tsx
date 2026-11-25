@@ -1,3 +1,5 @@
+import type {Metadata} from 'next';
+import {getSiteUrl} from '../../../lib/articles/site-url';
 import {notFound} from 'next/navigation';
 import Breadcrumb from '../../../components/Breadcrumb';
 import StoryCard from '../../../components/StoryCard';
@@ -6,12 +8,20 @@ import {COUNTRY_CODES,EDITORIAL_COUNTRIES,COUNTRIES} from '../../../lib/editor/c
 import {listArticles} from '../../../lib/db/repository';
 export const revalidate=60;
 const PAGE_SIZE=15;
+export async function generateMetadata({params,searchParams}:{params:Promise<{code:string}>;searchParams:Promise<{page?:string}>}):Promise<Metadata>{
+ const code=(await params).code.toUpperCase();
+ const label=COUNTRIES.find(x=>x.code===code)?.name;
+ if(!label)return {title:'Pays introuvable',robots:{index:false,follow:false}};
+ const page=Math.min(500,Math.max(1,Math.floor(Number((await searchParams).page)||1)));
+ const {items}=await listArticles({country:code,page,pageSize:PAGE_SIZE});
+ return {title:'Actualités '+label+' — TV+ Afrique'+(page>1?' — Page '+page:''),description:'Suivez les informations de TV+ Afrique concernant '+label+'.',alternates:{canonical:(await getSiteUrl())+'/pays/'+code.toLowerCase()+(page>1?'?page='+page:'')},robots:{index:items.length>0,follow:true}};
+}
 export default async function CountryPage({params,searchParams}:{params:Promise<{code:string}>;searchParams:Promise<{page?:string}>}) {
  const {code:raw}=await params;
  const code=raw.trim().toUpperCase();
  if(!COUNTRY_CODES.includes(code))notFound();
  const q=await searchParams;
- const page=Math.min(500,Math.max(1,Number(q.page)||1));
+ const page=Math.min(500,Math.max(1,Math.floor(Number(q.page)||1)));
  const label=EDITORIAL_COUNTRIES.find(x=>x.code===code)?.name||COUNTRIES.find(x=>x.code===code)?.name||code;
  const {items,total}=await listArticles({country:code,page,pageSize:PAGE_SIZE});
  const totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
