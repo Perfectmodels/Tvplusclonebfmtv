@@ -11,19 +11,15 @@ function respond(int $status, array $payload): void {
     exit;
 }
 
+require_once __DIR__.'/api-health.php';
 try {
     if (($_GET['resource'] ?? '') !== 'newsroom' && $_SERVER['REQUEST_METHOD'] !== 'GET') {
         header('Allow: GET');
         respond(405, ['error' => 'Méthode non autorisée']);
     }
 
-    $config = require dirname(__DIR__, 2) . '/tvplus-v3-private.php';
-    $pdo = new PDO('mysql:host=localhost;dbname=cp1779864p23_tvplus_v3;charset=utf8mb4',
-        'cp1779864p23_tvplus_rw', $config['password'], [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_EMULATE_PREPARES => false,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
+    $config = tvplusApiConfig(dirname(__DIR__, 2).'/tvplus-v3-private.php');
+    $pdo = tvplusApiPdo($config);
     $resource = $_GET['resource'] ?? 'health';
     if ($resource === 'newsroom') {
         require_once __DIR__ . '/newsroom.php';
@@ -35,7 +31,7 @@ try {
     }
     if ($resource === 'health') {
         $pdo->query('SELECT id FROM tvp_articles LIMIT 1');
-        respond(200, ['status' => 'ok']);
+        respond(200, ['status' => 'ok','version'=>TVPLUS_API_RELEASE]);
     }
     if (in_array($resource,['schedule','ads','media_catalog','media_detail','home_layout'],true)) {
         require_once __DIR__.'/extras.php'; publicExtras($pdo,$resource);
@@ -112,5 +108,7 @@ try {
     $query->execute($params);
     respond(200, ['items' => $query->fetchAll(), 'total' => (int)$count->fetchColumn()]);
 } catch (Throwable $e) {
+    // No credentials, SQL statements or exception messages are written to logs.
+    error_log('TVPLUS API failure ['.get_class($e).'] code='.(string)$e->getCode());
     respond(503, ['error' => 'Service éditorial indisponible']);
 }

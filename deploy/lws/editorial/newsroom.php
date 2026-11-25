@@ -23,9 +23,16 @@ function newsroom(PDO $pdo, array $config): void {
     if (empty($config['service_key']) || !hash_equals($config['service_key'], $_SERVER['HTTP_X_TVPLUS_KEY'] ?? '')) {
         respond(403, ['error'=>'Accès refusé']);
     }
-    $request = json_decode(file_get_contents('php://input'), true, 32, JSON_THROW_ON_ERROR);
+    $raw=file_get_contents('php://input',false,null,0,512001);
+    if(!is_string($raw)||strlen($raw)>512000)respond(413,['error'=>'Requête trop volumineuse']);
+    try{$request=json_decode($raw,true,32,JSON_THROW_ON_ERROR);}catch(JsonException $e){respond(400,['error'=>'JSON invalide']);}
+    if(!is_array($request)||!is_string($request['operation']??null)||!is_array($request['actor']??null)||!is_array($request['actor']['permissions']??null))respond(400,['error'=>'Requête invalide']);
     $op = $request['operation'] ?? '';
     $actor = $request['actor'] ?? [];
+    if($op==='system.health'){
+      if(($actor['id']??'')!=='deployment-check')respond(403,['error'=>'Accès refusé']);
+      require_once __DIR__.'/api-health.php';$result=tvplusSchema($pdo);respond($result['status']==='ok'?200:503,$result);
+    }
     $permissions = $actor['permissions'] ?? [];
     $review = in_array('articles.review', $permissions, true);
     $read = in_array('articles.read_all', $permissions, true);
