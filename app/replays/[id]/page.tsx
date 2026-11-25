@@ -27,7 +27,7 @@ export default async function ReplayPage({params}:Props){
  {schema&&<script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema).replace(/</g,'\\u003c')}}/>}
  <Breadcrumb items={[{label:'Accueil',href:'/'},{label:'Replays',href:'/replays'},{label:episode.title}]}/>
  <h1 className="page-title">{episode.title}</h1>
- <ReplayEmbed title={episode.title} url={episode.videoUrl} thumbnail={episode.thumbnail}/>
+ {seo ? <div className="tvplus-replay-embed"><iframe src={seo.embedUrl} title={episode.title} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" style={{width:'100%',aspectRatio:'16 / 9',border:0}}/></div> : <ReplayEmbed title={episode.title} url={episode.videoUrl} thumbnail={episode.thumbnail}/>}
  {seo&&<p><time dateTime={seo.uploadDate}>{new Date(seo.uploadDate).toLocaleDateString('fr-FR',{timeZone:'Africa/Libreville'})}</time></p>}
  {episode.description&&<p className="page-intro">{episode.description}</p>}
  <Link href="/replays">Tous les replays TV+ Afrique</Link>
