@@ -18,8 +18,13 @@ export async function generateMetadata({params,searchParams}:{params:Promise<{sl
  return {title:label+' — Actualités TV+ Afrique'+(page>1?' — Page '+page:''),description:'Les dernières actualités de la rubrique '+label+' sur TV+ Afrique.',alternates:{canonical:(await getSiteUrl())+'/rubrique/'+slug+(page>1?'?page='+page:'')},robots:{index:items.length>0,follow:true}};
 }
 export async function generateStaticParams(){
- const {data:categories}=await getCategories();
- return (categories.length?categories:staticCategories).map(c=>({slug:categorySlug(c)}));
+ // Même tolérance que pour les articles : le build ne doit pas dépendre de l'API LWS.
+ try {
+  const {data:categories}=await getCategories();
+  return (categories.length?categories:staticCategories).map(c=>({slug:categorySlug(c)}));
+ } catch {
+  return staticCategories.map(c=>({slug:categorySlug(c)}));
+ }
 }
 export default async function Category({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{page?:string}>}){
  const {slug}=await params;

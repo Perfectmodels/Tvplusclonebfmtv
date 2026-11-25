@@ -22,11 +22,15 @@ const cachedArticles = unstable_cache(async () => {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = await getSiteUrl();
+  // Le sitemap est généré au build : ne jamais faire échouer la compilation si
+  // l'API éditoriale LWS n'est pas encore joignable. Un prochain build/regénération
+  // (revalidate) reprendra le catalogue complet.
   const [{ data: categories }, { data: programs }] = await Promise.all([
-    getCategories(), getPrograms(),
+    getCategories().catch(() => ({ data: [] as Awaited<ReturnType<typeof getCategories>>['data'] })),
+    getPrograms().catch(() => ({ data: [] as Awaited<ReturnType<typeof getPrograms>>['data'] })),
   ]);
 
-  const articles = await cachedArticles();
+  const articles = await cachedArticles().catch(() => []);
 
   const staticRoutes = [
     '', '/actualites', '/rubriques', '/direct', '/videos', '/replay-emissions', '/replays',

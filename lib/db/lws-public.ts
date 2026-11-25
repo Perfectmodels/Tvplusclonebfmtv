@@ -9,11 +9,29 @@ import type { PublicEpisode, PublicArticle } from './repository';
 export const usesLwsCatalog = () => true; // MySQL est désormais la seule source.
 
 async function read<T>(resource: string, filters: Record<string, string>, tags: string[]) {
-  const endpoint=process.env.LWS_EDITORIAL_API_URL;if(!endpoint)throw new Error('LWS_EDITORIAL_API_URL manquante.');
+  // Pendant `next build`, le catalogue peut être absent (variable non définie en local,
+  // API LWS non encore déployée). On renvoie un résultat vide pour ne pas bloquer la
+  // compilation : avec `revalidate`, les données sont récupérées au premier accès.
+  const buildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  const empty = () => ({ items: [], total: 0 }) as T;
+  const endpoint=process.env.LWS_EDITORIAL_API_URL;
+  if(!endpoint){
+    if(buildPhase) return empty();
+    throw new Error('LWS_EDITORIAL_API_URL manquante.');
+  }
   const url=new URL(endpoint);if(url.protocol!=='https:'||url.username||url.password)throw new Error('API LWS HTTPS requise.');
   url.search = new URLSearchParams({ resource, ...filters }).toString();
-  const response = await fetch(url, { next: { revalidate: 60, tags }, redirect:'error', signal: AbortSignal.timeout(8000) });
-  if (!response.ok) throw new Error('Catalogue MySQL indisponible.');
+  let response: Response;
+  try {
+    response = await fetch(url, { next: { revalidate: 60, tags }, redirect:'error', signal: AbortSignal.timeout(8000) });
+  } catch (error) {
+    if(buildPhase) return empty();
+    throw error;
+  }
+  if (!response.ok) {
+    if(buildPhase) return empty();
+    throw new Error('Catalogue MySQL indisponible.');
+  }
   return await response.json() as T;
 }
 
