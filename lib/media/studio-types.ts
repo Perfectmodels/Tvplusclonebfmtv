@@ -11,7 +11,7 @@ export function httpsUrl(value:string){try{const u=new URL(value);return u.proto
 export function mediaSource(kind:StudioKind,value:string){
  if(!httpsUrl(value))return false;
  const u=new URL(value);
- if(kind==='podcast')return /\.(mp3|ogg|wav|m4a|aac)(?:$)/i.test(u.pathname)||['open.spotify.com','soundcloud.com','www.soundcloud.com','www.deezer.com','deezer.com','podcasts.apple.com'].includes(u.hostname);
+ if(kind==='podcast')return /\.(mp3|ogg|wav|m4a|aac)(?:$)/i.test(u.pathname)||['open.spotify.com','spotify.com','www.spotify.com','soundcloud.com','www.soundcloud.com','www.deezer.com','deezer.com','podcasts.apple.com'].includes(u.hostname);
  return !!parseVideoUrl(value)||/\.(mp4|webm|m3u8)$/i.test(u.pathname);
 }
 export const metaSchema=z.object({series:z.string().trim().max(140).default(''),season:z.number().int().min(1).max(1000).nullable().default(null),episode:z.number().int().min(1).max(100000).nullable().default(null),host:z.string().trim().max(160).default(''),guest:z.string().trim().max(300).default(''),journalist:z.string().trim().max(160).default(''),location:z.string().trim().max(160).default(''),credits:z.string().trim().max(500).default(''),caption:z.string().trim().max(2000).default(''),keywords:z.string().trim().max(500).default(''),transcript:z.string().trim().max(20000).default(''),reportType:z.enum(['reportage','interview','documentaire','decryptage']).default('reportage'),relatedArticle:z.string().trim().max(160).refine(v=>!v||/^\/(?:a|article)\/[a-zA-Z0-9_-]+$/.test(v),'Lien interne /a/... ou /article/...').default('')});
@@ -21,7 +21,7 @@ export const saveSchema=z.object({kind:z.enum(kinds),id:z.string().uuid().option
 export type StudioForm=z.infer<typeof saveSchema>;
 export type StudioItem=StudioForm&{id:string;revision:number;state:StudioState;published_at:string|null;updated_at:string|null};
 export type StudioList={items:StudioItem[];total:number;page:number;pageSize:number;counts:Partial<Record<StudioState,number>>};
-export function canManageStudio(permissions:string[],kind:StudioKind){return permissions.includes('shows.manage')||permissions.includes('studio.'+kind+'.manage');}
+export function canManageStudio(permissions:string[],kind:StudioKind){return permissions.includes('shows.manage')||permissions.includes('studio.'+kind+'_manage');}
 export function canReviewStudio(permissions:string[]){return permissions.includes('articles.review')||permissions.includes('settings.manage');}
 export function targets(state:StudioState,reviewer:boolean):StudioState[]{
  switch(state){case 'draft':return ['production','review','archived'];case 'production':return ['draft','review','archived'];case 'review':return reviewer?['production','approved','archived']:[];case 'approved':return reviewer?['production','published','scheduled','archived']:[];case 'scheduled':case 'published':return reviewer?['production','archived']:[];case 'archived':return reviewer?['draft']:[];}

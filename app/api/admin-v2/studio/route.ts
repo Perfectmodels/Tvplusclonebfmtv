@@ -3,7 +3,7 @@ import {z} from 'zod';
 import {getV2Actor} from '../../../../lib/auth/v2-admin';
 import {newsroom} from '../../../../lib/admin-v2/lws';
 import {ApiError,handleRoute,ok} from '../../../../lib/api/response';
-import {kinds,states,saveSchema,canManageStudio,type StudioKind,type StudioList,type StudioItem} from '../../../../lib/media/studio-types';
+import {kinds,states,saveSchema,canManageStudio,readyForReview,type StudioKind,type StudioList,type StudioItem} from '../../../../lib/media/studio-types';
 import {revalidatePath,revalidateTag} from 'next/cache';
 export const dynamic='force-dynamic';
 async function actor(kind:StudioKind){const a=await getV2Actor();if(!a)throw new ApiError('Connexion requise.',401,'UNAUTHORIZED');if(!canManageStudio(a.permissions,kind))throw new ApiError('Permission insuffisante.',403,'UNAUTHORIZED');return a;}
@@ -15,7 +15,13 @@ export const POST=handleRoute(async(req:NextRequest)=>{
  const raw=await req.json().catch(()=>null);
  if(raw?.action==='transition'){
   const p=transition.safeParse(raw);if(!p.success)throw new ApiError('Transition invalide.',400);
-  const result=await newsroom<StudioItem>(await actor(p.data.kind),'studio.transition',{data:p.data});
+  const a=await actor(p.data.kind);
+  if(['review','approved','scheduled','published'].includes(p.data.target)){
+   const current=await newsroom<StudioItem>(a,'studio.get',{data:{kind:p.data.kind,id:p.data.id}});
+   if(current.revision!==p.data.revision)throw new ApiError('Ce contenu a été modifié. Rechargez la page.',409,'CONFLICT');
+   if(!readyForReview(current))throw new ApiError('Source média compatible et couverture requises.',400);
+  }
+  const result=await newsroom<StudioItem>(a,'studio.transition',{data:p.data});
   revalidateTag('editorial-media');for(const path of ['/','/reels','/podcasts','/videos','/media/'+result.id])revalidatePath(path);return ok(result);
  }
  const p=saveSchema.safeParse(raw);if(!p.success)throw new ApiError(p.error.issues[0]?.message||'Formulaire invalide.',400);

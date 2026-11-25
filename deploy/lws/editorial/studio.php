@@ -17,7 +17,7 @@ function studioHttps(string $url):bool {
 function studioSource(string $kind,string $url):bool {
  if(!studioHttps($url))return false;
  $u=parse_url($url);$host=strtolower($u['host']);$path=$u['path']??'';
- if($kind==='podcast')return (bool)preg_match('/\.(mp3|ogg|wav|m4a|aac)$/i',$path)||in_array($host,['open.spotify.com','soundcloud.com','www.soundcloud.com','deezer.com','www.deezer.com','podcasts.apple.com'],true);
+ if($kind==='podcast')return (bool)preg_match('/\.(mp3|ogg|wav|m4a|aac)$/i',$path)||in_array($host,['open.spotify.com','spotify.com','www.spotify.com','soundcloud.com','www.soundcloud.com','deezer.com','www.deezer.com','podcasts.apple.com'],true);
  return (bool)preg_match('/\.(mp4|webm|m3u8)$/i',$path)||in_array($host,['youtube.com','www.youtube.com','m.youtube.com','youtu.be','facebook.com','www.facebook.com','m.facebook.com','web.facebook.com','fb.watch','tiktok.com','www.tiktok.com','m.tiktok.com','vimeo.com','www.vimeo.com','player.vimeo.com','dailymotion.com','www.dailymotion.com','dai.ly'],true);
 }
 function studio(PDO $pdo,string $op,array $request):void {
@@ -27,7 +27,7 @@ function studio(PDO $pdo,string $op,array $request):void {
  $q->execute([$actor]);$permissions=json_decode((string)$q->fetchColumn(),true);
  if(!is_array($permissions))respond(403,['error'=>'Accès refusé']);
  $kind=(string)($d['kind']??'');if(!in_array($kind,['reel','podcast','reportage'],true))respond(400,['error'=>'Format invalide']);
- if(!in_array('shows.manage',$permissions,true)&&!in_array('studio.'.$kind.'.manage',$permissions,true))respond(403,['error'=>'Permission insuffisante']);
+ if(!in_array('shows.manage',$permissions,true)&&!in_array('studio.'.$kind.'_manage',$permissions,true))respond(403,['error'=>'Permission insuffisante']);
  $reviewer=in_array('articles.review',$permissions,true)||in_array('settings.manage',$permissions,true);
  $state=studioStateSql();$select="SELECT *,($state) AS state FROM tvp_editorial_media";
  if($op==='studio.list'){
@@ -37,7 +37,7 @@ function studio(PDO $pdo,string $op,array $request):void {
   if($filter!=='all'){if(!in_array($filter,['draft','production','review','approved','scheduled','published','archived'],true))respond(400,['error'=>'Statut invalide']);$where[]="($state)=?";$params[]=$filter;}
   $search=trim((string)($d['q']??''));if($search!==''){$where[]='(LOCATE(?,title)>0 OR LOCATE(?,description)>0 OR LOCATE(?,category)>0)';$params[]=$search;$params[]=$search;$params[]=$search;}
   $w=implode(' AND ',$where);$q=$pdo->prepare('SELECT COUNT(*) FROM tvp_editorial_media WHERE '.$w);$q->execute($params);$total=(int)$q->fetchColumn();
-  $q=$pdo->prepare($select.' WHERE '.$w." ORDER BY updated_at DESC,id LIMIT $size OFFSET $offset");$q->execute($params);
+  $q=$pdo->prepare($select.' WHERE '.$w." ORDER BY ".($filter==='scheduled'?'published_at ASC':'updated_at DESC').",id LIMIT $size OFFSET $offset");$q->execute($params);
   respond(200,['items'=>array_map('studioRow',$q->fetchAll()),'total'=>$total,'page'=>$page,'pageSize'=>$size,'counts'=>(object)$counts]);
  }
  $id=(string)($d['id']??'');

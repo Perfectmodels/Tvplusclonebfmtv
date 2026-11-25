@@ -9,6 +9,7 @@ const ALL_PERMISSIONS = [
   'articles.read', 'articles.read_all', 'articles.create', 'articles.edit_own',
   'articles.review', 'articles.publish_scheduled', 'categories.manage', 'shows.manage',
   'media.upload', 'media.delete', 'schedule.manage', 'settings.manage',
+  'studio.reel_manage', 'studio.podcast_manage', 'studio.reportage_manage',
   'users.manage', 'roles.manage', 'audit.read',
 ];
 

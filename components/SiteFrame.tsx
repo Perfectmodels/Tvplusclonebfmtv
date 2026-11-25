@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import PublicAssistant from './PublicAssistant';
 import BackToTop from './BackToTop';
 import LiveOverlayProvider from './video/LiveOverlayProvider';
+import PodcastPlaybackProvider from './video/PodcastPlaybackProvider';
 
 export default function SiteFrame({ children, header, footer }: {
   children: ReactNode;
@@ -24,13 +25,13 @@ export default function SiteFrame({ children, header, footer }: {
   }
 
   return (
-    <LiveOverlayProvider>
+    <LiveOverlayProvider><PodcastPlaybackProvider>
       <a href="#contenu" className="skip-link">Aller au contenu</a>
       {header}
       <div id="contenu">{children}</div>
       {footer}
       <BackToTop />
       <PublicAssistant />
-    </LiveOverlayProvider>
+    </PodcastPlaybackProvider></LiveOverlayProvider>
   );
 }

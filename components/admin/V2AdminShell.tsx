@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Newspaper, Images, ListTree, Tv, PlayCircle, MonitorPlay,
-  RectangleHorizontal, MessageCircle, Menu, X, LogOut, ExternalLink, Plus, ChevronRight, Rss, ShieldCheck, Shield, Film, Mic, Video, Wallet, Settings,
+  RectangleHorizontal, MessageCircle, Menu, X, LogOut, ExternalLink, Plus, ChevronRight, Rss, ShieldCheck, Shield, Film, Mic, Video, Wallet, Settings, CalendarDays,
 } from 'lucide-react';
 import TvPlusLogo from '../TvPlusLogo';
 
@@ -22,9 +22,10 @@ const GROUPS=[
     {href:'/admin-v2/categories',label:'Rubriques',icon:ListTree,permission:'categories.manage'},
   ] },
   { label:'Studio audiovisuel', links:[
-    {href:'/admin-v2/studio/reels',label:'Reels',icon:Film,permission:'shows.manage',alternatePermission:'studio.reel.manage'},
-    {href:'/admin-v2/studio/podcasts',label:'Podcasts',icon:Mic,permission:'shows.manage',alternatePermission:'studio.podcast.manage'},
-    {href:'/admin-v2/studio/reportages',label:'Reportages',icon:Video,permission:'shows.manage',alternatePermission:'studio.reportage.manage'},
+    {href:'/admin-v2/studio/reels',label:'Reels',icon:Film,permission:'shows.manage',alternatePermission:'studio.reel_manage'},
+    {href:'/admin-v2/studio/podcasts',label:'Podcasts',icon:Mic,permission:'shows.manage',alternatePermission:'studio.podcast_manage'},
+    {href:'/admin-v2/studio/reportages',label:'Reportages',icon:Video,permission:'shows.manage',alternatePermission:'studio.reportage_manage'},
+    {href:'/admin-v2/studio/calendar',label:'Programmation médias',icon:CalendarDays,permission:'shows.manage',alternatePermission:'studio.calendar_read'},
   ] },
   { label:'Communication', links:[{href:'/admin-v2/whatsapp',label:'Centre WhatsApp',icon:MessageCircle,permission:'settings.manage'},{href:'/admin-v2/seo',label:'SEO & Visibilité',icon:Newspaper,permission:'articles.read_all'}] },
   { label:'Antenne & Diffusion', links:[
@@ -81,7 +82,8 @@ export default function V2AdminShell({children,role,email,permissions}:{
       <nav aria-label="Navigation du tableau de bord" className="v2-navigation">
         {GROUPS.map(group=>{
           const links=group.links.filter(link=>!link.permission||permissions.includes(link.permission) ||
-            (link.alternatePermission && permissions.includes(link.alternatePermission)));
+            (link.alternatePermission && permissions.includes(link.alternatePermission)) ||
+            (link.href==='/admin-v2/studio/calendar'&&['studio.reel_manage','studio.podcast_manage','studio.reportage_manage'].some(p=>permissions.includes(p))));
           return links.length?<div className="v2-nav-group" key={group.label}>
             <span className="v2-nav-section-label">{group.label}</span>
             {links.map(link=>{

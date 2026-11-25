@@ -58,13 +58,6 @@ function adminExtras(PDO $pdo,string $op,array $request): void {
  }
  if($op==='catalog.list')respond(200,['items'=>$pdo->query('SELECT * FROM tvp_editorial_media ORDER BY created_at DESC LIMIT 300')->fetchAll()]);
  if($op==='catalog.create'||$op==='catalog.edit')respond(409,['error'=>'Utilisez le Studio audiovisuel pour créer ou modifier un contenu.']);
- if(false){
-  $kind=$data['kind']??'';$status=$data['status']??'';$title=trim((string)($data['title']??''));$url=(string)($data['source_url']??'');
-  if(!in_array($kind,['reel','reportage','podcast'],true)||!in_array($status,['draft','published'],true)||strlen($title)<3||strlen($title)>800||!str_starts_with($url,'https://'))respond(400,['error'=>'Champs invalides']);
-  $values=[$kind,$title,(string)($data['description']??''),(string)($data['category']??''),$url,(string)($data['thumbnail_url']??''),$data['duration_seconds']??null,$status];
-  if($op==='catalog.create'){$id=$pdo->query('SELECT UUID()')->fetchColumn();$pdo->prepare("INSERT INTO tvp_editorial_media (kind,title,description,category,source_url,thumbnail_url,duration_seconds,status,id,published_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,IF(?='published',UTC_TIMESTAMP(6),NULL),UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))")->execute([...$values,$id,$status]);}
-  else{$id=(string)($request['id']??'');if(!preg_match('/^[0-9a-f-]{36}$/i',$id))respond(400,['error'=>'Identifiant invalide']);$pdo->prepare("UPDATE tvp_editorial_media SET kind=?,title=?,description=?,category=?,source_url=?,thumbnail_url=?,duration_seconds=?,status=?,published_at=IF(?='published',COALESCE(published_at,UTC_TIMESTAMP(6)),NULL),updated_at=UTC_TIMESTAMP(6) WHERE id=?")->execute([...$values,$status,$id]);}
-  $q=$pdo->prepare('SELECT * FROM tvp_editorial_media WHERE id=?');$q->execute([$id]);$row=$q->fetch();if(!$row)respond(404,['error'=>'Contenu introuvable']);respond(200,$row);
- }
+
  respond(404,['error'=>'Opération inconnue']);
 }
