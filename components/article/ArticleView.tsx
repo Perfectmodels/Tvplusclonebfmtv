@@ -6,6 +6,7 @@ import ArticleReadCounter from './ArticleReadCounter';
 import type { PublicArticle } from '../../lib/db/repository';
 import type { Story } from '../../lib/data';
 import { categoryHref } from '../../lib/categories';
+import { absoluteUrl, plainText, validDate } from '../../lib/seo/public-feeds';
 
 export default function ArticleView({
   story,
@@ -20,17 +21,21 @@ export default function ArticleView({
 }) {
   const categoryPath = categoryHref(story.category);
 
+  const photo = story.image ? absoluteUrl(story.image, shortUrl) : undefined;
+  const authorName = story.author || 'La rédaction';
+  const published = validDate(story.publishedAt);
+  const updated = validDate(story.updatedAt ?? story.publishedAt);
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
     headline: story.title,
-    description: story.chapter || story.summary,
-    image: story.image ? [story.image] : [],
-    datePublished: story.publishedAt ?? undefined,
-    dateModified: story.updatedAt ?? story.publishedAt ?? undefined,
-    author: { '@type': 'Person', name: story.author || 'La rédaction' },
+    description: plainText(story.chapter || story.summary || ''),
+    image: photo ? [photo] : undefined,
+    datePublished: published?.toISOString(),
+    dateModified: updated?.toISOString(),
+    author: { '@type': /rédaction|tv\+/i.test(authorName) ? 'Organization' : 'Person', name: authorName },
     publisher: {
-      '@type': 'Organization', name: 'TV+ Afrique',
+      '@type': 'NewsMediaOrganization', name: 'TV+ Afrique',
       logo: { '@type': 'ImageObject', url: new URL('/logo.png', shortUrl).toString() },
     },
     inLanguage: 'fr-GA',
@@ -54,7 +59,7 @@ export default function ArticleView({
             <header className={'article-feature' + (story.image ? ' has-image' : '')}>
               {story.image && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={story.image} alt="" className="article-feature-image" decoding="async" fetchPriority="high"/>
+                <img src={story.image} alt={story.coverAlt || ''} className="article-feature-image" decoding="async" fetchPriority="high"/>
               )}
               <span className="article-feature-gradient" aria-hidden="true" />
               <div className="article-feature-content">
@@ -71,7 +76,7 @@ export default function ArticleView({
             )}
 
             <div className="article-tools">
-              <span>{story.author || 'La rédaction'} · {story.time} · Lecture {story.readingTime ?? 3} min</span>
+              <span>{authorName} · {published ? <time dateTime={published.toISOString()}>{new Intl.DateTimeFormat('fr-GA', {dateStyle:'long',timeStyle:'short',timeZone:'Africa/Libreville'}).format(published)}</time> : story.time} · Lecture {story.readingTime ?? 3} min</span>
               <ShareButtons url={shortUrl} title={story.title} />
             </div>
 
