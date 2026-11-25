@@ -9,7 +9,7 @@ type Session = { uid: string; exp: number };
 
 function secret(): string {
   const value = process.env.AUTH_SESSION_SECRET;
-  if (!value) throw new Error('AUTH_SESSION_SECRET manquant.');
+  if (!value || value.length<32) throw new Error('AUTH_SESSION_SECRET manquant ou trop court.');
   return value;
 }
 
@@ -24,9 +24,10 @@ export function createSessionToken(uid: string): string {
 
 export function readSessionToken(token?: string | null): Session | null {
   if (!token) return null;
-  const [body, signature] = token.split('.');
+  const [body,signature,...rest]=token.split('.');
+  if(rest.length)return null;
   if (!body || !signature) return null;
-  const expected = sign(body);
+  let expected:string;try{expected=sign(body);}catch{return null;}
   const a = Buffer.from(signature);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;

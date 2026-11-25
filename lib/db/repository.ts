@@ -1,4 +1,5 @@
 import 'server-only';
+import {newsroom} from '../admin-v2/lws';
 import * as v2 from './v2-public';
 import { usesLwsCatalog, getLwsPrograms, getLwsEpisodes } from './lws-public';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -497,31 +498,13 @@ export async function searchAll(query: string) {
   return { items, source: 'static' as DataSource };
 }
 
-export async function subscribeNewsletter(email: string, newsletter: string) {
-  if (v2.usesTvplusV2()) throw new Error('La newsletter du clone n’est pas encore adaptée à la base TV+ V2.');
-  const db = getServerSupabase();
-  const { data, error } = await db
-    .from('newsletter_subscriptions')
-    .insert({ email, newsletter })
-    .select('id, email, newsletter, created_at')
-    .single();
-  if (error) throw new Error(error.message);
-  return data as NewsletterRow;
+export async function subscribeNewsletter(email:string,newsletter:string){
+ const data=await newsroom<{id:string;created_at:string}>({id:'public',permissions:[]},'forms.newsletter',{data:{email,newsletter}});
+ return {...data,email,newsletter} as NewsletterRow;
 }
-
-export async function createContact(payload: {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-}) {
-  if (v2.usesTvplusV2()) throw new Error('Le formulaire de contact nécessite une migration dédiée, sans toucher aux tables TV+ V2.');
-  const db = getServerSupabase();
-  const { data, error } = await db.from('contacts').insert(payload).select('id, created_at').single();
-  if (error) throw new Error(error.message);
-  return data as Pick<ContactRow, 'id' | 'created_at'>;
+export async function createContact(payload:{name:string;email:string;subject:string;message:string}){
+ return newsroom<Pick<ContactRow,'id'|'created_at'>>({id:'public',permissions:[]},'forms.contact',{data:payload});
 }
-
 export async function getAdminStats() {
   const db = getServerSupabase();
   const tables = ['articles', 'categories', 'videos', 'podcasts', 'newsletter_subscriptions', 'contacts', 'media', 'programs'] as const;

@@ -1,3 +1,4 @@
+import {newsroom} from '../../../../lib/admin-v2/lws';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
@@ -18,21 +19,14 @@ const schema=z.object({
   message:'La fin de diffusion doit être après le début.'
 });
 export const GET=handleRoute(async()=>{
-  const {db}=await requireV2Api('settings.manage');
-  const {data,error}=await db.from('homepage_ad_slots').select('banner,slot,advertiser,image_url,target_url,alt,active,starts_at,ends_at,updated_at')
-    .order('banner').order('slot');
-  if(error)throw new ApiError('Publicités indisponibles.',503,'UNAVAILABLE');
-  return ok({items:data??[]});
+  const {actor}=await requireV2Api('settings.manage');
+  return ok(await newsroom(actor,'ads.list'));
 });
 export const PATCH=handleRoute(async(request:NextRequest)=>{
-  const {db}=await requireV2Api('settings.manage');
+  const {actor}=await requireV2Api('settings.manage');
   const parsed=schema.safeParse(await request.json());
   if(!parsed.success)throw new ApiError('Données publicitaires invalides.',400,'BAD_REQUEST',parsed.error.flatten());
-  const {banner,slot,...values}=parsed.data;
-  const {data,error}=await db.from('homepage_ad_slots')
-    .update({...values,updated_at:new Date().toISOString()}).eq('banner',banner).eq('slot',slot)
-    .select('banner,slot,advertiser,image_url,target_url,alt,active,starts_at,ends_at,updated_at').maybeSingle();
-  if(error||!data)throw new ApiError('Enregistrement publicitaire refusé.',403,'UNAUTHORIZED');
+  const data=await newsroom(actor,'ads.save',{data:parsed.data});
   revalidateTag('homepage-ads');revalidatePath('/');
   return ok(data);
 });
