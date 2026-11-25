@@ -31,7 +31,7 @@ export default async function SeoDashboard() {
     <section className="v2-dashboard-kpis" aria-label="Indicateurs SEO">{metrics.map(([label,value]) => <div key={label} className="v2-dashboard-kpi"><span>{label}</span><strong>{value === null ? '—' : value.toLocaleString('fr-FR')}</strong></div>)}</section>
     {(!result || result.source === 'static') && <p role="alert">Les données éditoriales sont indisponibles. Aucun résultat n’a été estimé.</p>}
     <section className="v2-dashboard-panel"><header><div><h2>Infrastructure publique</h2><p>Ouvrir et vérifier les documents générés par le site.</p></div></header>
-      <ul>{[['Sitemap général','/sitemap.xml'],['Google Actualités','/sitemap-news.xml'],['Flux RSS éditorial','/rss.xml'],['Directives robots','/robots.txt']].map(([name,path])=><li key={path}><a href={path} target="_blank" rel="noreferrer">{name}</a></li>)}</ul>
+      <ul>{[['Sitemap général','/sitemap.xml'],['Google Actualités','/sitemap-news.xml'],['Sitemap vidéos','/sitemap-videos.xml'],['Flux RSS éditorial','/rss.xml'],['Directives robots','/robots.txt']].map(([name,path])=><li key={path}><a href={path} target="_blank" rel="noreferrer">{name}</a></li>)}</ul>
       <p>Adresse canonique configurée : {base}</p>
     </section>
     <section className="v2-dashboard-panel"><header><div><h2>Optimisation des articles</h2><p>Contrôles internes, non assimilables à un score Google.</p></div></header>
