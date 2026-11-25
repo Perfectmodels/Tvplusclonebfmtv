@@ -6,6 +6,7 @@ import { getCategories } from '../lib/db/repository';
 import { navigationCategories } from '../lib/public-navigation';
 import './globals.css';
 import './editorial.css';
+import './chatbot.css';
 import './replay-embeds.css';
 
 export const metadata: Metadata = {
