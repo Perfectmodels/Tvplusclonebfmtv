@@ -11,6 +11,8 @@ import {
 import TiptapEditor, { type EditorValue } from '../editor/TiptapEditor';
 import { COUNTRIES, GABON_PROVINCES } from '../../lib/editor/countries';
 import { parseVideoUrl } from '../../lib/video/providers';
+import ArticleSeoTools from './ArticleSeoTools';
+import { seoDocumentMetrics, seoScore } from '../../lib/seo/score';
 import ReplayEmbed from '../video/ReplayEmbed';
 import { watchDraftKey, watchDraftSchema } from '../../lib/editorial/veille-types';
 
@@ -433,6 +435,20 @@ export default function V2ArticleEditor({
                   <h2 id="article-seo-title">SEO et partage</h2>
                   <p>Optimisez la visibilité de votre article dans les moteurs et sur les réseaux sociaux.</p></div>
               </div>
+              <ArticleSeoTools title={form.title} text={content.text}
+                score={seoScore({
+                  title: form.seo_title.trim() || form.title, description: form.seo_description.trim() || form.excerpt,
+                  excerpt: form.excerpt, words: content.words, keywords: tagCount,
+                  ...seoDocumentMetrics(content.json, process.env.NEXT_PUBLIC_SITE_URL),
+                  cover: Boolean(form.cover_media_id), coverAlt: Boolean(cover?.alt?.trim()),
+                  classified: Boolean(form.category_id && form.country_code),
+                  validSlug: /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(form.slug),
+                })}
+                onApply={canEdit ? (field, value) => {
+                  if (field === 'keywords') { setKeywords(value); setDirty(true); }
+                  else setField(field === 'title' ? 'seo_title' : 'seo_description', value);
+                } : undefined}
+              />
               <div className="v2-compose-search-preview">
                 <span className="v2-compose-search-site">TV+ Afrique · Article</span>
                 <strong>{form.seo_title.trim() || form.title.trim() || 'Le titre de votre article s’affichera ici'}</strong>

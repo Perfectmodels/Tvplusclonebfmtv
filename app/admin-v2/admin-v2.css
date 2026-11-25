@@ -1441,3 +1441,9 @@
 .v2-watch-angles button { white-space: normal; text-align: start; }
 .v2-watch-angles button[aria-pressed="true"] { background: #103d83; color: white; }
 .v2-watch-angles p { margin: 8px 0 0; }
+
+.v2-seo-tools { display: grid; gap: 10px; margin-block: 12px 20px; }
+.v2-seo-tools summary { padding: 10px; border: 1px solid #d5dfec; border-radius: 6px; cursor: pointer; font-weight: 700; }
+.v2-seo-tools li { margin-block: 7px; }
+.v2-seo-tools li p { margin: 3px 0; }
+.v2-seo-tools button { justify-self: start; white-space: normal; }

@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { getSiteUrl } from '../../../lib/articles/site-url';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '../../../components/Breadcrumb';
@@ -5,6 +7,20 @@ import ReplayEmbed from '../../../components/video/ReplayEmbed';
 import { getPrograms, getEpisodes } from '../../../lib/db/repository';
 
 export const revalidate = 60;
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const { data } = await getPrograms();
+  const program = data.find((item) => item.slug === slug);
+  if (!program) return { robots: { index: false, follow: false } };
+  const url = new URL('/emissions/' + encodeURIComponent(slug), await getSiteUrl()).href;
+  return {
+    title: program.name,
+    description: program.description || undefined,
+    alternates: { canonical: url },
+    openGraph: { type: 'website', url, title: program.name, description: program.description || undefined },
+  };
+}
 
 export default async function EmissionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

@@ -55,6 +55,8 @@ export function cleanArticlePayload(input: unknown) {
 export function invalidatePublicArticle(slug?: string) {
   revalidateTag('public-articles');
   revalidatePath('/');
+  revalidatePath('/sitemap.xml');
+  revalidatePath('/rss.xml');
   if (slug) revalidatePath('/article/' + slug);
 }
 

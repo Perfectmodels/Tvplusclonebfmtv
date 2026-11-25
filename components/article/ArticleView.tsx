@@ -1,3 +1,4 @@
+import { articleAuthor, articleJsonLd } from '../../lib/seo/metadata';
 import { UserRound } from 'lucide-react';
 import Breadcrumb from '../Breadcrumb';
 import ShareButtons from '../ShareButtons';
@@ -19,28 +20,8 @@ export default function ArticleView({
   initialReadCount?:number;
 }) {
   const categoryPath = categoryHref(story.category);
-  const author = story.author?.trim() || 'La rédaction TV+ Afrique';
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'NewsArticle',
-    headline: story.title,
-    description: story.chapter || story.summary,
-    image: story.image ? [story.image] : [],
-    datePublished: story.publishedAt ?? undefined,
-    dateModified: story.updatedAt ?? story.publishedAt ?? undefined,
-    author: { '@type': 'Person', name: author },
-    publisher: {
-      '@type': 'Organization', name: 'TV+ Afrique',
-      logo: { '@type': 'ImageObject', url: new URL('/logo.png', shortUrl).toString() },
-    },
-    inLanguage: 'fr-GA',
-    isAccessibleForFree: true,
-    keywords: (story.tags ?? []).join(', '),
-    mainEntityOfPage: shortUrl,
-    url: shortUrl,
-    articleSection: story.category,
-  };
+  const author = articleAuthor(story);
+  const jsonLd = articleJsonLd(story, shortUrl, categoryPath);
 
   return (
     <>

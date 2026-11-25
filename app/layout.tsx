@@ -10,6 +10,7 @@ import './replay-embeds.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tvplusv2.vercel.app'),
+  alternates: { types: { 'application/rss+xml': '/rss.xml' } },
   applicationName: 'TV+ Afrique',
   openGraph: { siteName: 'TV+ Afrique', locale: 'fr_GA', type: 'website' },
   title: 'TV+ Afrique — L’actualité du Gabon en continu',
