@@ -31,13 +31,14 @@ type V2Media = { id: string; imgbb_url: string | null; bucket: string; path: str
 type V2Article = {
   id: string; slug: string; short_code: string; title: string; excerpt: string; category_id: string;
   cover_media_id: string | null; content_html?: string; content_json?: unknown;
+  video_source_url?:string|null;
   status: string; featured: boolean; is_alert: boolean; is_video_article: boolean;
   tags: string[]; seo_title: string | null; seo_description: string | null;
   published_at: string | null; updated_at: string; created_at: string;
   country_code: string; province_slug: string | null; author_id: string;
 };
 const SELECT_ARTICLE_LIST = 'id,slug,short_code,title,excerpt,category_id,cover_media_id,status,featured,is_alert,is_video_article,tags,seo_title,seo_description,country_code,province_slug,published_at,updated_at,created_at';
-const SELECT_ARTICLE_DETAIL = 'id,slug,short_code,title,excerpt,category_id,cover_media_id,content_html,content_json,status,featured,is_alert,is_video_article,tags,seo_title,seo_description,published_at,updated_at,created_at,country_code,province_slug,author_id';
+const SELECT_ARTICLE_DETAIL = 'id,slug,short_code,title,excerpt,category_id,cover_media_id,content_html,content_json,status,featured,is_alert,is_video_article,tags,seo_title,seo_description,published_at,updated_at,created_at,country_code,province_slug,author_id,video_source_url';
 
 function imageUrl(media: V2Media | undefined) {
   if (!media) return '';
@@ -93,6 +94,7 @@ function mapFull(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Publ
   return {
     ...basic,
     articleId: a.id,
+    videoUrl:a.video_source_url??null,
     chapter: a.excerpt,
     contentHtml: a.content_html ?? null,
     seoTitle: a.seo_title,
@@ -183,7 +185,7 @@ export const getV2Topics = unstable_cache(async (): Promise<{data: TopicItem[]; 
 
 export const getV2Programs = unstable_cache(async () => {
   const { data, error } = await client().from('shows')
-    .select('id,slug,title,description,tagline,schedule_label,host_name,category_id,cover_media_id')
+    .select('id,slug,title,description,tagline,schedule_label,host_name,category_id,cover_media_id,intro_video_url')
     .eq('is_active', true).order('position');
   if (error) throw new Error(error.message);
   const index = await lookups((data ?? []).map((p) => p.cover_media_id));
@@ -191,7 +193,7 @@ export const getV2Programs = unstable_cache(async () => {
     data: (data ?? []).map((p) => ({
       id: p.id, slug: p.slug, name: p.title, host: p.host_name||'',
       slot: p.schedule_label, category: index.categories.get(p.category_id)?.name ?? 'Émission',
-      image: imageUrl(index.media.get(p.cover_media_id)), description: p.description || p.tagline,
+      image: imageUrl(index.media.get(p.cover_media_id)), description: p.description || p.tagline,introVideoUrl:p.intro_video_url??null,
     })),
     source: 'supabase' as const,
   };
