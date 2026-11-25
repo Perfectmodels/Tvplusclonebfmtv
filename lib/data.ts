@@ -27,6 +27,8 @@ export type Story = {
   seoTitle?: string | null;
   seoDescription?: string | null;
   countryCode?: string;
+  province?: string | null;
+  robots?: string | null;
 };
 
 export const topics: string[] = [];
