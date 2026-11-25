@@ -36,7 +36,7 @@ type V2Article = {
   published_at: string | null; updated_at: string; created_at: string;
   country_code: string; province_slug: string | null; author_id: string;
 };
-const SELECT_ARTICLE_LIST = 'id,slug,short_code,title,excerpt,category_id,cover_media_id,status,featured,is_alert,is_video_article,tags,seo_title,seo_description,country_code,published_at,updated_at,created_at';
+const SELECT_ARTICLE_LIST = 'id,slug,short_code,title,excerpt,category_id,cover_media_id,status,featured,is_alert,is_video_article,tags,seo_title,seo_description,country_code,province_slug,published_at,updated_at,created_at';
 const SELECT_ARTICLE_DETAIL = 'id,slug,short_code,title,excerpt,category_id,cover_media_id,content_html,content_json,status,featured,is_alert,is_video_article,tags,seo_title,seo_description,published_at,updated_at,created_at,country_code,province_slug,author_id';
 
 function imageUrl(media: V2Media | undefined) {
@@ -83,7 +83,7 @@ function mapStory(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Sto
     wordCount: words,
     readingTime: words ? Math.max(1, Math.ceil(words / 220)) : undefined,
     tags: a.tags || [],seoTitle:a.seo_title,seoDescription:a.seo_description,
-    countryCode:a.country_code||'GA',
+    countryCode:a.country_code||'GA',province:a.province_slug,
   };
 }
 
@@ -109,11 +109,12 @@ function mapFull(a: V2Article, index: Awaited<ReturnType<typeof lookups>>): Publ
 }
 
 export const listV2Articles = unstable_cache(async ({
-  category, country, search, page = 1, pageSize = 12,
-}: {category?: string; country?: string; search?: string; page?: number; pageSize?: number} = {}) => {
+  category, country, province, search, page = 1, pageSize = 12,
+}: {category?: string; country?: string; province?: string; search?: string; page?: number; pageSize?: number} = {}) => {
   const db = client();
   let q = db.from('articles').select(SELECT_ARTICLE_LIST, { count: 'exact' }).eq('status', 'published');
   if(country) q=q.eq('country_code',country);
+  if(province) q=q.eq('province_slug',province);
   if (category) {
     const { data: cat, error } = await db.from('categories').select('id').eq('slug', categorySlug(category)).maybeSingle();
     if (error) throw new Error(error.message);
