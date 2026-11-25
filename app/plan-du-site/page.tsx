@@ -40,7 +40,7 @@ export default async function PlanDuSitePage() {
             </div>
           </section>
         ))}
-        <section>
+        <section id="rubriques">
           <h2>Toutes les rubriques</h2>
           <div className="footer-links">
             {categories.map((category) => (
