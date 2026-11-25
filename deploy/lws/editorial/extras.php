@@ -9,7 +9,7 @@ function publicExtras(PDO $pdo,string $resource): void {
   if(isset($_GET['kind'])){if(!in_array($_GET['kind'],['reel','reportage','podcast'],true))respond(400,['error'=>'Format invalide']);$where[]='kind=?';$params[]=$_GET['kind'];}
   if($resource==='media_detail'){$id=(string)($_GET['id']??'');if(!preg_match('/^[0-9a-f-]{36}$/i',$id))respond(400,['error'=>'Identifiant invalide']);$where[]='id=?';$params[]=$id;}
   $limit=max(1,min(100,(int)($_GET['limit']??60)));
-  $q=$pdo->prepare('SELECT id,kind,title,description,category,source_url,thumbnail_url,duration_seconds,published_at FROM tvp_editorial_media WHERE '.implode(' AND ',$where)." ORDER BY published_at DESC LIMIT $limit");$q->execute($params);respond(200,['items'=>$q->fetchAll()]);
+  $q=$pdo->prepare('SELECT id,kind,title,description,category,source_url,thumbnail_url,duration_seconds,published_at,studio_meta FROM tvp_editorial_media WHERE '.implode(' AND ',$where)." ORDER BY published_at DESC LIMIT $limit");$q->execute($params);respond(200,['items'=>$q->fetchAll()]);
  }
  respond(404,['error'=>'Ressource inconnue']);
 }
@@ -56,7 +56,8 @@ function adminExtras(PDO $pdo,string $op,array $request): void {
   $pdo->prepare('UPDATE tvp_home_editorial_settings SET media_order=?,hidden_media=? WHERE id=1')->execute([json_encode($order),json_encode($hidden)]);respond(200,['order'=>$order,'hidden'=>$hidden]);
  }
  if($op==='catalog.list')respond(200,['items'=>$pdo->query('SELECT * FROM tvp_editorial_media ORDER BY created_at DESC LIMIT 300')->fetchAll()]);
- if($op==='catalog.create'||$op==='catalog.edit'){
+ if($op==='catalog.create'||$op==='catalog.edit')respond(409,['error'=>'Utilisez le Studio audiovisuel pour créer ou modifier un contenu.']);
+ if(false){
   $kind=$data['kind']??'';$status=$data['status']??'';$title=trim((string)($data['title']??''));$url=(string)($data['source_url']??'');
   if(!in_array($kind,['reel','reportage','podcast'],true)||!in_array($status,['draft','published'],true)||strlen($title)<3||strlen($title)>800||!str_starts_with($url,'https://'))respond(400,['error'=>'Champs invalides']);
   $values=[$kind,$title,(string)($data['description']??''),(string)($data['category']??''),$url,(string)($data['thumbnail_url']??''),$data['duration_seconds']??null,$status];

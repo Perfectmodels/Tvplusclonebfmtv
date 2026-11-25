@@ -12,5 +12,6 @@ async function authorized(){return (await requireV2Api('shows.manage')).actor;}
 function clean(input:unknown){const parsed=schema.safeParse(input);if(!parsed.success)throw new ApiError('Champs invalides.',400);const v=parsed.data;if(!v.source_url.startsWith('https://')||!validMedia(v.kind,v.source_url))throw new ApiError('Adresse média HTTPS compatible requise.',400);return v;}
 function invalidate(){revalidateTag('editorial-media');revalidatePath('/');}
 export const GET=handleRoute(async()=>{const actor=await authorized();return ok(await newsroom(actor,'catalog.list'));});
-export const POST=handleRoute(async(request:NextRequest)=>{const actor=await authorized(),v=clean(await request.json());const data=await newsroom(actor,'catalog.create',{data:v});invalidate();return created(data);});
-export const PATCH=handleRoute(async(request:NextRequest)=>{const actor=await authorized(),input=await request.json();const id=z.string().uuid().safeParse(input.id);if(!id.success)throw new ApiError('Identifiant invalide.',400);const data=await newsroom(actor,'catalog.edit',{id:id.data,data:clean(input)});invalidate();return ok(data);});
+// L'ancienne écriture ne doit pas contourner la validation du nouveau Studio.
+export const POST=handleRoute(async()=>{await authorized();throw new ApiError('Utilisez le Studio audiovisuel.',409,'CONFLICT');});
+export const PATCH=POST;
