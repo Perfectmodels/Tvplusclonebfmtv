@@ -50,7 +50,8 @@ export const POST=handleRoute(async(request:NextRequest,{params}:Context)=>{
     archive:'archived',restore:article.published_at?'inactive':'draft',
   };
   const patch:Record<string,unknown>={status:next[body.action]};
-  if(body.action==='publish'||body.action==='activate')patch.published_at=new Date().toISOString();
+  if(body.action==='publish')patch.published_at=article.status==='inactive'&&article.published_at?article.published_at:new Date().toISOString();
+  if(body.action==='activate')patch.published_at=article.published_at||new Date().toISOString();
   if(body.action==='schedule')patch.published_at=body.scheduled_at;
   if(body.action==='approve'){
     patch.reviewed_by=actor.id;patch.reviewed_at=new Date().toISOString();
@@ -61,6 +62,6 @@ export const POST=handleRoute(async(request:NextRequest,{params}:Context)=>{
     .select('id,slug,short_code,status,published_at,updated_at').maybeSingle();
   if(error)throw new ApiError('Action refusée par les permissions ou la base.',403,'UNAUTHORIZED');
   if(!data)throw new ApiError('Conflit de modification. Actualisez cet article.',409,'CONFLICT');
-  invalidatePublicArticle(article.slug);
+  invalidatePublicArticle(article.slug,article.short_code);
   return ok(data);
 });
