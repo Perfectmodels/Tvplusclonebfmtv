@@ -5,7 +5,7 @@ import { articlePath } from '../articles/urls';
 
 const entities: Record<string, string> = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'};
 export const escapeXml = (value: string) => value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/[&<>"']/g, c => entities[c] ?? c);
-export const isIndexable = (item: {robots?:string|null}) => !/(?:^|[\\s,])(?:noindex|none)(?:$|[\\s,])/i.test(item.robots??'');
+export const isIndexable = (item: {robots?:string|null}) => !/(?:^|[\s,])(?:noindex|none)(?:$|[\s,])/i.test(item.robots??'');
 export const plainText = (value: string) => value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 export const absoluteUrl = (value: string, base: string) => {
   try { const url = new URL(value, base); return /^https?:$/.test(url.protocol) ? url.href : undefined; } catch { return undefined; }
