@@ -65,6 +65,18 @@ export default function V2ArticleEditor({
   const [ownerId, setOwnerId] = useState(actorId);
   const [shortCode, setShortCode] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [seoAi,setSeoAi]=useState<{titles:string[];description:string;questions:string[];recommendations:string[];keywords:string[]}|null>(null);
+  const [seoAiBusy,setSeoAiBusy]=useState(false);
+  const [seoAiError,setSeoAiError]=useState('');
+  async function requestSeoAi(){
+    if(!window.confirm('Envoyer le titre et le texte de cet article au service IA configuré pour obtenir des suggestions ?'))return;
+    setSeoAiBusy(true);setSeoAiError('');setSeoAi(null);
+    try{
+      const response=await fetch('/api/admin-v2/seo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:form.title,excerpt:form.excerpt,text:content.text.slice(0,14000)})});
+      const result=await response.json();if(!response.ok)throw new Error(result.error?.message||'Assistant indisponible');
+      setSeoAi(result.data);
+    }catch(e){setSeoAiError(e instanceof Error?e.message:'Assistant indisponible');}finally{setSeoAiBusy(false);}
+  }
   const [mediaPage, setMediaPage] = useState(1);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -394,6 +406,15 @@ export default function V2ArticleEditor({
                   <button type="button" className="v2-compose-button secondary" disabled={!seo.suggestedTags.length} onClick={()=>{setKeywords([...new Set([...parseKeywords(keywords),...seo.suggestedTags])].slice(0,20).join(', '));setDirty(true);setSuccess('');}}>Ajouter les mots-clés suggérés</button>
                 </div>}
                 <small>{seo.suggestedTags.join(' · ')}</small>
+                {canEdit&&<button type="button" className="v2-compose-button secondary" disabled={seoAiBusy||form.title.trim().length<5||!content.text.trim()} onClick={()=>void requestSeoAi()}>{seoAiBusy?'Analyse IA…':'Suggestions avancées IA · GEO / AEO'}</button>}
+                {seoAiError&&<p role="alert">{seoAiError}</p>}
+                {seoAi&&<div><p>Suggestions IA à vérifier avant publication. Le modèle ne vérifie pas les sources.</p>
+                  <ul>{seoAi.titles.map((title,i)=><li key={i}>{title} <button type="button" className="v2-compose-link-button" disabled={!canEdit} onClick={()=>setField('seo_title',title)}>Appliquer</button></li>)}</ul>
+                  <p>{seoAi.description}</p><button type="button" className="v2-compose-link-button" disabled={!canEdit} onClick={()=>setField('seo_description',seoAi.description)}>Appliquer la description</button>
+                  <h3>Questions couvertes</h3><ul>{seoAi.questions.map((q,i)=><li key={i}>{q}</li>)}</ul>
+                  <h3>Recommandations</h3><ul>{seoAi.recommendations.map((q,i)=><li key={i}>{q}</li>)}</ul>
+                  <p>{seoAi.keywords.join(' · ')}</p>
+                </div>}
               </div>
               <div className="v2-compose-search-preview">
                 <span className="v2-compose-search-site">TV+ Afrique · Article</span>
