@@ -1,0 +1,12 @@
+import 'server-only';
+import {unstable_cache} from 'next/cache';
+import {getPublicServerSupabase} from '../supabase/server';
+export const defaultHomeOrder=['reels','ligne-rouge','replays','reportages','podcasts'] as const;
+export type HomeBlock=typeof defaultHomeOrder[number];
+export const readHomeConfig=unstable_cache(async()=>{
+ try{const {data,error}=await getPublicServerSupabase().from('home_editorial_settings').select('media_order,hidden_media').eq('id',1).maybeSingle();if(error||!data)return {order:[...defaultHomeOrder],hidden:[] as HomeBlock[]};
+ const order=(Array.isArray(data.media_order)?data.media_order:[]).filter((v:unknown):v is HomeBlock=>defaultHomeOrder.includes(v as HomeBlock));
+ const hidden=(Array.isArray(data.hidden_media)?data.hidden_media:[]).filter((v:unknown):v is HomeBlock=>defaultHomeOrder.includes(v as HomeBlock));
+ return {order:[...new Set<HomeBlock>([...order,...defaultHomeOrder])],hidden};
+ }catch{return {order:[...defaultHomeOrder],hidden:[] as HomeBlock[]};}
+},['home-editorial-settings'],{revalidate:300,tags:['home-editorial-settings']});
