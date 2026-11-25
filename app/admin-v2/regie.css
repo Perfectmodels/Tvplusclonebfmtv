@@ -53,7 +53,7 @@
 .v2-regie .admin-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .v2-regie .v2-note{margin:10px 0}
 @media(max-width:1150px){.v2-regie .v2-edit-grid,.v2-regie-ads{grid-template-columns:1fr}}
-@media(max-width:760px){.v2-regie-summary{grid-template-columns:1fr}.v2-regie-summary .v2-card{min-height:90px}.v2-regie-times{grid-template-columns:1fr}.v2-regie-channel,.v2-regie-category{align-items:flex-start;flex-wrap:wrap}.v2-regie-channel .v2-actions,.v2-regie-category .v2-actions{width:100%;justify-content:flex-end}.v2-regie .v2-toolbar{flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px}.v2-regie .v2-toolbar .admin-btn{flex-shrink:0}}
+@media(max-width:760px){.v2-regie-summary{grid-template-columns:1fr}.v2-regie-summary .v2-card{min-height:90px}.v2-regie-times{grid-template-columns:1fr}.v2-regie-channel,.v2-regie-category{align-items:flex-start;flex-wrap:wrap}.v2-regie-channel .v2-actions,.v2-regie-category .v2-actions{width:100%;justify-content:flex-end}.v2-regie .v2-toolbar{flex-wrap:wrap}.v2-regie .v2-toolbar .admin-btn{flex-shrink:0}}
 
 
 /* Régie live 2026 : configuration séparée du flux source, des destinations et du lecteur. */
@@ -176,7 +176,7 @@
 }
 @media(max-width:760px) {
  .live-regie-v3 {gap:14px}
- .live-regie-steps {display:flex;overflow-x:auto;padding:2px 1px 9px;scroll-snap-type:x mandatory}
+ .live-regie-steps {grid-template-columns:minmax(0,1fr)}
  .live-regie-step {min-width:205px;flex:0 0 75%;max-width:250px;min-height:78px;scroll-snap-align:start}
  .live-regie-panel {padding:18px 14px!important;gap:18px}
  .live-regie-panel-head {gap:11px}

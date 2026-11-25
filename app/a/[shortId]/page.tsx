@@ -11,8 +11,14 @@ export const revalidate = 60;
 type Params = { params: Promise<{ shortId: string }> };
 
 export async function generateStaticParams() {
-  const { items } = await listArticles({ pageSize: 48 });
-  return items.filter((item) => item.shortId).map((item) => ({ shortId: item.shortId! }));
+  // Le catalogue MySQL peut être indisponible pendant le build (variable d'environnement
+  // absente ou API LWS non joignable). Avec `revalidate`, Next génère les pages à la demande.
+  try {
+    const { items } = await listArticles({ pageSize: 48 });
+    return items.filter((item) => item.shortId).map((item) => ({ shortId: item.shortId! }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -65,6 +71,6 @@ export default async function ShortArticlePage({ params }: Params) {
   const siteUrl = await getSiteUrl();
 
   const related=relatedBySeo(item,items,4);
-  const initialReadCount=item.articleId?await getV2ArticleReadCount(item.articleId):0;
+  const initialReadCount=item.reads ?? (item.articleId ? await getV2ArticleReadCount(item.articleId) : 0);
   return <ArticleView story={item} related={related} initialReadCount={initialReadCount} shortUrl={`${siteUrl}/a/${shortId}`} />;
 }

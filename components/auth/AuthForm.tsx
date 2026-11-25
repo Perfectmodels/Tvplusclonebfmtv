@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
@@ -17,6 +17,9 @@ export default function AuthForm({ mode }: { mode: Mode }) {
   const [message, setMessage] = useState('');
 
   const isLogin = mode === 'login';
+  function nextPath(){const n=new URLSearchParams(window.location.search).get('next');if(!n||!n.startsWith('/')||n.startsWith('//')||n.includes('\\'))return null;const u=new URL(n,window.location.origin);return u.origin===window.location.origin&&(/^(?:\/direct|\/admin-v2|\/compte)(?:\/|$)/.test(u.pathname))?u.pathname+u.search:null;}
+  const [returnTo,setReturnTo]=useState('');
+  useEffect(()=>{setReturnTo(nextPath()||'');},[]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,10 +35,22 @@ export default function AuthForm({ mode }: { mode: Mode }) {
       if (!response.ok) throw new Error(body?.error?.message ?? 'Une erreur est survenue.');
       setStatus('done');
       if (isLogin) {
-        const next = new URLSearchParams(window.location.search).get('next');
-        router.push(next && /^\/admin-v2(?:\/|$)/.test(next) ? next : '/compte');
+        const next = nextPath();
+        let destination = '/compte';
+        try {
+          const meResponse = await fetch('/api/auth/me', { cache: 'no-store' });
+          const me = await meResponse.json();
+          const profile = me?.data?.profile;
+          const permissions: string[] = profile?.permissions ?? [];
+          const isAdmin = permissions.some(p=>['articles.read_all','settings.manage','shows.manage','schedule.manage','users.manage','roles.manage'].includes(p)) || ['admin', 'super_admin'].includes(profile?.role);
+          if (isAdmin) destination = '/admin-v2';
+        } catch {
+          // En cas d'échec, on conserve la destination lecteur.
+        }
+        router.push(next || destination);
         router.refresh();
       } else {
+        const next=nextPath();if(next&&!body.data?.needsConfirmation){router.push(next);router.refresh();return;}
         setMessage(
           body.data?.needsConfirmation
             ? 'Un e-mail de confirmation vous a été envoyé.'
@@ -108,9 +123,9 @@ export default function AuthForm({ mode }: { mode: Mode }) {
 
       <p className="auth-switch">
         {isLogin ? (
-          <>Pas encore de compte ? <Link href="/inscription">Inscrivez-vous</Link></>
+          <>Pas encore de compte ? <Link href={"/inscription"+(returnTo?"?next="+encodeURIComponent(returnTo):"")}>Inscrivez-vous</Link></>
         ) : (
-          <>Déjà inscrit ? <Link href="/connexion">Connectez-vous</Link></>
+          <>Déjà inscrit ? <Link href={"/connexion"+(returnTo?"?next="+encodeURIComponent(returnTo):"")}>Connectez-vous</Link></>
         )}
       </p>
       {isLogin && (

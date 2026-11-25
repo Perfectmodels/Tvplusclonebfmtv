@@ -27,6 +27,6 @@ export default function ArticleReadCounter({shortCode,initial}:{shortCode?:strin
   return ()=>{cancelled=true;if(timer!==undefined)window.clearTimeout(timer);document.removeEventListener('visibilitychange',update);};
  },[shortCode]);
  return <span className="article-read-counter" aria-label={reads.toLocaleString('fr-FR')+' lectures enregistrées'}>
-  <Eye size={16} aria-hidden="true"/> {reads.toLocaleString('fr-FR')} lecture{reads>1?'s':''}
+  <Eye size={16} aria-hidden="true"/> {reads.toLocaleString('fr-FR')} lecture{reads!==1?'s':''}
  </span>;
 }

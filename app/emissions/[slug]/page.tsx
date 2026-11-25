@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '../../../components/Breadcrumb';
-import ReplayEmbed from '../../../components/video/ReplayEmbed';
+import ShowIntro from '../../../components/video/ShowIntro';
+import MediaBrowser from '../../../components/MediaBrowser';
 import { getPrograms, getEpisodes } from '../../../lib/db/repository';
 
 export const revalidate = 60;
@@ -9,7 +10,7 @@ export const revalidate = 60;
 export default async function EmissionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [{ data: programs }, { data: allEpisodes }] = await Promise.all([
-    getPrograms(), getEpisodes(100),
+    getPrograms(), getEpisodes(500),
   ]);
   const program = programs.find((item) => item.slug === slug);
   if (!program) notFound();
@@ -31,22 +32,11 @@ export default async function EmissionPage({ params }: { params: Promise<{ slug:
           {program.slot && <span>Programmation : {program.slot}</span>}
         </div>
       </div>
+      <ShowIntro title={program.name} url={program.introVideoUrl} poster={program.image}/>
       <section className="editorial-section" aria-label="Épisodes de l'émission">
         <div className="section-head has-rule"><h2>Les épisodes</h2></div>
         {episodes.length ? (
-          <div className="media-grid">
-            {episodes.map((episode) => (
-              <article key={episode.id} className="media-card">
-                <ReplayEmbed title={episode.title} url={episode.videoUrl} thumbnail={episode.thumbnail}/>
-                <span className="media-body">
-                  <span className="media-meta">{new Date(episode.publishedAt).toLocaleDateString('fr-FR')}</span>
-                  <strong className="media-title">{episode.title}</strong>
-                  {episode.description && <span className="media-description">{episode.description}</span>}
-
-                </span>
-              </article>
-            ))}
-          </div>
+          <MediaBrowser variant="video" pageSize={12} items={episodes.map(episode=>({id:episode.id,title:episode.title,category:program.name,image:episode.thumbnail||'/logo.png',meta:new Date(episode.publishedAt).toLocaleDateString('fr-FR',{timeZone:'Africa/Libreville'}),description:episode.legacyPage?'Archive TV+ Afrique':episode.description,href:'/replays/'+encodeURIComponent(episode.id)}))}/>
         ) : <p className="empty-state">Aucun épisode publié pour cette émission pour le moment.</p>}
       </section>
       <p><Link href="/replay-emissions" className="direct-cta">Toutes les émissions TV+</Link></p>

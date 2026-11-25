@@ -5,26 +5,43 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Newspaper, Images, ListTree, Tv, PlayCircle, MonitorPlay,
-  RectangleHorizontal, Menu, X, LogOut, ExternalLink, Plus, ChevronRight,
+  RectangleHorizontal, MessageCircle, Menu, X, LogOut, ExternalLink, Plus, ChevronRight, Rss, ShieldCheck, Shield, Film, Mic, Video, Wallet, Settings, CalendarDays,
 } from 'lucide-react';
 import TvPlusLogo from '../TvPlusLogo';
 
 const GROUPS=[
-  { label:'Pilotage', links:[{href:'/admin-v2',label:'Vue générale',icon:LayoutDashboard,permission:''}] },
+  { label:'Pilotage', links:[
+    {href:'/admin-v2',label:'Vue générale',icon:LayoutDashboard,permission:''},
+    {href:'/admin-v2/controle',label:'Contrôle & rapports',icon:ShieldCheck,permission:'articles.review'},
+    {href:'/admin-v2/utilisateurs',label:'Utilisateurs et rôles',icon:Shield,permission:'users.manage', alternatePermission:'roles.manage'},
+  ] },
   { label:'Rédaction', links:[
     {href:'/admin-v2/articles',label:'Articles',icon:Newspaper,permission:'articles.read_all'},
+    {href:'/admin-v2/veille',label:'Veille éditoriale',icon:Rss,permission:'articles.read_all'},
     {href:'/admin-v2/media',label:'Médiathèque',icon:Images,permission:'media.upload'},
     {href:'/admin-v2/categories',label:'Rubriques',icon:ListTree,permission:'categories.manage'},
   ] },
-  { label:'Diffusion', links:[
+  { label:'Studio audiovisuel', links:[
+    {href:'/admin-v2/studio/reels',label:'Reels',icon:Film,permission:'shows.manage',alternatePermission:'studio.reel_manage'},
+    {href:'/admin-v2/studio/podcasts',label:'Podcasts',icon:Mic,permission:'shows.manage',alternatePermission:'studio.podcast_manage'},
+    {href:'/admin-v2/studio/reportages',label:'Reportages',icon:Video,permission:'shows.manage',alternatePermission:'studio.reportage_manage'},
+    {href:'/admin-v2/studio/calendar',label:'Programmation médias',icon:CalendarDays,permission:'shows.manage',alternatePermission:'studio.calendar_read'},
+  ] },
+  { label:'Communication', links:[{href:'/admin-v2/whatsapp',label:'Centre WhatsApp',icon:MessageCircle,permission:'settings.manage'},{href:'/admin-v2/seo',label:'SEO & Visibilité',icon:Newspaper,permission:'articles.read_all'}] },
+  { label:'Antenne & Diffusion', links:[
     {href:'/admin-v2/shows',label:'Émissions',icon:Tv,permission:'shows.manage'},
     {href:'/admin-v2/replays',label:'Replays',icon:PlayCircle,permission:'shows.manage'},
     {href:'/admin-v2/live',label:'Direct',icon:MonitorPlay,permission:'schedule.manage'},
+  ] },
+  { label:'Monétisation', links:[
+    {href:'/admin-v2/premium',label:'Abonnements Premium',icon:Wallet,permission:'settings.manage'},
     {href:'/admin-v2/advertising',label:'Publicités',icon:RectangleHorizontal,permission:'settings.manage'},
   ] },
+  { label:'Administration', links:[{href:'/admin-v2/homepage',label:'Organisation accueil',icon:Settings,permission:'settings.manage'}] },
 ];
 const ROLES:Record<string,string>={
   super_admin:'Super administrateur',admin:'Administrateur',
+  chef_web:'Chef du web',redacteur_en_chef:'Rédacteur en chef',journaliste:'Journaliste',lecteur:'Lecteur',
   editor_in_chief:'Rédacteur en chef',journalist:'Journaliste',
   video_editor:'Monteur',community_manager:'Responsable numérique',
 };
@@ -64,7 +81,9 @@ export default function V2AdminShell({children,role,email,permissions}:{
       <p className="v2-sidebar-eyebrow">STUDIO & ADMINISTRATION</p>
       <nav aria-label="Navigation du tableau de bord" className="v2-navigation">
         {GROUPS.map(group=>{
-          const links=group.links.filter(link=>!link.permission||permissions.includes(link.permission));
+          const links=group.links.filter(link=>!link.permission||permissions.includes(link.permission) ||
+            (link.alternatePermission && permissions.includes(link.alternatePermission)) ||
+            (link.href==='/admin-v2/studio/calendar'&&['studio.reel_manage','studio.podcast_manage','studio.reportage_manage'].some(p=>permissions.includes(p))));
           return links.length?<div className="v2-nav-group" key={group.label}>
             <span className="v2-nav-section-label">{group.label}</span>
             {links.map(link=>{

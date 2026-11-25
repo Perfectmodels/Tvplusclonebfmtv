@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {getTvplusV2PublicClient} from '../../../lib/db/v2-public';
+import {newsroom, usesLwsCatalog} from '../../../lib/admin-v2/lws';
 export const dynamic='force-dynamic';
 export async function POST(request:NextRequest){
   const origin=request.headers.get('origin');
@@ -9,6 +10,12 @@ export async function POST(request:NextRequest){
   let shortCode='';
   try{const body=await request.json();shortCode=String(body?.shortCode||'');}catch{return NextResponse.json({error:'Requête invalide'},{status:400});}
   if(!/^[A-Za-z0-9_-]{8}$/.test(shortCode))return NextResponse.json({error:'Article invalide'},{status:400});
+  if(usesLwsCatalog()){
+    try{
+      const {reads}=await newsroom<{reads:number}>({id:'public',permissions:[]},'reads.record',{data:{shortCode}});
+      return NextResponse.json({reads},{headers:{'Cache-Control':'no-store'}});
+    }catch{return NextResponse.json({error:'Compteur indisponible'},{status:503,headers:{'Cache-Control':'no-store'}});}
+  }
   try{
     const {data,error}=await getTvplusV2PublicClient().rpc('record_public_article_read',{p_short_code:shortCode});
     if(error)throw error;

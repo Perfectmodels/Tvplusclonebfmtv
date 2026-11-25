@@ -1,0 +1,33 @@
+'use client';
+import {useEffect,useState,useRef} from 'react';
+import Link from 'next/link';
+import {CheckCircle2,ChevronRight,ShieldCheck,UserRound,Wallet} from 'lucide-react';
+type Plan={slug:string;name:string;amount:number;duration_minutes:number};
+type Plans={available:boolean;enabled:boolean;mode:string;plans:Plan[];message?:string};
+const money=(v:number)=>v.toLocaleString('fr-FR')+' FCFA';
+function duration(n:number){return n%1440===0?n/1440+' jour(s)':n%60===0?n/60+' heure(s)':n+' minutes';}
+export default function PremiumCheckout({authenticated,configured}:{authenticated:boolean;configured:boolean}){
+ const [data,setData]=useState<Plans|null>(null),[slug,setSlug]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[confirmed,setConfirmed]=useState(false),[step,setStep]=useState(0),[refresh,setRefresh]=useState(0);
+ const lock=useRef(false);
+ useEffect(()=>{const c=new AbortController();setError('');fetch('/api/premium/plans',{signal:c.signal,cache:'no-store'}).then(async r=>{const b=await r.json();if(!r.ok||!b.success)throw Error('Catalogue des offres indisponible.');return b.data as Plans;}).then(v=>{if(c.signal.aborted)return;setData(v);const requested=new URLSearchParams(window.location.search).get('offre');const selected=v.plans.find(p=>p.slug===requested);setSlug(selected?.slug||v.plans[0]?.slug||'');if(selected)setStep(1);}).catch(e=>{if(!c.signal.aborted)setError(e.message);});return()=>c.abort();},[refresh]);
+ const plan=data?.plans.find(p=>p.slug===slug),ready=!!data?.enabled&&(configured||data?.mode==='sandbox');
+ const next='/direct'+(plan?'?offre='+encodeURIComponent(plan.slug):'');
+ async function purchase(){if(lock.current||!plan||!confirmed||!ready||!authenticated)return;lock.current=true;setBusy(true);setError('');
+ try{const r=await fetch('/api/premium/payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'checkout',plan:slug,amount:plan.amount,durationMinutes:plan.duration_minutes,confirmed:true}),cache:'no-store'});const b=await r.json();if(!r.ok||!b.success)throw Error(b.error?.message||'Paiement indisponible.');if(b.data.url){window.location.assign(b.data.url);return;}if(b.data.reference){window.location.assign('/direct/paiement?reference='+encodeURIComponent(b.data.reference));return;}throw Error('Référence indisponible.');}catch(e){setError(e instanceof Error?e.message:'Paiement indisponible.');}finally{lock.current=false;setBusy(false);}}
+ return <section className="premium-offers premium-subscription" aria-label="Souscrire au Direct Premium">
+ <nav className="premium-steps" aria-label="Étapes de l’abonnement">{['Offre','Compte et récapitulatif','Paiement'].map((label,i)=><span key={label} aria-current={i===step?'step':undefined}>{i+1}. {label}{i<2&&<ChevronRight size={14}/>}</span>)}</nav>
+ {error&&<p role="alert" className="premium-error">{error}</p>}
+ {!data&&!error&&<p role="status">Chargement des offres…</p>}
+ {data&&!data.available&&<p role="status" className="premium-info">{data.message||'Le catalogue des offres est momentanément indisponible.'}</p>}
+ {data?.available&&!data.plans.length&&<p className="premium-info">Les formules sont en cours de configuration par TV+ Afrique. Aucun prix n’a encore été publié.</p>}
+ {(!data?.available||!data.plans.length)&&<div className="premium-placeholder-plan"><strong>Abonnement Direct Premium</strong><span>Tarifs et durées à définir par l’administrateur.</span><button className="premium-secondary" type="button" onClick={()=>{setRefresh(n=>n+1);setStep(0);}}>Actualiser les offres</button></div>}
+ {step===0&&!!data?.plans.length&&<><fieldset><legend>Choisissez votre formule</legend>{data.plans.map(p=><label className={'premium-option'+(slug===p.slug?' selected':'')} key={p.slug}><input type="radio" name="premium-plan" checked={slug===p.slug} onChange={()=>{setSlug(p.slug);setConfirmed(false);}}/><span><strong>{p.name}</strong><small>{duration(p.duration_minutes)} · Sans reconduction automatique</small></span><b>{money(p.amount)}</b></label>)}</fieldset><button className="premium-primary" type="button" disabled={!plan} onClick={()=>setStep(1)}>Continuer l’abonnement <ChevronRight size={18}/></button></>}
+ {step>=1&&plan&&<><section className="premium-recap"><h3>Récapitulatif de votre abonnement</h3><div><span>{plan.name}</span><strong>{money(plan.amount)}</strong></div><small>Accès pendant {duration(plan.duration_minutes)}. Aucun renouvellement automatique.</small><button className="premium-secondary" type="button" onClick={()=>{setStep(0);setConfirmed(false);}}>Modifier la formule</button></section>
+ <section className="premium-account"><h3><UserRound size={18}/> Votre compte</h3>{authenticated?<p><CheckCircle2 size={17}/> Compte connecté. L'accès sera associé à ce compte.</p>:<><p>Créez un compte avec votre nom, votre adresse e-mail et votre mot de passe, ou connectez-vous pour retrouver votre abonnement.</p><Link className="premium-primary" href={'/inscription?next='+encodeURIComponent(next)}>Créer mon compte</Link><Link className="premium-secondary" href={'/connexion?next='+encodeURIComponent(next)}>J'ai déjà un compte</Link></>}</section>
+ <section className="premium-account"><h3><Wallet size={18}/> Paiement sécurisé SingPay</h3><p>Vous serez redirigé vers SingPay pour choisir le moyen de paiement disponible et confirmer la transaction.</p><label className="premium-confirm"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/> Je confirme la formule et le montant de {money(plan.amount)}.</label>
+ {!ready&&<p className="premium-info">Le parcours est consultable. Les encaissements n'ont pas encore été ouverts par l'administrateur.</p>}
+ <button type="button" className="premium-primary" disabled={!authenticated||!ready||!confirmed||busy} onClick={()=>{setStep(2);void purchase();}}>{busy?'Préparation du paiement…':'Continuer vers SingPay'}</button></section></>}
+ {step===0&&(!data?.plans.length)&&<section className="premium-account"><h3>Votre compte et votre abonnement</h3>{authenticated?<p>Vous êtes connecté. Les formules seront disponibles dès leur publication.</p>:<><Link className="premium-primary" href="/inscription?next=%2Fdirect">Créer mon compte</Link><Link className="premium-secondary" href="/connexion?next=%2Fdirect">Me connecter</Link></>}<p><ShieldCheck size={17}/> Le paiement sécurisé apparaîtra après la publication d’une offre.</p></section>}
+ <Link href="/direct/paiement" className="premium-secondary">Mes abonnements et paiements</Link><small>TV+ Afrique ne collecte jamais de code confidentiel Mobile Money.</small>
+ </section>;
+}

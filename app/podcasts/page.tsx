@@ -1,31 +1,6 @@
 import Breadcrumb from '../../components/Breadcrumb';
-import MediaBrowser from '../../components/MediaBrowser';
-import { getPodcasts } from '../../lib/db/repository';
-import { isPlayableAudioUrl } from '../../lib/media/urls';
-
-export const revalidate = 60;
-
-export default async function PodcastsPage() {
-  const { data: podcasts } = await getPodcasts();
-  const items = podcasts.filter((p) => isPlayableAudioUrl(p.href)).map((p) => ({
-    id: p.id,
-    title: p.title,
-    category: p.category,
-    image: p.image,
-    meta: p.duration,
-    description: p.description,
-    href: p.href,
-  }));
-
-  return (
-    <main className="shell listing-page">
-      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Podcasts' }]} />
-      <h1 className="page-title">Podcasts</h1>
-      <p className="page-intro">
-        Écoutez nos podcasts quand vous le souhaitez : décryptages, récits, entretiens et analyses.
-      </p>
-      <div className="section-head has-rule"><h2>Tous les podcasts</h2></div>
-      <MediaBrowser items={items} variant="audio" pageSize={8} />
-    </main>
-  );
-}
+import {AvCard,AvPagination} from '../../components/AvCatalog';
+import {listCatalog,type CatalogItem} from '../../lib/media/catalog';
+export const revalidate=120;
+export const metadata={title:'Podcasts — TV+ Afrique',alternates:{canonical:'/podcasts'}};
+export default async function PodcastsPage({searchParams}:{searchParams:Promise<{page?:string}>}){const page=Math.max(1,Math.min(10000,Math.floor(Number((await searchParams).page)||1))),size=24,data=await listCatalog('podcast',size,page);const groups=new Map<string,CatalogItem[]>();for(const item of data.items){const title=item.studio_meta?.series||'Épisodes indépendants';groups.set(title,[...(groups.get(title)||[]),item]);}return <main className="shell listing-page av-public"><Breadcrumb items={[{label:'Accueil',href:'/'},{label:'Podcasts'}]}/><header className="av-public-head"><h1 className="page-title">TV+ Podcasts</h1><p className="page-intro">Entretiens, récits et analyses à écouter quand vous le souhaitez.</p></header>{!data.available?<p role="alert">Les podcasts sont momentanément indisponibles.</p>:!data.items.length?<p className="empty-state">Aucun podcast publié sur cette page.</p>:[...groups.entries()].map(([title,items])=><section className="av-section" key={title}><h2>{title}</h2><div className="av-grid">{items.map(item=><AvCard key={item.id} item={item}/>)}</div></section>)}<AvPagination path="/podcasts" page={page} total={data.total} size={size}/></main>;}

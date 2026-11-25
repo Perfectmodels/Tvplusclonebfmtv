@@ -23,13 +23,14 @@ export type Program = {
   category: string;
   image: string;
   description: string;
+  introVideoUrl?: string | null;
 };
 
 export const videos: MediaItem[] = [];
 export const programs: Program[] = [];
 export const podcasts: MediaItem[] = [];
 
-export const tvSchedule: { time: string; title: string; category: string; live: boolean }[] = [];
+export const tvSchedule: { weekday?: number; time: string; title: string; category: string; live: boolean }[] = [];
 
 export const channels: { name: string; tagline: string; image: string; kind: string }[] = [];
 

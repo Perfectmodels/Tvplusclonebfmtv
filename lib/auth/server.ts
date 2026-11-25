@@ -1,76 +1,21 @@
 import 'server-only';
-import { usesTvplusV2 } from '../db/v2-public';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { ROLE_PERMISSIONS, type Permission } from './permissions';
-
-export async function createAuthClient() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) throw new Error('Configuration Supabase manquante.');
-  const cookieStore = await cookies();
-
-  return createServerClient(url, key, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-        } catch {
-          // Appel depuis un Server Component : le middleware rafraîchit le cookie.
-        }
-      },
-    },
-  });
-}
-
-export async function getUser() {
-  const supabase = await createAuthClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user ?? null;
-}
-
-export async function getProfile(existingUser?: Awaited<ReturnType<typeof getUser>>) {
-  const user = existingUser === undefined ? await getUser() : existingUser;
-  if (!user) return null;
-  const supabase = await createAuthClient();
-  if (usesTvplusV2()) {
-    const { data, error } = await supabase.from('profiles')
-      .select('id, full_name, role, is_active, created_at')
-      .eq('id', user.id).maybeSingle();
-    if (error || !data || !data.is_active) return null;
-    return { ...data, email: user.email ?? '' };
-  }
-  const { data } = await supabase.from('profiles').select('id, email, full_name, role, created_at').eq('id', user.id).maybeSingle();
-  return data ?? { id: user.id, email: user.email ?? '', full_name: null, role: 'reader' as const, created_at: user.created_at };
-}
-
-export async function requireUser() {
-  const user = await getUser();
-  if (!user) redirect('/connexion');
-  return user;
-}
-
-export async function requireAdmin() {
-  const user = await requireUser();
-  const profile = await getProfile();
-  if (!profile || !['admin', 'super_admin'].includes(profile.role)) redirect('/acces-refuse');
-  return { user, profile };
-}
-
-export async function hasPermission(permission: Permission): Promise<boolean> {
-  const profile = await getProfile();
-  if (!profile) return false;
-  return (ROLE_PERMISSIONS[profile.role] ?? []).includes(permission);
-}
-
-export async function requirePermission(permission: Permission) {
-  const { user, profile } = await requireAdmin();
-  if (!(ROLE_PERMISSIONS[profile?.role ?? 'reader'] ?? []).includes(permission)) {
-    redirect('/acces-refuse');
-  }
-  return { user, profile };
-}
+import {cache} from 'react';
+import {redirect} from 'next/navigation';
+import {newsroom} from '../admin-v2/lws';
+import {getSession} from './session';
+import {ROLE_PERMISSIONS,type Permission} from './permissions';
+export type AuthUser={id:string;email?:string;created_at?:string;user_metadata?:Record<string,unknown>};
+export type AuthProfile={id:string;email:string;full_name:string|null;role:string;created_at:string;is_active?:boolean;permissions?:string[]};
+type MysqlProfile={id:string;email:string;full_name:string|null;role:string;is_active:boolean;permissions:string[]};
+const mysqlProfile=cache(async():Promise<MysqlProfile|null>=>{
+ const session=await getSession();if(!session)return null;
+ try{const p=await newsroom<MysqlProfile>({id:session.uid,permissions:[]},'auth.me',{data:{id:session.uid}});return p.is_active?p:null;}catch{return null;}
+});
+export async function getUser():Promise<AuthUser|null>{const p=await mysqlProfile();return p?{id:p.id,email:p.email,created_at:'',user_metadata:{full_name:p.full_name}}:null;}
+export async function getProfile(existingUser?:AuthUser|null):Promise<AuthProfile|null>{const p=await mysqlProfile();if(!p||existingUser===null||(existingUser&&existingUser.id!==p.id))return null;return {...p,created_at:''};}
+export async function requireUser(){const user=await getUser();if(!user)redirect('/connexion');return user;}
+export async function requireAdmin(){const user=await requireUser(),profile=await getProfile(user);if(!profile||!['admin','super_admin'].includes(profile.role))redirect('/acces-refuse');return {user,profile};}
+export async function hasPermission(permission:Permission){const p=await getProfile();return !!p&&(p.permissions??ROLE_PERMISSIONS[p.role]??[]).includes(permission);}
+export async function requirePermission(permission:Permission){const {user,profile}=await requireAdmin();if(!(profile.permissions??ROLE_PERMISSIONS[profile.role]??[]).includes(permission))redirect('/acces-refuse');return {user,profile};}
+// Les anciens modules non migrés échouent explicitement : aucune connexion à l’ancien fournisseur.
+export async function createAuthClient():Promise<import('@supabase/supabase-js').SupabaseClient>{throw new Error('Ancien accès désactivé : migrer cette route vers le service éditorial MySQL.');}

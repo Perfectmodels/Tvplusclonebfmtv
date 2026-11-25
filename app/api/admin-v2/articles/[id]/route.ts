@@ -3,12 +3,15 @@ import { requireV2Api, requireV2AnyApi } from '../../../../../lib/auth/v2-admin'
 import { handleRoute, ok, ApiError } from '../../../../../lib/api/response';
 import { cleanArticlePayload, invalidatePublicArticle } from '../../../../../lib/admin-v2/article-write';
 
+import { newsroom, usesLwsCatalog, getReferences } from '../../../../../lib/admin-v2/lws';
+
 export const dynamic='force-dynamic';
 type Context={params:Promise<{id:string}>};
 
 export const GET=handleRoute(async (_request:NextRequest,{params}:Context)=>{
-  const {db}=await requireV2Api('articles.read_all');
+  const {actor,db}=await requireV2Api('articles.read_all');
   const {id}=await params;
+  if (usesLwsCatalog()) return ok(await newsroom(actor,'get',{id}));
   const {data,error}=await db.from('articles').select(
     'id,slug,short_code,title,excerpt,category_id,cover_media_id,content_json,tags,seo_title,seo_description,status,country_code,province_slug,featured,is_alert,published_at,author_id,updated_at'
   ).eq('id',id).maybeSingle();
@@ -18,12 +21,18 @@ export const GET=handleRoute(async (_request:NextRequest,{params}:Context)=>{
 });
 
 export const PATCH=handleRoute(async (request:NextRequest,{params}:Context)=>{
-  const {db}=await requireV2AnyApi(['articles.edit_own','articles.review']);
+  const {actor,db}=await requireV2AnyApi(['articles.edit_own','articles.review']);
   const {id}=await params;
   const input=await request.json();
   const expected=typeof input.expected_updated_at==='string'?input.expected_updated_at:'';
   if(!expected)throw new ApiError('Version de l’article requise pour éviter les conflits.',400);
   const patch=cleanArticlePayload(input);
+  if (usesLwsCatalog()) {
+    const references=await getReferences(actor,db,patch.category_id,patch.cover_media_id);
+    const article=await newsroom<{slug:string}>(actor,'edit',{id,data:patch,expected,references});
+    invalidatePublicArticle(article.slug);
+    return ok(article);
+  }
   const {data:existing,error:existingError}=await db.from('articles').select('slug,updated_at').eq('id',id).maybeSingle();
   if(existingError)throw new ApiError('Article inaccessible.',403,'UNAUTHORIZED');
   if(!existing)throw new ApiError('Article introuvable.',404,'NOT_FOUND');

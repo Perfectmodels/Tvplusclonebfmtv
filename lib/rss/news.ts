@@ -32,7 +32,7 @@ function selectSources(): Source[] {
   return [...PRIMARY_SOURCES, ...rotating];
 }
 
-async function readSource(source: Source): Promise<NormalizedItem[]> {
+export async function readSource(source: Pick<Source, 'url'>, limit = MAX_ITEMS_PER_SOURCE, summaryLimit = 320): Promise<NormalizedItem[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
@@ -48,7 +48,7 @@ async function readSource(source: Source): Promise<NormalizedItem[]> {
     const xml = await response.text();
     // Refuser les documents hors normes plutôt que de charger un flux énorme.
     if (xml.length > 1_500_000) return [];
-    return parseFeed(xml, source.url.includes('news.google.com')).slice(0, MAX_ITEMS_PER_SOURCE);
+    return parseFeed(xml, new URL(source.url).hostname === 'news.google.com', summaryLimit).slice(0, limit);
   } catch {
     // Une source en panne ne rend pas le site indisponible.
     return [];

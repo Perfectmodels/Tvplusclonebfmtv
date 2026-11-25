@@ -1,5 +1,7 @@
 'use client';
 
+import PaginatedList from '../../../components/admin/PaginatedList';
+
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import {
@@ -22,9 +24,11 @@ type Settings = {
 type ApiResponse<T> = { data?: T; error?: { message?: string; details?: { fieldErrors?: Record<string,string[]> } } };
 
 const api = '/api/admin-v2/restream';
-const callback = 'https://tvplusclonebfmtv.vercel.app/api/admin-v2/restream/callback';
+// L'origine réelle du navigateur est utilisée pour l'affichage ; l'OAuth serveur doit autoriser cette origine.
+const callbackPath = '/api/admin-v2/restream/callback';
 
 export default function RegieDirect() {
+ const [callback,setCallback]=useState(callbackPath);
  const [account, setAccount] = useState<Account | null>(null);
  const [settings, setSettings] = useState<Settings | null>(null);
  const [playerCode, setPlayerCode] = useState('');
@@ -59,6 +63,7 @@ export default function RegieDirect() {
  }, []);
 
  useEffect(() => {
+  setCallback(window.location.origin+callbackPath);
   const feedback = new URLSearchParams(window.location.search).get('restream');
   if (feedback === 'connected') setSuccess('Compte Restream connecté avec succès.');
   if (feedback === 'setup') setError('La connexion Restream doit être activée dans les paramètres serveur.');
@@ -189,19 +194,20 @@ export default function RegieDirect() {
     <a href="https://restream.io/" target="_blank" rel="noopener noreferrer">Gérer sur Restream <ArrowUpRight size={14}/></a>
    </div>
    {account.channels.length ? <div className="restream-channel-grid">
-    {account.channels.map(ch => <div className="restream-channel" key={ch.id}>
+    <PaginatedList items={account.channels} pageSize={6}>{(entries) => entries.map(ch => <div className="restream-channel" key={ch.id}>
      <span><Video size={20}/></span>
      <div><strong>{ch.name}</strong><small>Chaîne liée au compte Restream</small></div>
      {ch.url && <a href={ch.url} target="_blank" rel="noopener noreferrer" aria-label={'Ouvrir '+ch.name}><ExternalLink size={16}/></a>}
-    </div>)}
+    </div>)}</PaginatedList>
    </div> : <p className="restream-empty">Aucune chaîne disponible. Ajoutez YouTube, Facebook ou une autre destination directement dans Restream.</p>}
   </section>}
 
   <section className="v2-card restream-site-panel" aria-labelledby="restream-site-title">
    <div className="restream-section-heading">
-    <div><h2 id="restream-site-title">Lecteur permanent TV+ Afrique</h2><p>Un lecteur Restream installé une seule fois : dès que le direct commence sur Restream, il apparaît sur le site sans actualisation manuelle.</p></div>
+    <div><h2 id="restream-site-title">Lecteur permanent TV+ Afrique</h2><p>Paramétrez et prévisualisez le signal de la régie. Le lecteur public Premium utilise un mécanisme distinct de droits et de jetons temporaires.</p></div>
     <MonitorPlay size={22}/>
    </div>
+   <div className="restream-current-source"><strong>Diffusion et accès Premium sont deux étapes différentes.</strong> Le lecteur configuré ici sert à la régie ; un lien Restream ou YouTube public ne constitue pas un contrôle d'accès payant. Vérifiez le broker vidéo et les paiements dans <a href="/admin-v2/premium">Abonnements Premium</a> avant toute commercialisation.</div>
    {settings?.enabled && !['youtube','restream'].includes(settings.player_platform) &&
     <div className="restream-current-source">Une ancienne source de diffusion est encore enregistrée. Elle ne sera plus affichée sur le site. Publiez le lecteur Restream pour remplacer son paramétrage.</div>}
    {settings?.enabled && settings.player_platform === 'restream' && <div className="v2-success" role="status">

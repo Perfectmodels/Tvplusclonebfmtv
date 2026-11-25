@@ -1,4 +1,6 @@
 'use client';
+
+import PaginatedList from '../../../components/admin/PaginatedList';
 import { useCallback, useEffect, useState } from 'react';
 import { CalendarClock, ExternalLink, ImageIcon, Megaphone, Save } from 'lucide-react';
 type Slot={banner:number;slot:number;advertiser:string;image_url:string;target_url:string;alt:string;active:boolean;starts_at:string|null;ends_at:string|null;updated_at?:string};
@@ -40,7 +42,7 @@ export default function AdvertisingV2(){
   <div className="v2-card"><h2 className="v2-panel-title">Bandeau {banner} · {labels[banner-1]}</h2>
    <p className="v2-note">Les modifications s'appliquent uniquement à l'emplacement enregistré. L'affichage public respecte les dates, l'activation et le cache du site.</p></div>
   {loading?<p>Chargement des campagnes…</p>:<div className="v2-regie-ads">
-   {items.filter(x=>x.banner===banner).map(x=><section key={x.slot} className="v2-card">
+   <PaginatedList key={banner} items={items.filter(x=>x.banner===banner)} pageSize={2}>{(entries) => entries.map(x => <section key={x.slot} className="v2-card">
     <div className="v2-regie-section-head"><h3>Emplacement {x.slot}/5</h3><span>{state(x)}</span></div>
     <div className="v2-regie-ad-preview">{x.image_url?<img src={x.image_url} alt={x.alt||'Visuel publicitaire'}/>:<div><ImageIcon size={28}/><span>Choisir un visuel</span></div>}</div>
     <div className="v2-regie-times">
@@ -60,7 +62,7 @@ export default function AdvertisingV2(){
     <label className="v2-regie-check"><input type="checkbox" checked={x.active} onChange={e=>edit(x,'active',e.target.checked)}/> Activer la campagne</label>
     <div className="v2-actions"><button type="button" disabled={saving!==null} className="admin-btn admin-btn-primary" onClick={()=>void save(x)}><Save size={16}/>{saving===x.banner+'-'+x.slot?'Enregistrement…':'Enregistrer l’emplacement'}</button>
      {x.target_url&&<a href={x.target_url} target="_blank" rel="noopener noreferrer" className="admin-btn admin-btn-ghost">Tester le lien <ExternalLink size={14}/></a>}</div>
-   </section>)}
+   </section>)}</PaginatedList>
   </div>}
  </div>;
 }

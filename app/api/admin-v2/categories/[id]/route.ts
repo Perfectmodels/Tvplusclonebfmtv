@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireV2Api } from '../../../../../lib/auth/v2-admin';
 import { handleRoute,ok,ApiError } from '../../../../../lib/api/response';
+import { newsroom, usesLwsCatalog } from '../../../../../lib/admin-v2/lws';
 import { revalidateTag } from 'next/cache';
 export const dynamic='force-dynamic';
 type Context={params:Promise<{id:string}>};
@@ -11,10 +12,14 @@ const schema=z.object({
  hue:z.number().int().min(0).max(359),
 });
 export const PATCH=handleRoute(async(request:NextRequest,{params}:Context)=>{
- const {db}=await requireV2Api('categories.manage');const {id}=await params;
+ const {actor,db}=await requireV2Api('categories.manage');const {id}=await params;
  if(!z.string().uuid().safeParse(id).success)throw new ApiError('Rubrique inconnue.',400);
  const parse=schema.safeParse(await request.json());
  if(!parse.success)throw new ApiError('Rubrique invalide.',400,'BAD_REQUEST',parse.error.flatten());
+ if(usesLwsCatalog()){
+  const data=await newsroom(actor,'categories.edit',{id,data:parse.data});
+  revalidateTag('public-categories');revalidateTag('public-articles');return ok(data);
+ }
  if(parse.data.parent_id===id)throw new ApiError('Une rubrique ne peut pas être son propre parent.',400);
  if(parse.data.parent_id){
   const {data:possibleParent}=await db.from('categories').select('id,parent_id').eq('id',parse.data.parent_id).maybeSingle();
@@ -34,8 +39,12 @@ export const PATCH=handleRoute(async(request:NextRequest,{params}:Context)=>{
  revalidateTag('public-categories');revalidateTag('public-articles');return ok(data);
 });
 export const DELETE=handleRoute(async(_request:NextRequest,{params}:Context)=>{
- const {db}=await requireV2Api('categories.manage');const {id}=await params;
+ const {actor,db}=await requireV2Api('categories.manage');const {id}=await params;
  if(!z.string().uuid().safeParse(id).success)throw new ApiError('Identifiant invalide.',400);
+ if(usesLwsCatalog()){
+  const data=await newsroom(actor,'categories.delete',{id});
+  revalidateTag('public-categories');return ok(data);
+ }
  const [articles,shows,children]=await Promise.all([
   db.from('articles').select('id',{count:'exact',head:true}).eq('category_id',id),
   db.from('shows').select('id',{count:'exact',head:true}).eq('category_id',id),

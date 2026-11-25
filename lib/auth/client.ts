@@ -1,10 +1,3 @@
 'use client';
-
-import { createBrowserClient } from '@supabase/ssr';
-
-export function createAuthBrowserClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) throw new Error('Configuration Supabase manquante.');
-  return createBrowserClient(url, key);
-}
+import type {SupabaseClient} from '@supabase/supabase-js';
+export function createAuthBrowserClient():SupabaseClient{throw new Error('Authentification historique désactivée. Utiliser les routes de session TV+ MySQL.');}

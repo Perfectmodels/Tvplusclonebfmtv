@@ -6,43 +6,43 @@ import { useEffect, useState } from 'react';
 import { Menu, X, Search, ChevronRight, ChevronDown } from 'lucide-react';
 import { EDITORIAL_COUNTRIES } from '../lib/editor/countries';
 import TvPlusLogo from './TvPlusLogo';
-import { topicLinks, topics as staticTopics } from '../lib/data';
 import { categoryHref } from '../lib/categories';
 
-type TopicItem = { label: string; link: string };
+type Panel = 'menu' | 'search' | 'countries';
 
-function GabonMark() {
-  return (
-    <svg width="18" height="20" viewBox="0 0 18 20" aria-hidden="true" className="gabon-mark">
-      <rect x="0" y="0" width="4" height="20" fill="#009E60" />
-      <rect x="5" y="0" width="8" height="20" fill="#FCD116" />
-      <rect x="14" y="0" width="4" height="20" fill="#0055A4" />
-    </svg>
-  );
-}
+const menuGroups = [
+  { label: 'L’actualité', links: [
+    ['Dernières actualités', '/actualites'],
+    ['Gabon', '/pays/ga'],
+    ['Toutes les actualités','/actualites'],
+    ['TV+ Reels','/reels'],
+    ['Articles vidéo','/articles-video'],
+    ['Ligne Rouge','/ligne-rouge'],
+  ] },
+  { label: 'À regarder et à écouter', links: [
+    ['Le direct', '/direct'],
+    ['Émissions et replays', '/replay-emissions'],
+    ['Grille des programmes', '/programme-tv'],
+    ['Vidéos', '/videos'],
+    ['Podcasts', '/podcasts'],
+  ] },
+  { label: 'Services', links: [
+    ['Rechercher un article', '/recherche'],
+    ['Newsletters', '/newsletters'],
+    ['Nous contacter', '/contacts'],
+  ] },
+];
 
-export default function Header({
-  topics = staticTopics.map((label) => ({ label, link: topicLinks[label] ?? '/news-24-7' })),
-  categories = [],
-}: { topics?: TopicItem[]; categories?: string[] }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [countryOpen, setCountryOpen] = useState(false);
+export default function Header({ categories = [] }: { categories?: string[] }) {
+  const [panel, setPanel] = useState<Panel | null>(null);
   const pathname = usePathname();
+  const close = () => setPanel(null);
+  const toggle = (name: Panel) => setPanel((current) => current === name ? null : name);
+  const active = (href: string) => pathname === href ? 'page' : undefined;
 
+  useEffect(close, [pathname]);
   useEffect(() => {
-    setMenuOpen(false);
-    setSearchOpen(false);
-    setCountryOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setMenuOpen(false);
-      setSearchOpen(false);
-      setCountryOpen(false);
-    };
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') setPanel(null); };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
@@ -51,39 +51,22 @@ export default function Header({
     <header className="site-header">
       <div className="header-top">
         <div className="shell header-top-inner">
-          <button
-            className="menu-toggle"
-            aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-            aria-expanded={menuOpen}
-            aria-controls="site-mega-menu"
-            type="button"
-            onClick={() => { setMenuOpen(v => !v); setSearchOpen(false); setCountryOpen(false); }}
-          >
-            {menuOpen ? <X size={26} strokeWidth={2.4} /> : <Menu size={26} strokeWidth={2.4} />}
+          <button className="menu-toggle" type="button" aria-label={panel === 'menu' ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={panel === 'menu'} aria-controls="site-mega-menu" onClick={() => toggle('menu')}>
+            {panel === 'menu' ? <X size={26} strokeWidth={2.4} /> : <Menu size={26} strokeWidth={2.4} />}
             <span>Menu</span>
           </button>
 
-          <Link href="/" className="brand" aria-label="TV+ Afrique — retourner à l’accueil" title="Retour à l’accueil">
-            <TvPlusLogo />
-          </Link>
-
+          <Link href="/" className="brand" aria-label="Accueil de TV+ Afrique" onClick={close}><TvPlusLogo /></Link>
           <div className="header-actions">
-            <Link href="/replay-emissions" className="header-text-link">
-              Replay
+            <Link href="/replay-emissions" className="header-text-link" aria-current={active('/replay-emissions')} onClick={close}>Replays</Link>
+            <Link href="/direct" className="direct-btn" aria-current={active('/direct')} onClick={close}>
+              <span className="direct-dot" /> Direct
             </Link>
-            <Link href="/direct" className="direct-btn">
-              <span className="direct-dot" />
-              Direct
-            </Link>
-            <button
-              className="header-search-btn"
-              aria-label={searchOpen ? 'Fermer la recherche' : 'Rechercher'}
-              aria-expanded={searchOpen}
-              aria-controls="site-search-form"
-              type="button"
-              onClick={() => { setSearchOpen(v => !v); setMenuOpen(false); setCountryOpen(false); }}
-            >
-              {searchOpen ? <X size={19} /> : <Search size={19} />}
+            <button hidden className="header-search-btn" type="button"
+              aria-label={panel === 'search' ? 'Fermer la recherche' : 'Rechercher'}
+              aria-expanded={panel === 'search'} aria-controls="site-search-form" onClick={() => toggle('search')}>
+              {panel === 'search' ? <X size={19} /> : <Search size={19} />}
             </button>
           </div>
         </div>
@@ -91,113 +74,68 @@ export default function Header({
 
       <nav className="nav-primary" aria-label="Navigation principale">
         <div className="shell nav-primary-inner">
-          <div className="nav-topics">
-            {topics.map((topic, i) => (
-              <Link
-                key={topic.label}
-                href={topic.link}
-                className={i === topics.length - 1 ? 'topic-last' : ''}
-              >
-                {topic.label}
-              </Link>
-            ))}
-          </div>
           <div className="nav-links">
-            <button type="button" className="nav-country-toggle" aria-expanded={countryOpen}
-              aria-controls="country-navigation" onClick={()=>{setCountryOpen(v=>!v);setMenuOpen(false);setSearchOpen(false)}}>
-              <GabonMark /> Gabon <ChevronDown size={14} aria-hidden="true"/>
+            <button type="button" className="nav-country-toggle" aria-expanded={panel === 'countries'}
+              aria-controls="country-navigation" aria-label="Gabon et actualités par pays" onClick={() => toggle('countries')}>
+              Gabon <ChevronDown size={14} aria-hidden="true" />
             </button>
-            {categories.map((category) => (
-              <Link key={category} href={categoryHref(category)}>
-                {category}
-              </Link>
+            {categories.slice(0, 5).map((category) => (
+              <Link key={category} href={categoryHref(category)} className="nav-editorial-category"
+                aria-current={active(categoryHref(category))} onClick={close}>{category}</Link>
             ))}
+            <Link href="/rubriques" aria-current={active('/rubriques')} onClick={close}>Toutes les rubriques</Link>
           </div>
         </div>
       </nav>
 
-      {countryOpen && (
-        <div id="country-navigation" className="country-navigation" role="navigation" aria-label="Choisir un pays">
+      {panel === 'countries' && (
+        <nav id="country-navigation" className="country-navigation" aria-label="Actualités par pays">
           <div className="country-navigation-inner shell">
             <strong>Actualités par pays</strong>
             <div className="country-navigation-grid">
-              {EDITORIAL_COUNTRIES.map(country => (
-                <Link href={'/pays/'+country.code.toLowerCase()} key={country.code}
-                  className={country.code==='GA'?'country-gabon':''}
-                  onClick={()=>setCountryOpen(false)}>
-                  {country.name}<ChevronRight size={14} aria-hidden="true"/>
-                </Link>
-              ))}
+              {EDITORIAL_COUNTRIES.filter(({ code }) => code !== 'FR').map((country) => {
+                const href = '/pays/' + country.code.toLowerCase();
+                return <Link href={href} key={country.code} aria-current={active(href)} onClick={close}>
+                  {country.name}<ChevronRight size={14} aria-hidden="true" />
+                </Link>;
+              })}
             </div>
-            <p>Les pays sans publication affichent un état vide, sans reprendre les actualités du Gabon.</p>
           </div>
-        </div>
+        </nav>
       )}
 
-      {searchOpen && (
+      {panel === 'search' && (
         <form id="site-search-form" className="header-search shell" action="/recherche" role="search">
           <Search size={18} aria-hidden="true" />
-          <input name="q" autoFocus placeholder="Rechercher une actualité, une rubrique…" />
+          <input name="q" autoFocus aria-label="Rechercher un article" placeholder="Rechercher une actualité…" />
           <button type="submit">Rechercher</button>
         </form>
       )}
 
-      {menuOpen && (
-        <div className="mega-menu" id="site-mega-menu" aria-label="Menu de navigation">
+      {panel === 'menu' && (
+        <nav className="mega-menu" id="site-mega-menu" aria-label="Menu du site">
           <div className="shell mega-inner">
-            <div className="mega-col mega-lead">
-              <span className="mega-label">Navigation</span>
-              <Link href="/actualites" onClick={() => setMenuOpen(false)}>Toutes les actualités <ChevronRight size={15}/></Link>
-              <Link href="/pays/ga" onClick={() => setMenuOpen(false)}>Gabon et pays <ChevronRight size={15}/></Link>
-              {topics.map((topic) => (
-                <Link key={topic.label} href={topic.link} onClick={() => setMenuOpen(false)}>
-                  {topic.label} <ChevronRight size={15} />
+            <section className="mega-col">
+              <h2 className="mega-label">Rubriques</h2>
+              {categories.map((category) => (
+                <Link href={categoryHref(category)} key={category} aria-current={active(categoryHref(category))} onClick={close}>
+                  {category} <ChevronRight size={15} aria-hidden="true" />
                 </Link>
               ))}
-            </div>
-            <div className="mega-col">
-              <Link href="/rubriques" className="mega-label" onClick={() => setMenuOpen(false)}>Toutes les rubriques <ChevronRight size={14} aria-hidden="true"/></Link>
-              {categories.slice(0, 5).map((category) => (
-                <Link
-                  key={category}
-                  href={categoryHref(category)}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {category} <ChevronRight size={15} />
-                </Link>
-              ))}
-            </div>
-            <div className="mega-col">
-              <span className="mega-label">&nbsp;</span>
-              {categories.slice(5).map((category) => (
-                <Link
-                  key={category}
-                  href={categoryHref(category)}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {category} <ChevronRight size={15} />
-                </Link>
-              ))}
-            </div>
-            <div className="mega-col mega-services">
-              <span className="mega-label">Services</span>
-              {[
-                ['Le direct', '/direct'],
-                ['Le fil info', '/news-24-7'],
-                ['Les vidéos', '/videos'],
-                ['Émissions & replays', '/replay-emissions'],
-                ['Replays', '/replays'],
-                ['Podcasts', '/podcasts'],
-                ['Programme TV', '/programme-tv'],
-                ['Plan du site', '/plan-du-site'],
-              ].map(([label, href]) => (
-                <Link key={label} href={href} onClick={() => setMenuOpen(false)}>
-                  {label} <ChevronRight size={15} />
-                </Link>
-              ))}
-            </div>
+              <Link href="/rubriques" aria-current={active('/rubriques')} onClick={close}>Toutes les rubriques <ChevronRight size={15} aria-hidden="true" /></Link>
+            </section>
+            {menuGroups.map((group) => (
+              <section className="mega-col" key={group.label}>
+                <h2 className="mega-label">{group.label}</h2>
+                {group.links.map(([label, href]) => (
+                  <Link key={href} href={href} aria-current={active(href)} onClick={close}>
+                    {label} <ChevronRight size={15} aria-hidden="true" />
+                  </Link>
+                ))}
+              </section>
+            ))}
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

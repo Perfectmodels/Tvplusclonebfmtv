@@ -1,4 +1,6 @@
 'use client';
+
+import PaginatedList from '../../../components/admin/PaginatedList';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CalendarClock, ExternalLink, Film, Plus, Search, Trash2 } from 'lucide-react';
@@ -24,10 +26,10 @@ export default function ReplaysV2(){
   if(!a.ok||!b.ok)throw Error(e.error?.message||s.error?.message||'Bibliothèque indisponible.');
   setItems(e.data.items||[]);setShows(s.data.items||[]);
  },[]);
- useEffect(()=>{load().catch(e=>setError(e.message)).finally(()=>setLoading(false))},[load]);
+ useEffect(()=>{const show=new URLSearchParams(window.location.search).get('show');if(show){setShowFilter(show);setForm(f=>({...f,show_id:show}));}load().catch(e=>setError(e.message)).finally(()=>setLoading(false))},[load]);
  function edit(item:Replay){setEditing(item.id);const {id,platform,external_id,...fields}=item;setForm(fields);setWhen(local(item.publish_at));setMode(item.status==='published'?'published':item.publish_at?'scheduled':'draft');setMessage('')}
  const change=<K extends keyof ReplayForm>(key:K,value:ReplayForm[K])=>setForm(f=>({...f,[key]:value}));
- function reset(){setForm({...empty,aired_at:new Date().toISOString()});setMode('draft');setWhen('');setEditing(null)}
+ function reset(){setForm({...empty,show_id:showFilter,aired_at:new Date().toISOString()});setMode('draft');setWhen('');setEditing(null)}
  async function save(event:React.FormEvent){
   event.preventDefault();setBusy(true);setError('');setMessage('');
   try{
@@ -48,7 +50,7 @@ export default function ReplaysV2(){
  }
  const source=parseVideoUrl(form.source_url);
  const embed=videoEmbedUrl(source?.platform||null,source?.externalId||null,form.source_url);
- const filtered=items.filter(x=>(filter==='all'||(filter==='scheduled'?x.status==='draft'&&!!x.publish_at:x.status===filter))&&(!showFilter||x.show_id===showFilter)&&(x.title+' '+x.description).toLowerCase().includes(query.toLowerCase()));
+ const filtered=items.filter(x=>(filter==='all'||(filter==='scheduled'?x.status==='draft'&&!!x.publish_at:(filter==='draft'?x.status==='draft'&&!x.publish_at:x.status===filter)))&&(!showFilter||x.show_id===showFilter)&&(x.title+' '+x.description).toLowerCase().includes(query.toLowerCase()));
  const planned=items.filter(x=>x.status==='draft'&&x.publish_at).length;
  return <div className="v2-regie">
   <header className="v2-head"><div><p className="v2-newsroom-eyebrow">DIFFUSION · VIDÉOTHÈQUE</p>
@@ -64,12 +66,12 @@ export default function ReplaysV2(){
      <select aria-label="Statut du replay" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">Tous</option><option value="published">En ligne</option><option value="scheduled">Programmés</option><option value="draft">Brouillons</option></select>
      <select aria-label="Émission" value={showFilter} onChange={e=>setShowFilter(e.target.value)}><option value="">Toutes les émissions</option>{shows.map(s=><option key={s.id} value={s.id}>{s.title}</option>)}</select></div>
     {loading?<p>Chargement…</p>:!filtered.length?<p className="v2-note">Aucun replay ne correspond aux filtres.</p>:<div className="v2-regie-channels">
-     {filtered.map(item=><div className="v2-regie-channel" key={item.id}><div>
+     <PaginatedList key={showFilter + filter + query} items={filtered} pageSize={6}>{(entries) => entries.map(item => <div className="v2-regie-channel" key={item.id}><div>
       <strong>{item.title}</strong><span>{shows.find(s=>s.id===item.show_id)?.title||'Émission'} · {item.platform||'Sans vidéo'} · {item.status==='published'?'En ligne':item.publish_at?'Programmé le '+display(item.publish_at):'Brouillon'}</span>
       {item.source_url&&<a href={item.source_url} target="_blank" rel="noopener noreferrer">Voir la vidéo source <ExternalLink size={13}/></a>}</div>
       <div className="v2-actions"><button type="button" className="admin-btn admin-btn-ghost" onClick={()=>edit(item)}>Modifier</button>
        <button type="button" className="admin-btn admin-btn-ghost" disabled={busy} onClick={()=>void remove(item.id)} aria-label={'Supprimer '+item.title}><Trash2 size={16}/></button></div>
-     </div>)}</div>}
+     </div>)}</PaginatedList></div>}
    </section>
    <section className="v2-card"><h2 className="v2-panel-title">{editing?'Modifier le replay':'Créer un replay'}</h2>
     <form onSubmit={save}>

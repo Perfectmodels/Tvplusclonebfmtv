@@ -189,7 +189,7 @@ export type Database = {
   };
 };
 
-export type DataSource = 'supabase' | 'static';
+export type DataSource = 'mysql' | 'supabase' | 'static';
 
 export type Paginated<T> = {
   items: T[];

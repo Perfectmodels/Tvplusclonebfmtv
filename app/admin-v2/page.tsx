@@ -1,13 +1,27 @@
+import { isPanfilEbo } from '../../lib/articles/author-names';
 import Link from 'next/link';
+import {redirect} from 'next/navigation';
 import V2ArticleThumb from '../../components/admin/V2ArticleThumb';
 import {
   Activity, Archive, ArrowUpRight, BarChart3, CalendarClock,
   CheckCircle2, ChevronRight, Clock3, FilePenLine, FileText,
   Images, Layers3, Plus, ShieldCheck, UsersRound,
 } from 'lucide-react';
-import { requireV2Page } from '../../lib/auth/v2-admin';
+import { getV2Actor, requireV2Page } from '../../lib/auth/v2-admin';
 import { createAuthClient } from '../../lib/auth/server';
-import { enrichArticleRows, type ArticleAdminRow } from '../../lib/admin-v2/article-records';
+import { enrichArticleRows, enrichArticleRowsFromMysql, type ArticleAdminRow } from '../../lib/admin-v2/article-records';
+import { newsroom, usesLwsCatalog } from '../../lib/admin-v2/lws';
+
+type DashboardFull = {
+  counts: Record<string,number>; total:number; media:number; week:number; today:number;
+  recent:ArticleAdminRow[]; live:ArticleAdminRow[]; scheduled:ArticleAdminRow[];
+  month:{author_id:string;category_id:string;published_at:string|null}[];
+  categories:{id:string;name:string}[]; profiles:{id:string;full_name:string|null}[];
+  audit:{
+    id:string;actor_id:string|null;action:string;entity_id:string|null;
+    details:unknown;created_at:string|null;
+  }[];
+};
 
 export const dynamic='force-dynamic';
 
@@ -24,8 +38,12 @@ const number=(value:number|null|undefined)=>typeof value==='number'?value.toLoca
 const dateText=(value:string|null|undefined)=>value?datetime.format(new Date(value)):'Date inconnue';
 
 export default async function DashboardV2() {
+  const current=await getV2Actor();
+  if(current&&!current.permissions.includes('articles.read_all')){if(current.permissions.includes('settings.manage'))redirect('/admin-v2/premium');if(current.permissions.includes('shows.manage'))redirect('/admin-v2/studio');if(current.permissions.includes('schedule.manage'))redirect('/admin-v2/live');if(current.permissions.includes('users.manage')||current.permissions.includes('roles.manage'))redirect('/admin-v2/utilisateurs');if(current.permissions.includes('studio.reel_manage'))redirect('/admin-v2/studio/reels');if(current.permissions.includes('studio.podcast_manage'))redirect('/admin-v2/studio/podcasts');if(current.permissions.includes('studio.reportage_manage'))redirect('/admin-v2/studio/reportages');}
   const actor=await requireV2Page();
-  const db=await createAuthClient();
+  const mysql=usesLwsCatalog();
+  const full=mysql?await newsroom<DashboardFull>(actor,'dashboard.full'):null;
+  const db=mysql?null:await createAuthClient();
   const now=new Date();
   // Libreville est à UTC+1 toute l'année : minuit local n'est pas minuit UTC.
   const gabonNow=new Date(now.getTime()+60*60_000);
@@ -36,64 +54,87 @@ export default async function DashboardV2() {
   const startMonth=new Date(now.getTime()-30*24*60*60_000);
   const counts:Record<string,number>={};
   const statuses=['published','draft','in_review','approved','scheduled','inactive','archived'];
+  let total=0,mediaCount=0,weekCount=0,todayCount=0;
+  let articleRows:ArticleAdminRow[]=[];
+  let month:{author_id:string;category_id:string;published_at:string|null}[]=[];
+  let categories:{id:string;name:string}[]=[];
+  let profiles:{id:string;full_name:string|null}[]=[];
+  let audit:{
+    id:string;actor_id:string|null;action:string;entity_id:string|null;
+    details:unknown;created_at:string|null;
+  }[]=[];
 
-  const [totals,recentResult,liveResult,scheduledResult,monthResult,weekResult,
-    todayResult,mediaResult,categoryResult,activityResult]=await Promise.all([
-    Promise.all([
-      db.from('articles').select('id',{head:true,count:'exact'}),
-      ...statuses.map(status=>db.from('articles').select('id',{head:true,count:'exact'}).eq('status',status)),
-    ]),
-    db.from('articles').select(
-      'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,updated_at,created_at,published_at'
-    ).order('updated_at',{ascending:false}).limit(8),
-    db.from('articles').select(
-      'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,updated_at,created_at,published_at'
-    ).eq('status','published').order('published_at',{ascending:false}).limit(7),
-    db.from('articles').select(
-      'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,updated_at,created_at,published_at'
-    ).eq('status','scheduled').gte('published_at',now.toISOString())
-      .order('published_at',{ascending:true}).limit(6),
-    db.from('articles').select('id,author_id,category_id,published_at')
-      .eq('status','published').gte('published_at',startMonth.toISOString())
-      .order('published_at',{ascending:false}).limit(2500),
-    db.from('articles').select('id',{head:true,count:'exact'})
-      .eq('status','published').gte('published_at',startWeek.toISOString()),
-    db.from('articles').select('id',{head:true,count:'exact'})
-      .eq('status','published').gte('published_at',startToday.toISOString()),
-    db.from('media').select('id',{head:true,count:'exact'}),
-    db.from('categories').select('id,name').order('position'),
-    actor.permissions.includes('audit.read')
-      ? db.from('audit_logs').select('id,actor_id,action,entity_id,details,created_at')
-        .eq('entity','articles').order('created_at',{ascending:false}).limit(7)
-      : Promise.resolve({data:[],error:null}),
-  ]);
+  if(full){
+    statuses.forEach(status=>counts[status]=full.counts[status]??0);
+    total=full.total;mediaCount=full.media;weekCount=full.week;todayCount=full.today;
+    articleRows=[...full.recent,...full.live,...full.scheduled] as ArticleAdminRow[];
+    month=full.month;categories=full.categories;profiles=full.profiles;
+    audit=actor.permissions.includes('audit.read')?full.audit:[];
+  }else if(db){
+    const [totals,recentResult,liveResult,scheduledResult,monthResult,weekResult,
+      todayResult,mediaResult,categoryResult,activityResult,profileResult]=await Promise.all([
+      Promise.all([
+        db.from('articles').select('id',{head:true,count:'exact'}),
+        ...statuses.map(status=>db.from('articles').select('id',{head:true,count:'exact'}).eq('status',status)),
+      ]),
+      db.from('articles').select(
+        'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,updated_at,created_at,published_at'
+      ).order('updated_at',{ascending:false}).limit(8),
+      db.from('articles').select(
+        'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,updated_at,created_at,published_at'
+      ).eq('status','published').order('published_at',{ascending:false}).limit(7),
+      db.from('articles').select(
+        'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,updated_at,created_at,published_at'
+      ).eq('status','scheduled').gte('published_at',now.toISOString())
+        .order('published_at',{ascending:true}).limit(6),
+      db.from('articles').select('id,author_id,category_id,published_at')
+        .eq('status','published').gte('published_at',startMonth.toISOString())
+        .order('published_at',{ascending:false}).limit(2500),
+      db.from('articles').select('id',{head:true,count:'exact'})
+        .eq('status','published').gte('published_at',startWeek.toISOString()),
+      db.from('articles').select('id',{head:true,count:'exact'})
+        .eq('status','published').gte('published_at',startToday.toISOString()),
+      db.from('media').select('id',{head:true,count:'exact'}),
+      db.from('categories').select('id,name').order('position'),
+      actor.permissions.includes('audit.read')
+        ? db.from('audit_logs').select('id,actor_id,action,entity_id,details,created_at')
+          .eq('entity','articles').order('created_at',{ascending:false}).limit(7)
+        : Promise.resolve({data:[],error:null}),
+      db.from('profiles').select('id,full_name'),
+    ]);
+    statuses.forEach((status,index)=>counts[status]=totals[index+1]?.count??0);
+    total=totals[0]?.count??0;
+    mediaCount=mediaResult.count??0;weekCount=weekResult.count??0;todayCount=todayResult.count??0;
+    articleRows=[
+      ...((recentResult.data??[]) as ArticleAdminRow[]),
+      ...((liveResult.data??[]) as ArticleAdminRow[]),
+      ...((scheduledResult.data??[]) as ArticleAdminRow[]),
+    ];
+    month=(monthResult.data??[]) as {author_id:string;category_id:string;published_at:string|null}[];
+    categories=(categoryResult.data??[]) as {id:string;name:string}[];
+    profiles=(profileResult.data??[]) as {id:string;full_name:string|null}[];
+    audit=(activityResult.data??[]) as typeof audit;
+  }
 
-  statuses.forEach((status,index)=>counts[status]=totals[index+1]?.count??0);
-  const total=totals[0]?.count??0;
-  const baseRows=[
-    ...((recentResult.data??[]) as ArticleAdminRow[]),
-    ...((liveResult.data??[]) as ArticleAdminRow[]),
-    ...((scheduledResult.data??[]) as ArticleAdminRow[]),
-  ];
-  const index=await enrichArticleRows(db,Array.from(new Map(baseRows.map(r=>[r.id,r])).values()));
+  const uniqueRows=Array.from(new Map(articleRows.map(row=>[row.id,row])).values());
+  const index=full
+    ? await enrichArticleRowsFromMysql(actor,uniqueRows)
+    : await enrichArticleRows(db!,uniqueRows);
   const articleMap=new Map(index.map(item=>[item.id,item]));
-  const recent=((recentResult.data??[]) as ArticleAdminRow[]).map(row=>articleMap.get(row.id)!).filter(Boolean);
-  const live=((liveResult.data??[]) as ArticleAdminRow[]).map(row=>articleMap.get(row.id)!).filter(Boolean);
-  const scheduled=((scheduledResult.data??[]) as ArticleAdminRow[]).map(row=>articleMap.get(row.id)!).filter(Boolean);
-  const month=monthResult.data??[];
-  const allAuthors=[...new Set(month.map(row=>row.author_id))];
-  const {data:profiles}=allAuthors.length
-    ? await db.from('profiles').select('id,full_name').in('id',allAuthors)
-    : {data:[] as {id:string;full_name:string|null}[]};
+  const recent=articleRows.slice(0,8).map(row=>articleMap.get(row.id)!).filter(Boolean);
+  const live=articleRows.slice(8,15).map(row=>articleMap.get(row.id)!).filter(Boolean);
+  const scheduled=articleRows.slice(15).map(row=>articleMap.get(row.id)!).filter(Boolean);
   const authorNames=new Map((profiles??[]).map(a=>[a.id,a.full_name||'Rédaction TV+']));
+  authorNames.set('panfil-ebo', 'Panfil Ebo');
   const authorCounts=new Map<string,number>();
   const categoryCounts=new Map<string,number>();
   month.forEach(row=>{
-    authorCounts.set(row.author_id,(authorCounts.get(row.author_id)??0)+1);
+    const authorKey = isPanfilEbo(authorNames.get(row.author_id)) ? 'panfil-ebo' : row.author_id;
+    authorCounts.set(authorKey, (authorCounts.get(authorKey) ?? 0) + 1);
     categoryCounts.set(row.category_id,(categoryCounts.get(row.category_id)??0)+1);
   });
   const authors=[...authorCounts].sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const categoryNames=new Map((categoryResult.data??[]).map(c=>[c.id,c.name]));
+  const categoryNames=new Map((categories??[]).map(c=>[c.id,c.name]));
   const topCategories=[...categoryCounts].sort((a,b)=>b[1]-a[1]).slice(0,5);
   const maxCategory=Math.max(1,...topCategories.map(item=>item[1]));
   const calendarKey=new Intl.DateTimeFormat('sv-SE',{
@@ -112,12 +153,7 @@ export default async function DashboardV2() {
     return {date,label:dayLabel.format(date),value};
   });
   const maxDay=Math.max(1,...dayBars.map(day=>day.value));
-  const audit=activityResult.data??[];
-  const auditActorIds=[...new Set(audit.map(a=>a.actor_id).filter((id): id is string => Boolean(id)))];
-  const auditActorResponse=auditActorIds.length
-    ? await db.from('profiles').select('id,full_name').in('id',auditActorIds)
-    : {data:[] as {id:string;full_name:string|null}[]};
-  const auditActorNames=new Map((auditActorResponse.data??[]).map(a=>[a.id,a.full_name||'Collaborateur']));
+  const auditActorNames=new Map((profiles??[]).map(a=>[a.id,a.full_name||'Collaborateur']));
   const auditRows=audit.map(entry=>{
     const changes=(entry.details??{}) as Record<string,unknown>;
     const statusUpdate=changes.status as {avant?:unknown;apres?:unknown}|string|undefined;
@@ -135,14 +171,14 @@ export default async function DashboardV2() {
     return {
       ...entry,
       activityLabel,
-      title:articleMap.get(entry.entity_id)?.title??title,
+      title:(entry.entity_id?articleMap.get(entry.entity_id)?.title:undefined)??title,
       person:entry.actor_id?(auditActorNames.get(entry.actor_id)??'Collaborateur'):'Importation ou automatisation',
     };
   });
 
   const kpis=[
     {label:'Articles en ligne',value:counts.published,icon:CheckCircle2,help:'Consultables sur le site',href:'/admin-v2/articles?status=published',tone:'positive'},
-    {label:'Publications du jour',value:todayResult.count??0,icon:Activity,help:'Depuis minuit à Libreville',href:'/admin-v2/articles?status=published',tone:'blue'},
+    {label:'Publications du jour',value:todayCount,icon:Activity,help:'Depuis minuit à Libreville',href:'/admin-v2/articles?status=published',tone:'blue'},
     {label:'À valider',value:counts.in_review,icon:ShieldCheck,help:'À traiter par la rédaction',href:'/admin-v2/articles?status=in_review',tone:'amber'},
     {label:'Programmés',value:counts.scheduled,icon:CalendarClock,help:'Mises en ligne à venir',href:'/admin-v2/articles?status=scheduled',tone:'violet'},
     {label:'Brouillons',value:counts.draft,icon:FilePenLine,help:'En cours de rédaction',href:'/admin-v2/articles?status=draft',tone:'slate'},
@@ -173,7 +209,7 @@ export default async function DashboardV2() {
         <header><div><p className="v2-dashboard-eyebrow">PUBLICATION</p>
           <h2 id="v2-week-title">Activité des 7 derniers jours</h2>
           <p>Articles mis en ligne, par jour, heure de Libreville.</p></div>
-          <strong className="v2-dashboard-total">{number(weekResult.count)} <span>publications</span></strong>
+          <strong className="v2-dashboard-total">{number(weekCount)} <span>publications</span></strong>
         </header>
         <div className="v2-dashboard-chart" role="img" aria-label="Publications par jour sur les sept derniers jours">
           {dayBars.map(day=><div key={day.label} className="v2-dashboard-bar-column"
@@ -187,7 +223,7 @@ export default async function DashboardV2() {
         </div>
         <div className="v2-dashboard-footnote">
           <span><FileText size={15}/> {number(total)} articles enregistrés au total</span>
-          <span><Images size={15}/> {number(mediaResult.count)} médias</span>
+          <span><Images size={15}/> {number(mediaCount)} médias</span>
         </div>
       </section>
       <section className="v2-dashboard-panel" aria-labelledby="v2-categories-title">

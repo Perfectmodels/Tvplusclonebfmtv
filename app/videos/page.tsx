@@ -1,37 +1,7 @@
 import Breadcrumb from '../../components/Breadcrumb';
-import LivePlayer from '../../components/LivePlayer';
-import MediaBrowser from '../../components/MediaBrowser';
-import { getVideos } from '../../lib/db/repository';
-import { isPlayableVideoUrl } from '../../lib/media/urls';
-
-export const revalidate = 60;
-
-export default async function VideosPage() {
-  const { data: videos } = await getVideos();
-  const items = videos.filter((v) => isPlayableVideoUrl(v.href)).map((v) => ({
-    id: v.id,
-    title: v.title,
-    category: v.category,
-    image: v.image,
-    meta: v.duration,
-    description: v.description,
-    href: v.href,
-  }));
-
-  return (
-    <main className="shell listing-page">
-      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Vidéos' }]} />
-      <h1 className="page-title">Vidéos</h1>
-      <p className="page-intro">
-        Reportages, décryptages et extraits d’antenne : retrouvez toutes les vidéos de la rédaction TV Plus.
-      </p>
-      <LivePlayer
-        compact
-        title="L'antenne TV+ Afrique"
-        description="Retrouvez les reportages, éditions et émissions depuis le direct de TV+ Afrique."
-      />
-      <div className="section-head has-rule"><h2>Toutes les vidéos</h2></div>
-      <MediaBrowser items={items} variant="video" />
-    </main>
-  );
-}
+import {AvCard,AvPagination} from '../../components/AvCatalog';
+import {listCatalog} from '../../lib/media/catalog';
+import Link from 'next/link';
+export const revalidate=120;
+export const metadata={title:'Reportages et vidéos — TV+ Afrique',alternates:{canonical:'/videos'}};
+export default async function VideosPage({searchParams}:{searchParams:Promise<{page?:string}>}){const page=Math.max(1,Math.min(10000,Math.floor(Number((await searchParams).page)||1))),size=24,data=await listCatalog('reportage',size,page);return <main className="shell listing-page av-public"><Breadcrumb items={[{label:'Accueil',href:'/'},{label:'Reportages'}]}/><header className="av-public-head"><h1 className="page-title">Reportages & vidéos</h1><p className="page-intro">Reportages, interviews et décryptages de la rédaction TV+ Afrique.</p></header><div className="rubrique-chips"><Link href="/reels">TV+ Reels</Link><Link href="/articles-video">Articles vidéo</Link><Link href="/ligne-rouge">Ligne Rouge</Link><Link href="/replays">Replays</Link></div>{!data.available?<p role="alert">Les reportages sont momentanément indisponibles.</p>:!data.items.length?<p className="empty-state">Aucun reportage publié sur cette page.</p>:<section className="av-section"><h2>Les derniers reportages</h2><div className="av-grid">{data.items.map(item=><AvCard key={item.id} item={item}/>)}</div></section>}<AvPagination path="/videos" page={page} total={data.total} size={size}/></main>;}

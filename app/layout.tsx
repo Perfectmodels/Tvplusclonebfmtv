@@ -1,15 +1,19 @@
 import type { Metadata } from 'next';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import BackToTop from '../components/BackToTop';
-import LiveOverlayProvider from '../components/video/LiveOverlayProvider';
-import { getCategories, getHeaderTopics } from '../lib/db/repository';
+import SiteFrame from '../components/SiteFrame';
+import { getCategories } from '../lib/db/repository';
+import { navigationCategories } from '../lib/public-navigation';
 import './globals.css';
 import './editorial.css';
 import './replay-embeds.css';
+import './home-refresh.css';
+import './studio-public.css';
+import './chatbot.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tvplusv2.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tvplusclonebfmtv.vercel.app'),
+  alternates:{types:{'application/rss+xml':'/rss.xml'}},
   applicationName: 'TV+ Afrique',
   openGraph: { siteName: 'TV+ Afrique', locale: 'fr_GA', type: 'website' },
   title: 'TV+ Afrique — L’actualité du Gabon en continu',
@@ -18,24 +22,18 @@ export const metadata: Metadata = {
 };
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
-  const [{ data: categories }, { data: topics }] = await Promise.all([
-    getCategories().catch(() => ({ data: [] as string[] })),
-    getHeaderTopics().catch(() => ({ data: [] as { label: string; link: string }[] })),
-  ]);
+  const { data } = await getCategories().catch(() => ({ data: [] as string[] }));
+  const categories = navigationCategories(data);
 
   return (
     <html lang="fr">
       <body>
-        <LiveOverlayProvider>
-          <a href="#contenu" className="skip-link">Aller au contenu</a>
-          <Header
-            categories={categories}
-            topics={topics}
-          />
-          <div id="contenu">{children}</div>
-          <Footer categories={categories} />
-          <BackToTop />
-        </LiveOverlayProvider>
+        <SiteFrame
+          header={<Header categories={categories} />}
+          footer={<Footer categories={categories} />}
+        >
+          {children}
+        </SiteFrame>
       </body>
     </html>
   );

@@ -1,6 +1,9 @@
 import 'server-only';
+import { editorialAuthorName } from '../articles/author-names';
 import { getExternalMediaUrl } from '../media-url';
 import type { createAuthClient } from '../auth/server';
+import type { V2Actor } from '../auth/v2-admin';
+import { newsroom } from './lws';
 
 export type ArticleAdminRow = {
   id: string; slug: string; short_code: string; title: string; excerpt?: string;
@@ -14,6 +17,38 @@ export type EnrichedArticle = ArticleAdminRow & {
 };
 
 type AuthDb = Awaited<ReturnType<typeof createAuthClient>>;
+
+/** Enrichissement MySQL : une seule opération LWS, aucun appel Supabase. */
+export async function enrichArticleRowsFromMysql(
+  actor: Pick<V2Actor,'id'|'permissions'>,
+  rows: ArticleAdminRow[],
+): Promise<EnrichedArticle[]> {
+  if (!rows.length) return [];
+  const ids = {
+    profiles: [...new Set(rows.flatMap((row) => [row.author_id, row.reviewed_by]).filter((id): id is string => !!id))],
+    categories: [...new Set(rows.map((row) => row.category_id))],
+    media: [...new Set(rows.map((row) => row.cover_media_id).filter((id): id is string => !!id))],
+  };
+  const result = await newsroom<{
+    profiles: { id: string; full_name: string | null }[];
+    categories: { id: string; name: string }[];
+    media: { id: string; media_url: string; original_path: string; alt_text: string }[];
+  }>(actor, 'lookups', { ids });
+  const profileMap = new Map(result.profiles.map((item) => [item.id, item.full_name || 'Rédaction TV+']));
+  const categoryMap = new Map(result.categories.map((item) => [item.id, item.name]));
+  const mediaMap = new Map(result.media.map((item) => [item.id, item]));
+  return rows.map((row) => {
+    const cover = row.cover_media_id ? mediaMap.get(row.cover_media_id) : null;
+    return {
+      ...row,
+      category_name: categoryMap.get(row.category_id) || 'Actualité',
+      author_name: editorialAuthorName(profileMap.get(row.author_id)) || 'Rédaction TV+',
+      publisher_name: row.reviewed_by ? profileMap.get(row.reviewed_by) ?? null : null,
+      cover_url: cover ? cover.media_url || cover.original_path : null,
+      cover_alt: cover?.alt_text || row.title,
+    };
+  });
+}
 
 /** Agrégation en lots : trois requêtes au maximum, indépendamment du nombre de cartes affichées. */
 export async function enrichArticleRows(db: AuthDb, rows: ArticleAdminRow[]): Promise<EnrichedArticle[]> {
@@ -44,7 +79,7 @@ export async function enrichArticleRows(db: AuthDb, rows: ArticleAdminRow[]): Pr
     return {
       ...row,
       category_name: categoryMap.get(row.category_id) || 'Actualité',
-      author_name: profilesMap.get(row.author_id) || 'Rédaction TV+',
+      author_name: editorialAuthorName(profilesMap.get(row.author_id)) || 'Rédaction TV+',
       publisher_name: row.reviewed_by ? profilesMap.get(row.reviewed_by) ?? null : null,
       cover_url: coverUrl,
       cover_alt: cover?.alt || row.title,

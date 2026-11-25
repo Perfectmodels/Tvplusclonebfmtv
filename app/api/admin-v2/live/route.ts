@@ -5,6 +5,7 @@ import { requireV2Api } from '../../../../lib/auth/v2-admin';
 import { handleRoute,ok,ApiError } from '../../../../lib/api/response';
 import { extractLiveUrl,resolveLivePlayback,isVercelOrSitePlaybackUrl } from '../../../../lib/video/live-platforms';
 import { revalidatePath, revalidateTag } from 'next/cache';
+import { newsroom, usesLwsCatalog } from '../../../../lib/admin-v2/lws';
 
 export const dynamic='force-dynamic';
 const date=z.string().datetime({offset:true}).nullable();
@@ -31,13 +32,14 @@ const schema=z.object({
 });
 const fields='title,hls_url,enabled,description,standby_message,player_platform,playback_url,starts_at,ends_at,updated_at';
 export const GET=handleRoute(async()=>{
-  const {db}=await requireV2Api('schedule.manage');
+  const {actor,db}=await requireV2Api('schedule.manage');
+  if(usesLwsCatalog())return ok(await newsroom(actor,'live.get'));
   const {data,error}=await db.from('site_live_settings').select(fields).eq('id',1).maybeSingle();
   if(error||!data)throw new ApiError('Réglages de régie indisponibles.',503,'UNAVAILABLE');
   return ok(data);
 });
 export const PATCH=handleRoute(async(request:NextRequest)=>{
-  const {db}=await requireV2Api('schedule.manage');
+  const {actor,db}=await requireV2Api('schedule.manage');
   const parsed=schema.safeParse(await request.json());
   if(!parsed.success)throw new ApiError('Configuration du direct invalide.',400,'BAD_REQUEST',parsed.error.flatten());
   const v=parsed.data;
@@ -48,6 +50,11 @@ export const PATCH=handleRoute(async(request:NextRequest)=>{
   }
   if(v.enabled && (!player.supported || (!player.hlsUrl && !player.embedUrl))){
     throw new ApiError('Le direct exige un lecteur Restream ou YouTube Live compatible.',400,'BAD_REQUEST');
+  }
+  if(usesLwsCatalog()){
+    const data=await newsroom(actor,'live.save',{data:{...v,playback_url:normalized,hls_url:''}});
+    revalidateTag('tvplus-public-live-settings');revalidatePath('/direct');revalidatePath('/');
+    return ok(data);
   }
   const {data,error}=await db.from('site_live_settings')
     .update({

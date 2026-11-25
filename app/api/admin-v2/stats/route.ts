@@ -1,8 +1,10 @@
 import { handleRoute, ok, ApiError } from '../../../../lib/api/response';
 import { requireV2Api } from '../../../../lib/auth/v2-admin';
+import { newsroom, usesLwsCatalog } from '../../../../lib/admin-v2/lws';
 export const dynamic='force-dynamic';
 export const GET=handleRoute(async()=>{
-  const {db}=await requireV2Api('articles.read_all');
+  const {actor,db}=await requireV2Api('articles.read_all');
+  if(usesLwsCatalog())return ok(await newsroom(actor,'dashboard'));
   const [published,drafts,review,approved,scheduled,media,categories,recent]=await Promise.all([
     db.from('articles').select('id',{head:true,count:'exact'}).eq('status','published'),
     db.from('articles').select('id',{head:true,count:'exact'}).eq('status','draft'),

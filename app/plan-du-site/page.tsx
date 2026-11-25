@@ -1,17 +1,15 @@
 import Link from 'next/link';
 import Breadcrumb from '../../components/Breadcrumb';
-import { getCategories } from '../../lib/db/repository';
-import { categoryHref } from '../../lib/categories';
 
 export const revalidate = 60;
 
 const sections = [
   { title: 'L’information', links: [
-    ['Accueil', '/'], ['Toutes les rubriques', '/rubriques'], ['Dernières actualités', '/actualites'], ['Fil info News 24/7', '/news-24-7'], ['Recherche', '/recherche'],
-    ['Direct', '/direct'], ['Vidéos', '/videos'],
+    ['Accueil', '/'], ['Dernières actualités', '/actualites'], ['Fil info News 24/7', '/news-24-7'], ['Recherche', '/recherche'],
+    ['Direct Premium', '/direct'], ['Reportages', '/videos'], ['Articles vidéo', '/articles-video'], ['Reels', '/reels'],
   ] },
   { title: 'Les émissions', links: [
-    ['Émissions & replays', '/replay-emissions'], ['Podcasts', '/podcasts'],
+    ['Émissions & replays', '/replay-emissions'], ['Tous les replays', '/replays'], ['Ligne Rouge', '/ligne-rouge'], ['Podcasts', '/podcasts'],
     ['Programme TV', '/programme-tv'],
   ] },
   { title: 'Services', links: [
@@ -23,9 +21,7 @@ const sections = [
   ] },
 ];
 
-export default async function PlanDuSitePage() {
-  const { data: categories } = await getCategories();
-
+export default function PlanDuSitePage() {
   return (
     <main className="shell listing-page">
       <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Plan du site' }]} />
@@ -35,18 +31,14 @@ export default async function PlanDuSitePage() {
         {sections.map((section) => (
           <section key={section.title}>
             <h2>{section.title}</h2>
-            <div className="footer-links">
+            <div className="sitemap-links">
               {section.links.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
             </div>
           </section>
         ))}
-        <section>
+        <section id="rubriques">
           <h2>Toutes les rubriques</h2>
-          <div className="footer-links">
-            {categories.map((category) => (
-              <Link key={category} href={categoryHref(category)}>{category}</Link>
-            ))}
-          </div>
+          <div className="sitemap-links"><Link href="/rubriques">Ouvrir le répertoire des rubriques</Link></div>
         </section>
       </div>
     </main>

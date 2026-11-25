@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Facebook, Linkedin, Link as LinkIcon, MessageCircle, Send, Share2 } from 'lucide-react';
+import { Check, Facebook, Linkedin, Link as LinkIcon, MessageCircle, Send, Share2 } from 'lucide-react';
 
 const X_ICON = (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -9,17 +9,15 @@ const X_ICON = (
   </svg>
 );
 
-export default function ShareButtons({ url, title }: { url?: string; title?: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const target = url ?? (typeof window !== 'undefined' ? window.location.href : '');
-  const label = title ?? '';
-  const encodedUrl = encodeURIComponent(target);
-  const encodedTitle = encodeURIComponent(label);
+export default function ShareButtons({ url, title }: { url: string; title: string }) {
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'manual'>('idle');
+  const encodedUrl = encodeURIComponent(url);
+  const encodedTitle = encodeURIComponent(title);
+  const whatsappText = encodeURIComponent(title + '\n' + url);
 
   const links = [
+    { name: 'WhatsApp', icon: <MessageCircle size={15} />, href: `https://api.whatsapp.com/send?text=${whatsappText}` },
     { name: 'Facebook', icon: <Facebook size={15} />, href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` },
-    { name: 'WhatsApp', icon: <MessageCircle size={15} />, href: `https://api.whatsapp.com/send?text=${encodedTitle}%20${encodedUrl}` },
     { name: 'X', icon: X_ICON, href: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}` },
     { name: 'LinkedIn', icon: <Linkedin size={15} />, href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}` },
     { name: 'Telegram', icon: <Send size={15} />, href: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}` },
@@ -27,25 +25,35 @@ export default function ShareButtons({ url, title }: { url?: string; title?: str
 
   async function copyLink() {
     try {
-      await navigator.clipboard.writeText(target);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2500);
+      await navigator.clipboard.writeText(url);
+      setCopyStatus('copied');
     } catch {
-      setCopied(false);
+      setCopyStatus('manual');
     }
   }
 
   async function nativeShare() {
-    if (!navigator.share) return copyLink();
+    const shareData = { title, url };
+    if (!navigator.share || navigator.canShare?.(shareData) === false) {
+      await copyLink();
+      return;
+    }
     try {
-      await navigator.share({ title: label, url: target });
-    } catch {
-      // partage annulé par l'utilisateur
+      await navigator.share(shareData);
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) await copyLink();
     }
   }
 
   return (
-    <div className="share-buttons-row">
+    <div className="share-buttons-row" role="group" aria-label="Partager cet article">
+      <button type="button" className="share-btn share-btn-labeled share-btn-primary" onClick={nativeShare}>
+        <Share2 size={16} aria-hidden="true" /> Partager
+      </button>
+      <button type="button" className="share-btn share-btn-labeled" onClick={copyLink}>
+        {copyStatus === 'copied' ? <Check size={16} aria-hidden="true" /> : <LinkIcon size={16} aria-hidden="true" />}
+        {copyStatus === 'copied' ? 'Lien copié' : 'Copier le lien'}
+      </button>
       {links.map((item) => (
         <a
           key={item.name}
@@ -59,13 +67,15 @@ export default function ShareButtons({ url, title }: { url?: string; title?: str
           {item.icon}
         </a>
       ))}
-      <button type="button" className="share-btn" onClick={nativeShare} aria-label="Partager" title="Partager">
-        <Share2 size={15} />
-      </button>
-      <button type="button" className="share-btn" onClick={copyLink} aria-label="Copier le lien court" title="Copier le lien court">
-        <LinkIcon size={15} />
-      </button>
-      {copied && <span className="share-feedback" role="status">Lien court copié</span>}
+      <span className="share-feedback" role="status">
+        {copyStatus === 'copied' && 'Lien de l’article copié.'}
+      </span>
+      {copyStatus === 'manual' && (
+        <label className="share-manual">
+          Copier le lien manuellement
+          <input value={url} readOnly autoFocus onFocus={(event) => event.currentTarget.select()} />
+        </label>
+      )}
     </div>
   );
 }
