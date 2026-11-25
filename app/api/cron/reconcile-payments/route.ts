@@ -8,7 +8,7 @@ export const dynamic='force-dynamic';
 export const maxDuration=60;
 const system={id:'payment-service',permissions:[]};
 function authorized(req:NextRequest){
- const secret=process.env.CRON_SECRET||'',token=req.headers.get('authorization')||'';
+ const secret=process.env.PAYMENT_RECONCILE_SECRET||'',token=req.headers.get('authorization')||'';
  const a=Buffer.from('Bearer '+secret),b=Buffer.from(token);
  return secret.length>=32&&a.length===b.length&&timingSafeEqual(a,b);
 }

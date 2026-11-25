@@ -54,7 +54,7 @@ function payments(PDO $pdo,string $op,array $req):void {
   if(!in_array($mode,['sandbox','production'],true)||!$wallet||strlen($wallet)>200||!preg_match('/^[a-z0-9-]{1,50}$/',$slug))respond(400,['error'=>'Demande invalide']);
   $pdo->beginTransaction();
   $q=$pdo->prepare('SELECT id FROM tvp_profiles WHERE id=? AND is_active=1 FOR UPDATE');$q->execute([$actor]);if(!$q->fetchColumn()){$pdo->rollBack();respond(403,['error'=>'Compte inactif']);}
-  $q=$pdo->prepare("SELECT reference FROM tvp_live_payments WHERE user_id=? AND wallet_id=? AND mode=? AND (state IN ('reserved','pending','review') OR (state='failed' AND (checkout_expires_at IS NULL OR checkout_expires_at>UTC_TIMESTAMP(6)))) ORDER BY created_at DESC LIMIT 1 FOR UPDATE");$q->execute([$actor,$wallet,$mode]);$existing=$q->fetchColumn();
+  $q=$pdo->prepare("SELECT reference FROM tvp_live_payments WHERE user_id=? AND mode=? AND (state IN ('reserved','pending','review') OR (state='failed' AND (checkout_expires_at IS NULL OR checkout_expires_at>UTC_TIMESTAMP(6)))) ORDER BY created_at DESC LIMIT 1 FOR UPDATE");$q->execute([$actor,$mode]);$existing=$q->fetchColumn();
   if($existing){$row=paymentRow($pdo,$existing);$pdo->commit();respond(200,['order'=>$row,'fresh'=>false]);}
   $q=$pdo->prepare('SELECT * FROM tvp_live_plans WHERE slug=? AND active=1 FOR UPDATE');$q->execute([$slug]);$plan=$q->fetch();
   if(!$plan){$pdo->rollBack();respond(404,['error'=>'Offre indisponible']);}
