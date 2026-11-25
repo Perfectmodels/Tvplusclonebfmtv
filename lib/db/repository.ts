@@ -578,6 +578,7 @@ export type PublicEpisode = {
 };
 
 export async function getEpisodes(limit = 24): Promise<Wrapped<PublicEpisode[]>> {
+  if (v2.usesTvplusV2()) return v2.getV2Episodes(limit);
   const result = await fromSupabase<EpisodeRow[]>(
     (db) => db.from('episodes').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(limit),
     [],
@@ -600,4 +601,11 @@ export async function getEpisodes(limit = 24): Promise<Wrapped<PublicEpisode[]>>
   return { data: [], source: 'static', error: result.error };
 }
 
+export async function getEpisodeById(id: string): Promise<PublicEpisode | null> {
+  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(id)) return null;
+  if (v2.usesTvplusV2()) return v2.getV2EpisodeById(id);
+  const result = await fromSupabase<EpisodeRow|null>(db=>db.from('episodes').select('*').eq('status','published').eq('id',id).maybeSingle(),null);
+  const e=result.data;
+  return e ? {id:e.id,programId:e.program_id??null,title:e.title,description:e.description??'',videoUrl:e.video_url??'',thumbnail:e.thumbnail_url??'',duration:e.duration,publishedAt:e.published_at??e.created_at} : null;
+}
 export { topics, topicLinks };
