@@ -16,11 +16,11 @@ type Category = { id: string; name: string; slug: string };
 type Media = { id: string; url: string; alt: string; mime_type: string };
 type ArticleForm = {
   title: string; slug: string; excerpt: string; category_id: string;
-  cover_media_id: string | null; seo_title: string; seo_description: string;
+  cover_media_id: string | null; video_source_url:string; seo_title: string; seo_description: string;
   country_code: string; province_slug: string; featured: boolean; is_alert: boolean;
 };
 const initialForm: ArticleForm = {
-  title: '', slug: '', excerpt: '', category_id: '', cover_media_id: null,
+  title: '', slug: '', excerpt: '', category_id: '', cover_media_id: null, video_source_url:'',
   seo_title: '', seo_description: '', country_code: 'GA', province_slug: '',
   featured: false, is_alert: false,
 };
@@ -133,7 +133,7 @@ export default function V2ArticleEditor({
         if (!alive) return;
         setForm({
           title: article.title, slug: article.slug, excerpt: article.excerpt ?? '',
-          category_id: article.category_id, cover_media_id: article.cover_media_id,
+          category_id: article.category_id, cover_media_id: article.cover_media_id, video_source_url:article.video_source_url??'',
           seo_title: article.seo_title ?? '', seo_description: article.seo_description ?? '',
           country_code: article.country_code ?? 'GA', province_slug: article.province_slug ?? '',
           featured: Boolean(article.featured), is_alert: Boolean(article.is_alert),
@@ -395,6 +395,7 @@ export default function V2ArticleEditor({
                   <h2 id="article-seo-title">SEO et partage</h2>
                   <p>Optimisez la visibilité de votre article dans les moteurs et sur les réseaux sociaux.</p></div>
               </div>
+              <label className="v2-field"><span>Vidéo associée à l’article (facultatif)</span><input type="url" value={form.video_source_url} disabled={!canEdit} onChange={event=>setField('video_source_url',event.target.value)} placeholder="Lien YouTube, Facebook, TikTok, Vimeo ou Dailymotion"/><small>Une vidéo valide classe l’article dans le bandeau Articles vidéo. L’article conserve son texte et sa rubrique.</small></label>
               <div className="v2-compose-search-preview" aria-label="Assistant SEO éditorial">
                 <strong>Score interne : {seo.score}/100</strong>
                 <progress max={100} value={seo.score} aria-label="Score SEO interne" style={{width:'100%'}}/>
