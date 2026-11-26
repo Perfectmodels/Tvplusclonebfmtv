@@ -8,8 +8,9 @@ import {emailSchema,parseJson} from '../../../../lib/api/validate';
 export const dynamic='force-dynamic';
 export const POST=handleRoute(async(req:NextRequest)=>{
  if(req.headers.get('origin')!==req.nextUrl.origin)throw new ApiError('Origine refusée.',403,'UNAUTHORIZED');
- rateLimit(req,{prefix:'recovery',limit:5,windowMs:600000});
  const {email}=parseJson(z.object({email:emailSchema}),await req.json());
+ rateLimit(req,{prefix:'recovery-ip',limit:20,windowMs:600000});
+ rateLimit(req,{prefix:'recovery-account',limit:3,windowMs:600000,subject:email});
  const db=await createAuthClient();const url=new URL('/auth/callback?flow=recovery',canonicalSiteUrl());
  const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:url.href});
  if(error&&(error.status===429||!error.status||error.status>=500))throw new ApiError('Envoi temporairement indisponible. Réessayez ultérieurement.',503,'UNAVAILABLE');
