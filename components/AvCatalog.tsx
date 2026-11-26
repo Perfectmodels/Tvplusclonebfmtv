@@ -21,9 +21,9 @@ export function AvPageHeader({ current, title, description }: { current: string;
       <h1 className="page-title">{title}</h1>
       {description && <p className="page-intro">{description}</p>}
       <nav className="av-format-nav" aria-label="Formats vidéo et audio">
-        <Link href="/videos" prefetch={false} aria-current={current === "/videos" ? "page" : undefined}>Espace vidéo</Link>
+        <a href="/videos" aria-current={current === "/videos" ? "page" : undefined}>Espace vidéo</a>
         {videoFormats.map(([href, label]) => (
-          <Link key={href} href={href} aria-current={href === current ? 'page' : undefined}>{label}</Link>
+          href === '/videos#reportages' ? <a key={href} href={href}>{label}</a> : <Link key={href} href={href} prefetch={false} aria-current={href === current ? 'page' : undefined}>{label}</Link>
         ))}
       </nav>
     </header>
