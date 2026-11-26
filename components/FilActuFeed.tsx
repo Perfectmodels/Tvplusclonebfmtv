@@ -35,11 +35,11 @@ export default function FilActuFeed({items,categories=[],total,excludeSlugs=[]}:
  const start=Math.max(1,Math.min(pages-4,page-2));
  return <div className="tvplus-chronicle" aria-busy={busy}>
   {error&&<p role="alert">{error}</p>}
-  {rows.length?<ol className="tvplus-chronicle-list">{rows.map(item=><li key={item.shortId||item.slug}>
-   <Link href={articlePath(item)} className="tvplus-chronicle-row">
+  {rows.length?<ol className="tvplus-chronicle-list">{rows.map((item,index)=><li key={item.shortId||item.slug}>
+   <Link href={articlePath(item)} className={'tvplus-chronicle-row'+(index===0?' is-latest':'')}>
     <span className="tvplus-chronicle-time">{dateLabel(item)}</span>
     <FeedThumbnail image={item.image}/>
-    <span className="tvplus-chronicle-copy"><span className="category-label">{item.category}</span><strong>{item.title}</strong></span>
+    <span className="tvplus-chronicle-copy"><span className="category-label">{item.category}</span><strong>{item.title}</strong>{item.summary&&<small className="tvplus-chronicle-summary">{item.summary}</small>}</span>
     <ChevronRight size={16} aria-hidden="true"/>
    </Link></li>)}</ol>:<p className="empty-state">Aucune actualité disponible.</p>}
   {pages>1&&<nav className="tvplus-chronicle-pages" aria-label="Pagination du fil actu">

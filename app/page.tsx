@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type {Metadata} from 'next';
-import type {ReactNode} from 'react';
+import {Suspense,type ReactNode} from 'react';
 import {MessageCircle} from 'lucide-react';
 import {getSiteUrl} from '../lib/articles/site-url';
 import AlertBar from '../components/AlertBar';
@@ -22,6 +22,11 @@ import {distributeHomepageStories} from '../lib/editorial/home-distribution';
 import {articlePath} from '../lib/articles/urls';
 import {categoryHref,categorySlug} from '../lib/categories';
 import {getNewsFeed} from '../lib/rss/news';
+async function HomeWireTicker(){
+ const wire=await getNewsFeed(20).catch(()=>({items:[]}));
+ return <NewsTicker items={wire.items.map(({id,time,title})=>({id,time,title}))} variant="rail" limit={20}/>;
+}
+
 export const revalidate=60;
 export async function generateMetadata({searchParams}:{searchParams:Promise<{q?:string}>}):Promise<Metadata>{
  const {q}=await searchParams;return q?.trim()?{title:'Recherche — TV+ Afrique',robots:{index:false,follow:true}}:{alternates:{canonical:await getSiteUrl(),types:{'application/rss+xml':'/rss.xml'}}};
@@ -31,15 +36,15 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  const result=await listArticles({search:q,pageSize:q?30:200}).catch(()=>null);
  const articles=result?.items??[];
  if(q)return <main className="shell"><section className="search-results"><SectionHeading title={'Résultats pour « '+q+' »'}/>{articles.length?<div className="selection-grid">{articles.map(s=><StoryCard story={s} key={s.slug}/>)}</div>:<p className="empty-state">Aucune actualité disponible pour cette recherche.</p>}</section></main>;
- const [wire,cats,ads,media,programs,episodes,layout,redLine,videoFeed]=await Promise.all([
-  getNewsFeed(20).catch(()=>({items:[]})),getCategories().catch(()=>({data:[]})),getHomepageAds(),homeMediaCatalog(),getPrograms().catch(()=>({data:[]})),getEpisodes(500).catch(()=>({data:[]})),readHomeConfig(),listRedLine(8).catch(()=>({items:[],total:0})),listArticles({videoOnly:true,pageSize:8}).catch(()=>null)
+ const [cats,ads,media,programs,episodes,layout,redLine,videoFeed]=await Promise.all([
+  getCategories().catch(()=>({data:[]})),getHomepageAds(),homeMediaCatalog(),getPrograms().catch(()=>({data:[]})),getEpisodes(48).catch(()=>({data:[]})),readHomeConfig(),listRedLine(8).catch(()=>({items:[],total:0})),listArticles({videoOnly:true,pageSize:8}).catch(()=>null)
  ]);
  const categories=cats.data;
  const {alert,hero,selection,feed,blocks,videoArticles}=distributeHomepageStories(articles,categories);
  const excluded=[alert?.slug,hero?.slug].filter((s):s is string=>!!s);
- const catalog=(kind:'reel'|'reportage'|'podcast')=>media.items.filter(m=>m.kind===kind).map(m=>({id:m.id,title:m.title,image:m.thumbnail_url,href:'/media/'+m.id,meta:m.category}));
+ const catalog=(kind:'reel'|'reportage'|'podcast')=>media.items.filter(m=>m.kind===kind).map(m=>({id:m.id,title:m.title,image:m.thumbnail_url,href:'/media/'+m.id,meta:m.category,source:m.source_url}));
  const line=programs.data.find(p=>p.slug==='ligne-rouge'||p.name.toLowerCase().trim()==='ligne rouge');
- const replay=()=>episodes.data.filter(e=>(!!e.videoUrl||!!e.legacyPage)&&(!line||e.programId!==line.id)).slice(0,8).map(e=>({id:e.id,title:e.title,image:e.thumbnail,href:'/replays/'+e.id,meta:e.duration}));
+ const replay=()=>episodes.data.filter(e=>(!!e.videoUrl||!!e.legacyPage)&&(!line||e.programId!==line.id)).slice(0,8).map(e=>({id:e.id,title:e.title,image:e.thumbnail,href:'/replays/'+e.id,meta:e.duration,source:'',deadLink:true}));
  const reels=catalog('reel'),lineItems:RedLineItem[]=redLine.items,replays=replay(),reports=catalog('reportage'),podcasts=catalog('podcast');
  type Strip={title:string;href:string;items:ReturnType<typeof catalog>;vertical?:boolean;audio?:boolean;emptyMessage?:string;redLine?:boolean;redLineItems?:RedLineItem[]};
  const stripMap: Record<HomeBlock,Strip>={
@@ -56,7 +61,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  }
  const videos=order.filter(id=>!layout.hidden.includes(id)).map(id=>stripMap[id]);
  const latestVideoArticles=videoFeed?.items.length?videoFeed.items:videoArticles;
- const articleVideos={title:'L’actualité en vidéo',href:'/articles-video',emptyMessage:'Aucun article vidéo publié pour le moment.',items:latestVideoArticles.map(s=>({id:s.slug,title:s.title,image:s.image,href:articlePath(s),meta:s.category}))};
+ const articleVideos={title:'L’actualité en vidéo',href:'/articles-video',emptyMessage:'Aucun article vidéo publié pour le moment.',items:latestVideoArticles.map(s=>({id:s.slug,title:s.title,image:s.image,href:articlePath(s),meta:s.category,source:s.sourceUrl??''}))};
  const reportIndex=videos.findIndex(s=>s.href==='/videos');
  videos.splice(reportIndex<0?videos.length:reportIndex+1,0,articleVideos);
  // The first two editorial sections follow the requested examples when available.
@@ -120,7 +125,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
    {hero?<StoryCard story={hero} variant="hero"/>:<p className="empty-state">Les actualités à la une seront bientôt disponibles.</p>}
    <section className="tvplus-home-feed" id="fil-info"><SectionHeading title="Fil actu"/><FilActuFeed items={feed} total={Math.max(0,(result?.total??articles.length)-excluded.length)} excludeSlugs={excluded}/></section>
   </div>
-  <aside className="tvplus-home-aside"><NewsTicker items={wire.items.map(({id,time,title})=>({id,time,title}))} variant="rail" limit={20}/></aside>
+  <aside className="tvplus-home-aside"><Suspense fallback={<p className="tvplus-home-ticker-loading" role="status">Chargement du fil…</p>}><HomeWireTicker/></Suspense></aside>
  </div>
  <div className="home-category-stack">{sections}</div>
  <section className="category-block" aria-label="Grille des programmes"><SectionHeading title="Grille des programmes" moreHref="/programme-tv" moreLabel="Voir les horaires"/><p>Retrouvez les émissions et les rendez-vous à l’antenne de TV+ Afrique.</p><div className="rubrique-chips"><Link href="/programme-tv">Consulter la grille TV</Link><Link href="/replay-emissions">Toutes les émissions et leurs replays</Link></div></section>

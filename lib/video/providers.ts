@@ -70,3 +70,23 @@ export function videoPlaybackUrl(embed: string, provider: VideoProvider): string
   }
   return embed;
 }
+
+/** Version silencieuse pour un fil automatique : le son reste désactivé au départ. */
+export function videoFeedUrl(embed: string, provider: VideoProvider, muted = true): string {
+  const url = new URL(videoPlaybackUrl(embed, provider));
+  if (provider === 'sproutvideo') {
+    if (muted) url.searchParams.set('mute', 'true');
+    else url.searchParams.delete('mute');
+  } else if (provider === 'youtube') {
+    url.searchParams.set('playsinline', '1');
+    if (muted) url.searchParams.set('mute', '1');
+    else url.searchParams.delete('mute');
+  } else if (provider === 'vimeo') {
+    if (muted) url.searchParams.set('muted', '1');
+    else url.searchParams.delete('muted');
+  } else if (provider === 'dailymotion') {
+    if (muted) url.searchParams.set('mute', '1');
+    else url.searchParams.delete('mute');
+  }
+  return url.toString();
+}

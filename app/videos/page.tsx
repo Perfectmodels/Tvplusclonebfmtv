@@ -1,27 +1,65 @@
 import Breadcrumb from '../../components/Breadcrumb';
-import { AvCard, AvPageHeader, AvPagination } from '../../components/AvCatalog';
+import { AvPageHeader } from '../../components/AvCatalog';
+import VideoFeed, { type FeedItem } from '../../components/video/VideoFeed';
 import { listCatalog } from '../../lib/media/catalog';
+import { getEpisodes } from '../../lib/db/repository';
 
 export const revalidate = 120;
 export const metadata = { title: 'Reportages et vidéos — TV+ Afrique', alternates: { canonical: '/videos' } };
 
-export default async function VideosPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
-  const page = Math.max(1, Math.min(10000, Math.floor(Number((await searchParams).page) || 1)));
-  const size = 24;
-  const data = await listCatalog('reportage', size, page);
+export default async function VideosPage() {
+  const [reels, reports, episodes, podcasts] = await Promise.all([
+    listCatalog('reel', 24, 1).catch(() => ({ items: [] })),
+    listCatalog('reportage', 24, 1).catch(() => ({ items: [] })),
+    getEpisodes(24).catch(() => ({ data: [] })),
+    listCatalog('podcast', 12, 1).catch(() => ({ items: [] })),
+  ]);
+
+  const feed: FeedItem[] = [
+    ...reels.items.map(item => ({
+      id: item.id,
+      title: item.title,
+      source: item.source_url,
+      cover: item.thumbnail_url,
+      kind: 'reel' as const,
+      category: 'TV+ Reels',
+      href: '/media/' + item.id,
+    })),
+    ...episodes.data.filter(episode => Boolean(episode.videoUrl)).map(episode => ({
+      id: episode.id,
+      title: episode.title,
+      source: '',
+      cover: episode.thumbnail ?? '',
+      kind: 'replay' as const,
+      category: 'Replay',
+      href: '/replays/' + episode.id,
+      deadLink: true,
+    })),
+    ...reports.items.map(item => ({
+      id: item.id,
+      title: item.title,
+      source: item.source_url,
+      cover: item.thumbnail_url,
+      kind: 'reportage' as const,
+      category: item.category || 'Reportage',
+      href: '/media/' + item.id,
+    })),
+    ...podcasts.items.map(item => ({
+      id: item.id,
+      title: item.title,
+      source: item.source_url,
+      cover: item.thumbnail_url,
+      kind: 'podcast' as const,
+      category: item.category || 'Podcast',
+      href: '/media/' + item.id,
+    })),
+  ].filter(item => Boolean(item.source));
 
   return (
     <main className="shell listing-page av-public">
-      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Reportages' }]} />
-      <AvPageHeader current="/videos" title="Reportages & vidéos" description="Reportages, interviews et décryptages de la rédaction TV+ Afrique." />
-      {!data.available && <p role="alert">Les reportages sont momentanément indisponibles.</p>}
-      {data.available && !data.items.length && <p className="empty-state">Aucun reportage publié sur cette page.</p>}
-      {data.items.length > 0 && (
-        <section className="av-section" aria-label="Reportages publiés">
-          <div className="av-grid av-report-grid">{data.items.map(item => <AvCard key={item.id} item={item} />)}</div>
-        </section>
-      )}
-      <AvPagination path="/videos" page={page} total={data.total} size={size} />
+      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Reportages & vidéos' }]} />
+      <AvPageHeader current="/videos" title="Reportages & vidéos" description="Le fil de toutes les vidéos TV+ Afrique : reels, replays, reportages et podcasts." />
+      <VideoFeed items={feed} />
     </main>
   );
 }

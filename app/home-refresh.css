@@ -26,3 +26,16 @@
 .tvplus-home-premium-link:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .tvplus-home-premium-link svg{flex:none}
 @media(max-width:760px){.tvplus-home-premium{padding:16px;gap:12px}.tvplus-home-premium-visual{min-height:80px}}
+
+/* Fil actu : même disposition, lecture et hiérarchie renforcées. */
+.tvplus-chronicle-row{position:relative;padding:14px 10px;border-bottom:1px solid #e3e9f2;border-left:3px solid transparent;border-radius:8px;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease}
+.tvplus-chronicle-row:hover{background:linear-gradient(90deg,#fff4f6,#f8fafc 65%);border-left-color:var(--red,#dc0000);box-shadow:0 6px 18px #0b1f3a0d}
+.tvplus-chronicle-row.is-latest .tvplus-chronicle-time::after{content:'';display:inline-block;width:6px;height:6px;margin-left:6px;border-radius:50%;background:var(--red,#dc0000);box-shadow:0 0 0 3px #dc000026;vertical-align:middle}
+.tvplus-chronicle-time{color:#a9122c;font-weight:800;font-variant-numeric:tabular-nums}
+.tvplus-chronicle-thumbnail{border:1px solid #dbe3ee;box-shadow:0 4px 12px #0b1f3a12}
+.tvplus-chronicle-row .category-label{display:inline-block;width:max-content;max-width:100%;padding:3px 8px;border-radius:4px;background:#eef3fb;color:#174c8d;font-size:.66rem;font-weight:850;letter-spacing:.06em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tvplus-chronicle-copy strong{color:#102d53;font-weight:750;transition:color .18s ease}
+.tvplus-chronicle-row:hover .tvplus-chronicle-copy strong{color:var(--red,#dc0000);text-decoration:none}
+.tvplus-chronicle-summary{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#5f6f86;font-size:.82rem;line-height:1.4}
+.tvplus-chronicle-row>svg{transition:transform .18s ease,color .18s ease}
+.tvplus-chronicle-row:hover>svg{color:var(--red,#dc0000);transform:translateX(3px)}

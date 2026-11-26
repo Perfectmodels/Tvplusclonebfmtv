@@ -451,3 +451,130 @@
   .redline-track { grid-auto-columns: minmax(240px, 82%); }
   .redline-card__quote { top: 24%; width: 66%; }
 }
+
+/* Fil vidéo façon réseaux sociaux : une seule vidéo active à la fois. */
+.video-feed-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 0;
+  background: #f7f9fcf2;
+  backdrop-filter: blur(8px);
+}
+
+.video-feed-tabs button {
+  padding: 9px 15px;
+  border: 1px solid #cbd8e8;
+  border-radius: 999px;
+  background: #fff;
+  color: #15345f;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.video-feed-tabs button[aria-pressed='true'] {
+  border-color: var(--red, #dc0000);
+  background: var(--red, #dc0000);
+  color: #fff;
+}
+
+.video-feed-list { display: grid; gap: 22px; }
+
+.video-feed-item {
+  position: relative;
+  min-height: min(78vh, 780px);
+  overflow: hidden;
+  border-radius: 14px;
+  background: #08162b;
+  scroll-snap-align: start;
+}
+
+.autoplay-video {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a1629;
+}
+
+.autoplay-video__cover,
+.autoplay-video__player {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+}
+
+.autoplay-video__player { z-index: 2; }
+
+.autoplay-video__sound {
+  position: absolute;
+  z-index: 4;
+  right: 14px;
+  bottom: 14px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #ffffff66;
+  border-radius: 50%;
+  background: #06162bb8;
+  color: #fff;
+  cursor: pointer;
+}
+
+.video-feed-info {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  gap: 6px;
+  padding: clamp(18px, 3vw, 34px);
+  background: linear-gradient(transparent, #06162be6);
+  color: #fff;
+}
+
+.video-feed-kind {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: #ff8b95;
+}
+
+.video-feed-info h2 {
+  margin: 0;
+  font-size: clamp(1.1rem, 2vw, 1.7rem);
+  line-height: 1.2;
+}
+
+.video-feed-info a {
+  justify-self: start;
+  color: #fff;
+  text-underline-offset: 3px;
+}
+
+.tvplus-media-tile.is-dead {
+  cursor: default;
+}
+
+.tvplus-media-tile.is-dead:hover strong {
+  text-decoration: none;
+}
+
+.tvplus-media-tile .autoplay-video {
+  aspect-ratio: 16 / 9;
+  border-radius: 5px;
+}
+
+.tvplus-media-track.is-vertical .tvplus-media-tile .autoplay-video {
+  aspect-ratio: 9 / 16;
+}
