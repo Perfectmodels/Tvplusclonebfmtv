@@ -31,8 +31,8 @@ export function distributeHomepageStories(articles: Story[], categories: string[
   feed.forEach(claim);
   const videoArticles=articles.filter(story=>available(story)&&story.kind==='video').slice(0,6);
   videoArticles.forEach(claim);
-  // L’ancienne colonne d’articles secondaires est remplacée par le Direct Premium.
-  // Ne pas réserver ces articles : ils restent disponibles pour les rubriques.
+  // La colonne latérale est réservée au flux News 24 et aux publicités.
+  // Ne pas réserver les articles secondaires : ils restent disponibles pour les rubriques.
   const rail: Story[] = [];
 
   const selection: Story[] = [];

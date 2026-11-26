@@ -6,7 +6,6 @@ import Newsletter from '../components/Newsletter';
 import QuestionSection from '../components/QuestionSection';
 import FilActuFeed from '../components/FilActuFeed';
 import NewsTicker from '../components/NewsTicker';
-import HomePremiumCard from '../components/video/HomePremiumCard';
 import AdvertisingCarousel from '../components/AdvertisingCarousel';
 import {getHomepageAds} from '../lib/ads/v2';
 import SectionHeading from '../components/SectionHeading';
@@ -55,7 +54,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
    {hero?<StoryCard story={hero} variant="hero"/>:<p className="empty-state">Les actualités à la une seront bientôt disponibles.</p>}
    <section className="tvplus-home-feed" id="fil-info"><SectionHeading title="Fil actu"/><FilActuFeed items={feed} total={Math.max(0,(result?.total??articles.length)-excluded.length)} excludeSlugs={excluded}/></section>
   </div>
-  <aside className="tvplus-home-aside"><HomePremiumCard/><NewsTicker items={wire.items.map(({id,time,title})=>({id,time,title}))} variant="rail" limit={20}/><AdvertisingCarousel placement="after-live" ads={ads['after-live']}/></aside>
+  <aside className="tvplus-home-aside"><NewsTicker items={wire.items.map(({id,time,title})=>({id,time,title}))} variant="rail" limit={20}/><AdvertisingCarousel placement="after-live" ads={ads['after-live']}/></aside>
  </div>
  <AdvertisingCarousel placement="after-hero" ads={ads['after-hero']}/>
  {videoArticles.length>0&&<HomeMediaStrip title="L’actualité en vidéo" href="/articles-video" items={videoArticles.map(s=>({id:s.slug,title:s.title,image:s.image,href:articlePath(s),meta:s.category}))}/>}
@@ -65,7 +64,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  {strips.slice(blocks.length).map(s=><HomeMediaStrip key={s.href} {...s}/>)}
  {blocks.length<2&&<AdvertisingCarousel placement="after-feed" ads={ads['after-feed']}/>}
  </div>
- <section className="category-block" aria-label="Explorer les contenus"><SectionHeading title="Toutes les actualités" moreHref="/actualites" moreLabel="Voir tous les articles"/><div className="rubrique-chips">{categories.map(c=><Link key={c} href={categoryHref(c)}>{c}</Link>)}</div><div className="rubrique-chips">{[['Articles vidéo','/articles-video'],['Reels','/reels'],['Reportages','/videos'],['Ligne Rouge','/ligne-rouge'],['Podcasts','/podcasts'],['Émissions et replays','/replay-emissions'],['Grille des programmes','/programme-tv'],['Direct Premium','/direct']].map(([name,url])=><Link key={url} href={url}>{name}</Link>)}</div></section>
+ <section className="category-block" aria-label="Explorer les contenus"><SectionHeading title="Toutes les actualités" moreHref="/actualites" moreLabel="Voir tous les articles"/><div className="rubrique-chips">{categories.map(c=><Link key={c} href={categoryHref(c)}>{c}</Link>)}</div><div className="rubrique-chips">{[['Articles vidéo','/articles-video'],['Reels','/reels'],['Reportages','/videos'],['Ligne Rouge','/ligne-rouge'],['Podcasts','/podcasts'],['Émissions et replays','/replay-emissions'],['Grille des programmes','/programme-tv']].map(([name,url])=><Link key={url} href={url}>{name}</Link>)}</div></section>
  <section className="home-question-section" aria-label="Questions du public"><QuestionSection/></section>
  <AdvertisingCarousel placement="before-newsletter" ads={ads['before-newsletter']}/><Newsletter/>
  </main></>;
