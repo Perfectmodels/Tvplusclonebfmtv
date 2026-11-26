@@ -5,7 +5,7 @@ import { listCatalog } from '../../lib/media/catalog';
 import { getEpisodes } from '../../lib/db/repository';
 
 export const revalidate = 120;
-export const metadata = { title: 'Reportages et vidéos — TV+ Afrique', alternates: { canonical: '/videos' } };
+export const metadata = { title: 'Espace vidéo — TV+ Afrique', alternates: { canonical: '/videos' } };
 
 export default async function VideosPage() {
   const [reels, reports, episodes, podcasts] = await Promise.all([
@@ -28,12 +28,11 @@ export default async function VideosPage() {
     ...episodes.data.filter(episode => Boolean(episode.videoUrl)).map(episode => ({
       id: episode.id,
       title: episode.title,
-      source: '',
+      source: episode.videoUrl,
       cover: episode.thumbnail ?? '',
       kind: 'replay' as const,
       category: 'Replay',
       href: '/replays/' + episode.id,
-      deadLink: true,
     })),
     ...reports.items.map(item => ({
       id: item.id,
@@ -57,8 +56,8 @@ export default async function VideosPage() {
 
   return (
     <main className="shell listing-page av-public">
-      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Reportages & vidéos' }]} />
-      <AvPageHeader current="/videos" title="Reportages & vidéos" description="Le fil de toutes les vidéos TV+ Afrique : reels, replays, reportages et podcasts." />
+      <Breadcrumb items={[{ label: 'Accueil', href: '/' }, { label: 'Espace vidéo' }]} />
+      <AvPageHeader current="/videos" title="Espace vidéo" description="Le fil de toutes les vidéos TV+ Afrique : reels, replays, reportages et podcasts." />
       <VideoFeed items={feed} />
     </main>
   );
