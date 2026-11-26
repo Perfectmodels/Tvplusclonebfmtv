@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import type {Metadata} from 'next';
+import type {ReactNode} from 'react';
+import {MessageCircle} from 'lucide-react';
 import {getSiteUrl} from '../lib/articles/site-url';
 import AlertBar from '../components/AlertBar';
-import Newsletter from '../components/Newsletter';
 import QuestionSection from '../components/QuestionSection';
 import FilActuFeed from '../components/FilActuFeed';
 import NewsTicker from '../components/NewsTicker';
-import HomePremiumCard from '../components/video/HomePremiumCard';
 import AdvertisingCarousel from '../components/AdvertisingCarousel';
-import {getHomepageAds} from '../lib/ads/v2';
+import {getHomepageAds,type Placement} from '../lib/ads/v2';
 import SectionHeading from '../components/SectionHeading';
 import StoryCard from '../components/StoryCard';
 import CategoryNewsCarousel from '../components/CategoryNewsCarousel';
@@ -46,7 +46,60 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
   reportages:{title:'Reportages TV+',href:'/videos',items:reports},
   podcasts:{title:'Podcasts TV+',href:'/podcasts',items:podcasts,audio:true}
  };
- const strips=layout.order.filter(id=>!layout.hidden.includes(id)).map(id=>stripMap[id]).filter(s=>s.items.length);
+ // Keep the saved visibility settings and place replays immediately after reels by default.
+ const order=[...layout.order];
+ if(order.join(',')==='reels,ligne-rouge,replays,reportages,podcasts') {
+  order.splice(0,3,'reels','replays','ligne-rouge');
+ }
+ const strips=order.filter(id=>!layout.hidden.includes(id)).map(id=>stripMap[id]).filter(s=>s.items.length);
+ const articleVideos={title:'L’actualité en vidéo',href:'/articles-video',items:videoArticles.map(s=>({id:s.slug,title:s.title,image:s.image,href:articlePath(s),meta:s.category}))};
+ const videos=[...strips];
+ if(articleVideos.items.length) {
+  const reportIndex=videos.findIndex(s=>s.href==='/videos');
+  videos.splice(reportIndex<0?videos.length:reportIndex+1,0,articleVideos);
+ }
+ // The first two editorial sections follow the requested examples when available.
+ const preferred=['economie','education','politique','societe'];
+ const rank=(name:string)=>{const index=preferred.indexOf(categorySlug(name));return index<0?preferred.length:index;};
+ const editorialBlocks=[...blocks].sort((a,b)=>rank(a.name)-rank(b.name));
+ const placements:Placement[]=['after-hero','after-feed','after-live','after-selection','before-newsletter'];
+ const sections:ReactNode[]=[];
+ let previousWasAd=false;
+ const appendContent=(node:ReactNode)=>{sections.push(node);previousWasAd=false;};
+ const appendAd=()=>{
+  if(previousWasAd)return;
+  while(placements.length){
+   const placement=placements.shift()!;
+   if(!ads[placement].length)continue;
+   sections.push(<AdvertisingCarousel key={placement} placement={placement} ads={ads[placement]}/>);
+   previousWasAd=true;
+   return;
+  }
+ };
+ const appendCategory=()=>{
+  const block=editorialBlocks.shift();
+  if(block)appendContent(<CategoryNewsCarousel key={'cat-'+categorySlug(block.name)} title={block.name} sectionId={'cat-'+categorySlug(block.name)} items={block.items} moreHref={categoryHref(block.name)}/>);
+ };
+ const appendVideo=()=>{
+  const strip=videos.shift();
+  if(strip)appendContent(<HomeMediaStrip key={strip.href} {...strip}/>);
+ };
+ // After the lead: ad, first topic, reels; then topic, ad, media.
+ appendAd();
+ appendCategory();
+ appendVideo();
+ while(editorialBlocks.length||videos.length){
+  appendCategory();
+  appendAd();
+  appendVideo();
+ }
+ if(selection.length){
+  appendContent(<CategoryNewsCarousel key="selection" title="Sélection de la rédaction" sectionId="selection-title" items={selection} moreHref="/actualites" selection/>);
+ }
+ // Only publish ads with a real campaign and an editorial separator.
+ appendAd();
+ const whatsappNumber=(process.env.WHATSAPP_CONTACT_NUMBER??process.env.NEXT_PUBLIC_WHATSAPP_CONTACT_NUMBER??'').trim().replace(/[+\s().-]/g,'');
+ const whatsappHref=/^[1-9]\d{7,14}$/.test(whatsappNumber)?'https://wa.me/'+whatsappNumber+'?text='+encodeURIComponent('Bonjour TV+ Afrique, je souhaite contacter la rédaction.'):null;
  return <>{alert&&<AlertBar title={alert.title} href={articlePath(alert)} time={alert.time}/>}
  <main className="shell">
  <SectionHeading id="home-top-stories-title" title="À la une" moreHref="/actualites" moreLabel="Toutes les actualités"/>
@@ -55,18 +108,15 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
    {hero?<StoryCard story={hero} variant="hero"/>:<p className="empty-state">Les actualités à la une seront bientôt disponibles.</p>}
    <section className="tvplus-home-feed" id="fil-info"><SectionHeading title="Fil actu"/><FilActuFeed items={feed} total={Math.max(0,(result?.total??articles.length)-excluded.length)} excludeSlugs={excluded}/></section>
   </div>
-  <aside className="tvplus-home-aside"><HomePremiumCard/><NewsTicker items={wire.items.map(({id,time,title})=>({id,time,title}))} variant="rail" limit={20}/><AdvertisingCarousel placement="after-live" ads={ads['after-live']}/></aside>
+  <aside className="tvplus-home-aside"><NewsTicker items={wire.items.map(({id,time,title})=>({id,time,title}))} variant="rail" limit={20}/></aside>
  </div>
- <AdvertisingCarousel placement="after-hero" ads={ads['after-hero']}/>
- {videoArticles.length>0&&<HomeMediaStrip title="L’actualité en vidéo" href="/articles-video" items={videoArticles.map(s=>({id:s.slug,title:s.title,image:s.image,href:articlePath(s),meta:s.category}))}/>}
- {selection.length>0&&<CategoryNewsCarousel title="Sélection de la rédaction" sectionId="selection-title" items={selection} moreHref="/actualites" selection/>}
- <AdvertisingCarousel placement="after-selection" ads={ads['after-selection']}/>
- <div className="home-category-stack">{blocks.map((block,i)=><section key={block.name}><CategoryNewsCarousel title={block.name} sectionId={'cat-'+categorySlug(block.name)} items={block.items} moreHref={categoryHref(block.name)}/>{strips[i]&&<HomeMediaStrip {...strips[i]}/>}{i===1&&<AdvertisingCarousel placement="after-feed" ads={ads['after-feed']}/>}</section>)}
- {strips.slice(blocks.length).map(s=><HomeMediaStrip key={s.href} {...s}/>)}
- {blocks.length<2&&<AdvertisingCarousel placement="after-feed" ads={ads['after-feed']}/>}
- </div>
+ <div className="home-category-stack">{sections}</div>
+ <section className="category-block" aria-label="Grille des programmes"><SectionHeading title="Grille des programmes" moreHref="/programme-tv" moreLabel="Voir les horaires"/><p>Retrouvez les émissions et les rendez-vous à l’antenne de TV+ Afrique.</p><div className="rubrique-chips"><Link href="/programme-tv">Consulter la grille TV</Link><Link href="/replay-emissions">Toutes les émissions et leurs replays</Link></div></section>
  <section className="category-block" aria-label="Explorer les contenus"><SectionHeading title="Toutes les actualités" moreHref="/actualites" moreLabel="Voir tous les articles"/><div className="rubrique-chips">{categories.map(c=><Link key={c} href={categoryHref(c)}>{c}</Link>)}</div><div className="rubrique-chips">{[['Articles vidéo','/articles-video'],['Reels','/reels'],['Reportages','/videos'],['Ligne Rouge','/ligne-rouge'],['Podcasts','/podcasts'],['Émissions et replays','/replay-emissions'],['Grille des programmes','/programme-tv'],['Direct Premium','/direct']].map(([name,url])=><Link key={url} href={url}>{name}</Link>)}</div></section>
  <section className="home-question-section" aria-label="Questions du public"><QuestionSection/></section>
- <AdvertisingCarousel placement="before-newsletter" ads={ads['before-newsletter']}/><Newsletter/>
+ <section className="newsletter" aria-label="Contacter TV+ Afrique sur WhatsApp">
+  <div><h3>Écrivez à TV+ Afrique</h3><p>{whatsappHref?'Une information, un témoignage ou une question ? Ouvrez WhatsApp pour échanger avec la rédaction.':'Une information, un témoignage ou une question ? Contactez la rédaction ou suivez notre chaîne WhatsApp officielle.'}</p></div>
+  {whatsappHref?<a className="newsletter-btn" href={whatsappHref} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true"/> Envoyer un message WhatsApp</a>:<div className="rubrique-chips"><Link href="/contacts">Contacter la rédaction</Link><a href="https://l.tvplusafrique.com/xw7b" target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true"/> Suivre sur WhatsApp</a></div>}
+ </section>
  </main></>;
 }
