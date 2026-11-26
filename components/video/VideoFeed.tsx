@@ -32,7 +32,7 @@ export default function VideoFeed({ items }: { items: FeedItem[] }) {
   );
 
   useEffect(() => {
-    const sync = () => { if (window.location.hash === '#reportages') setTab('reportage'); };
+    const sync = () => setTab(window.location.hash === '#reportages' ? 'reportage' : 'all');
     sync();
     window.addEventListener('hashchange', sync);
     return () => window.removeEventListener('hashchange', sync);
@@ -44,9 +44,10 @@ export default function VideoFeed({ items }: { items: FeedItem[] }) {
         {TABS.map(entry => (
           <button
             key={entry.id}
+            id={entry.id === 'reportage' ? 'reportages' : undefined}
             type="button"
             aria-pressed={tab === entry.id}
-            onClick={() => setTab(entry.id)}
+            onClick={() => { if (window.location.hash) window.history.replaceState(null, '', window.location.pathname + window.location.search); setTab(entry.id); }}
           >
             {entry.label}
           </button>
