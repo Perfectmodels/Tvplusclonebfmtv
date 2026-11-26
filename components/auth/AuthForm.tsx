@@ -1,14 +1,12 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
 
 type Mode = 'login' | 'signup';
 
 export default function AuthForm({ mode, returnTo, confirmationFailed }: { mode: Mode; returnTo: string; confirmationFailed: boolean }) {
-  const router = useRouter();
   const submitting = useRef(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,8 +38,7 @@ export default function AuthForm({ mode, returnTo, confirmationFailed }: { mode:
         return;
       }
       setStatus('done');
-      router.replace(body?.data?.next || returnTo || '/compte');
-      router.refresh();
+      window.location.replace(body?.data?.next || returnTo || '/compte');
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'Une erreur est survenue.');
