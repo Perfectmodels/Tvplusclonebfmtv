@@ -7,7 +7,7 @@ import { categoryHref } from '../lib/categories';
 const watchLinks = [
   { label: 'Émissions et replays', href: '/replay-emissions' },
   { label: 'Grille des programmes', href: '/programme-tv' }, {label:'TV+ Reels',href:'/reels'},{label:'Ligne Rouge',href:'/ligne-rouge'},
-  { label: 'Vidéos', href: '/videos' },
+  { label: 'Espace vidéo', href: '/videos' },
   { label: 'Podcasts', href: '/podcasts' },
 ];
 
