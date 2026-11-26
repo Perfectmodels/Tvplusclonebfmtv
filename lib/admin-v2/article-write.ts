@@ -45,6 +45,7 @@ export function cleanArticlePayload(input: unknown) {
   return {
     ...fields,
     content_json: doc,
+    video_url:video?.url??null,
     is_video_article: Boolean(video || /class="article-video"/.test(html)),
     province_slug: article.country_code === 'GA' ? article.province_slug ?? null : null,
     content_html: html,

@@ -3,6 +3,8 @@ import Breadcrumb from '../Breadcrumb';
 import ShareButtons from '../ShareButtons';
 import StoryCard from '../StoryCard';
 import ArticleReadCounter from './ArticleReadCounter';
+import ReplayEmbed from '../video/ReplayEmbed';
+import {parseVideoUrl} from '../../lib/video/providers';
 import type { PublicArticle } from '../../lib/db/repository';
 import type { Story } from '../../lib/data';
 import { categoryHref } from '../../lib/categories';
@@ -71,6 +73,7 @@ export default function ArticleView({
               </figure>
             )}
 
+            {story.videoUrl&&parseVideoUrl(story.videoUrl)&&!story.contentHtml?.includes('class="article-video"')&&<ReplayEmbed title={story.title} url={story.videoUrl} thumbnail={story.image}/>}
             <div className="article-body">
               {story.contentHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: story.contentHtml }} />

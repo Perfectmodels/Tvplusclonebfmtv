@@ -13,7 +13,7 @@ export const GET=handleRoute(async (_request:NextRequest,{params}:Context)=>{
   const {id}=await params;
   if (usesLwsCatalog()) return ok(await newsroom(actor,'get',{id}));
   const {data,error}=await db.from('articles').select(
-    'id,slug,short_code,title,excerpt,category_id,cover_media_id,content_json,tags,seo_title,seo_description,status,country_code,province_slug,featured,is_alert,published_at,author_id,updated_at'
+    'id,slug,short_code,title,excerpt,category_id,cover_media_id,content_json,video_url,tags,seo_title,seo_description,status,country_code,province_slug,featured,is_alert,published_at,author_id,updated_at'
   ).eq('id',id).maybeSingle();
   if(error)throw new ApiError('Lecture de l’article impossible.',503,'UNAVAILABLE');
   if(!data)throw new ApiError('Article introuvable.',404,'NOT_FOUND');

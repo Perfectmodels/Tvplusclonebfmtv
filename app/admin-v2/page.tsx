@@ -78,13 +78,13 @@ export default async function DashboardV2() {
         ...statuses.map(status=>db.from('articles').select('id',{head:true,count:'exact'}).eq('status',status)),
       ]),
       db.from('articles').select(
-        'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,updated_at,created_at,published_at'
+        'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,source_author_name,source_cover_url,updated_at,created_at,published_at'
       ).order('updated_at',{ascending:false}).limit(8),
       db.from('articles').select(
-        'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,updated_at,created_at,published_at'
+        'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,source_author_name,source_cover_url,updated_at,created_at,published_at'
       ).eq('status','published').order('published_at',{ascending:false}).limit(7),
       db.from('articles').select(
-        'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,updated_at,created_at,published_at'
+        'id,slug,short_code,title,excerpt,status,category_id,cover_media_id,author_id,reviewed_by,source_author_name,source_cover_url,updated_at,created_at,published_at'
       ).eq('status','scheduled').gte('published_at',now.toISOString())
         .order('published_at',{ascending:true}).limit(6),
       db.from('articles').select('id,author_id,category_id,published_at')

@@ -24,7 +24,7 @@ export const GET = handleRoute(async (request: NextRequest) => {
     return ok({...result,items:await enrichArticleRowsFromMysql(actor,result.items)});
   }
   let query = db.from('articles').select(
-    'id,slug,short_code,title,excerpt,category_id,cover_media_id,status,featured,is_alert,updated_at,created_at,published_at,author_id,reviewed_by',
+    'id,slug,short_code,title,excerpt,category_id,cover_media_id,status,featured,is_alert,updated_at,created_at,published_at,author_id,reviewed_by,source_author_name,source_cover_url',
     { count:'exact' },
   );
   if (allowedStatuses.includes(status)) query = query.eq('status',status);
@@ -51,7 +51,7 @@ export const POST = handleRoute(async (request: NextRequest) => {
     return created(article);
   }
   const {data,error} = await db.from('articles').insert({
-    ...body,author_id:actor.id,status:'draft',published_at:null
+    ...body,source_author_name:actor.name,author_id:actor.id,status:'draft',published_at:null
   }).select('id,slug,short_code,status,updated_at').single();
   if (error?.code === '23505') throw new ApiError('Ce lien est déjà utilisé.',409,'CONFLICT');
   if (error) throw new ApiError('Impossible d’enregistrer le brouillon. Vérifiez les champs et les permissions.',400);

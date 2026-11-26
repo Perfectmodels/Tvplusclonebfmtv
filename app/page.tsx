@@ -15,6 +15,7 @@ import HomeMediaStrip from '../components/HomeMediaStrip';
 import {listArticles,getCategories,getPrograms,getEpisodes} from '../lib/db/repository';
 import {readHomeConfig,type HomeBlock} from '../lib/editorial/home-config';
 import {homeMediaCatalog} from '../lib/media/catalog';
+import {listRedLine} from '../lib/media/red-line';
 import {distributeHomepageStories} from '../lib/editorial/home-distribution';
 import {articlePath} from '../lib/articles/urls';
 import {categoryHref,categorySlug} from '../lib/categories';
@@ -28,8 +29,8 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  const result=await listArticles({search:q,pageSize:q?30:200}).catch(()=>null);
  const articles=result?.items??[];
  if(q)return <main className="shell"><section className="search-results"><SectionHeading title={'Résultats pour « '+q+' »'}/>{articles.length?<div className="selection-grid">{articles.map(s=><StoryCard story={s} key={s.slug}/>)}</div>:<p className="empty-state">Aucune actualité disponible pour cette recherche.</p>}</section></main>;
- const [wire,cats,ads,media,programs,episodes,layout]=await Promise.all([
-  getNewsFeed(20).catch(()=>({items:[]})),getCategories().catch(()=>({data:[]})),getHomepageAds(),homeMediaCatalog(),getPrograms().catch(()=>({data:[]})),getEpisodes(500).catch(()=>({data:[]})),readHomeConfig()
+ const [wire,cats,ads,media,programs,episodes,layout,redLine]=await Promise.all([
+  getNewsFeed(20).catch(()=>({items:[]})),getCategories().catch(()=>({data:[]})),getHomepageAds(),homeMediaCatalog(),getPrograms().catch(()=>({data:[]})),getEpisodes(500).catch(()=>({data:[]})),readHomeConfig(),listRedLine(8).catch(()=>({items:[],total:0}))
  ]);
  const categories=cats.data;
  const {alert,hero,selection,feed,blocks,videoArticles}=distributeHomepageStories(articles,categories);
@@ -37,7 +38,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  const catalog=(kind:'reel'|'reportage'|'podcast')=>media.items.filter(m=>m.kind===kind).map(m=>({id:m.id,title:m.title,image:m.thumbnail_url,href:'/media/'+m.id,meta:m.category}));
  const line=programs.data.find(p=>p.slug==='ligne-rouge'||p.name.toLowerCase().trim()==='ligne rouge');
  const replay=(isLine:boolean)=>episodes.data.filter(e=>(!!e.videoUrl||!!e.legacyPage)&&(isLine?!!line&&e.programId===line.id:!line||e.programId!==line.id)).map(e=>({id:e.id,title:e.title,image:e.thumbnail,href:'/replays/'+e.id,meta:e.duration}));
- const reels=catalog('reel'),lineItems=replay(true),replays=replay(false),reports=catalog('reportage'),podcasts=catalog('podcast');
+ const reels=catalog('reel'),lineItems=redLine.items.map(m=>({id:m.id,title:m.title,image:/^https:\/\//i.test(m.thumbnail_url||'')?m.thumbnail_url:'/logo.png',href:'/ligne-rouge#'+m.id,meta:'Ligne Rouge'})),replays=replay(false),reports=catalog('reportage'),podcasts=catalog('podcast');
  const stripMap: Record<HomeBlock,{title:string;href:string;items:ReturnType<typeof catalog>;vertical?:boolean;red?:boolean;audio?:boolean}>={
   reels:{title:'TV+ Reels',href:'/reels',items:reels,vertical:true},
   'ligne-rouge':{title:'Ligne Rouge',href:'/ligne-rouge',items:lineItems,red:true},
@@ -45,7 +46,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
   reportages:{title:'Reportages TV+',href:'/videos',items:reports},
   podcasts:{title:'Podcasts TV+',href:'/podcasts',items:podcasts,audio:true}
  };
- const strips=layout.order.filter(id=>!layout.hidden.includes(id)).map(id=>stripMap[id]).filter(s=>s.items.length);
+ const strips=layout.order.filter(id=>!layout.hidden.includes(id)).map(id=>stripMap[id]);
  return <>{alert&&<AlertBar title={alert.title} href={articlePath(alert)} time={alert.time}/>}
  <main className="shell">
  <SectionHeading id="home-top-stories-title" title="À la une" moreHref="/actualites" moreLabel="Toutes les actualités"/>
@@ -60,8 +61,8 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  {videoArticles.length>0&&<HomeMediaStrip title="L’actualité en vidéo" href="/articles-video" items={videoArticles.map(s=>({id:s.slug,title:s.title,image:s.image,href:articlePath(s),meta:s.category}))}/>}
  {selection.length>0&&<CategoryNewsCarousel title="Sélection de la rédaction" sectionId="selection-title" items={selection} moreHref="/actualites" selection/>}
  <AdvertisingCarousel placement="after-selection" ads={ads['after-selection']}/>
- <div className="home-category-stack">{blocks.map((block,i)=><section key={block.name}><CategoryNewsCarousel title={block.name} sectionId={'cat-'+categorySlug(block.name)} items={block.items} moreHref={categoryHref(block.name)}/>{strips[i]&&<HomeMediaStrip {...strips[i]}/>}{i===1&&<AdvertisingCarousel placement="after-feed" ads={ads['after-feed']}/>}</section>)}
- {strips.slice(blocks.length).map(s=><HomeMediaStrip key={s.href} {...s}/>)}
+ <div className="home-category-stack">{blocks.map((block,i)=><section key={block.name}><CategoryNewsCarousel title={block.name} sectionId={'cat-'+categorySlug(block.name)} items={block.items} moreHref={categoryHref(block.name)}/>{strips[i]?.items.length>0&&<HomeMediaStrip {...strips[i]}/>}{i===1&&<AdvertisingCarousel placement="after-feed" ads={ads['after-feed']}/>}</section>)}
+ {strips.slice(blocks.length).filter(s=>s.items.length).map(s=><HomeMediaStrip key={s.href} {...s}/>)}
  {blocks.length<2&&<AdvertisingCarousel placement="after-feed" ads={ads['after-feed']}/>}
  </div>
  <section className="category-block" aria-label="Explorer les contenus"><SectionHeading title="Toutes les actualités" moreHref="/actualites" moreLabel="Voir tous les articles"/><div className="rubrique-chips">{categories.map(c=><Link key={c} href={categoryHref(c)}>{c}</Link>)}</div><div className="rubrique-chips">{[['Articles vidéo','/articles-video'],['Reels','/reels'],['Reportages','/videos'],['Ligne Rouge','/ligne-rouge'],['Podcasts','/podcasts'],['Émissions et replays','/replay-emissions'],['Grille des programmes','/programme-tv']].map(([name,url])=><Link key={url} href={url}>{name}</Link>)}</div></section>

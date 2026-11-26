@@ -8,6 +8,7 @@ import { newsroom } from './lws';
 export type ArticleAdminRow = {
   id: string; slug: string; short_code: string; title: string; excerpt?: string;
   status: string; category_id: string; cover_media_id: string | null; author_id: string;
+  source_author_name?:string|null;source_cover_url?:string|null;
   reviewed_by?: string | null; featured?: boolean; is_alert?: boolean;
   created_at: string; updated_at: string; published_at: string | null;
 };
@@ -79,9 +80,9 @@ export async function enrichArticleRows(db: AuthDb, rows: ArticleAdminRow[]): Pr
     return {
       ...row,
       category_name: categoryMap.get(row.category_id) || 'Actualité',
-      author_name: editorialAuthorName(profilesMap.get(row.author_id)) || 'Rédaction TV+',
+      author_name: row.source_author_name || editorialAuthorName(profilesMap.get(row.author_id)) || 'Rédaction TV+',
       publisher_name: row.reviewed_by ? profilesMap.get(row.reviewed_by) ?? null : null,
-      cover_url: coverUrl,
+      cover_url: coverUrl || row.source_cover_url || null,
       cover_alt: cover?.alt || row.title,
     };
   });

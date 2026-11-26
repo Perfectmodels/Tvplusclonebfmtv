@@ -1,7 +1,7 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import placements from '../../data/homepage-ads.json';
-import {readLwsResource} from '../db/lws-public';
+import {getTvplusV2PublicClient} from '../db/v2-public';
 
 export type Ad = {id:string;imageUrl:string;href:string;alt:string;advertiser:string};
 export type Placement = keyof typeof placements;
@@ -17,7 +17,8 @@ const empty = (): Ads => ({
 
 /** Ne montrer que les campagnes réellement actives et disposant d'un visuel. */
 const cached=unstable_cache(async ():Promise<Ads>=>{
-  const {items:data}=await readLwsResource<{items:{banner:number;slot:number;advertiser:string;image_url:string;target_url:string;alt:string;active:number;starts_at:string|null;ends_at:string|null}[]}>('ads',{},['homepage-ads']);
+  const {data,error}=await getTvplusV2PublicClient().from('homepage_ad_slots').select('banner,slot,advertiser,image_url,target_url,alt,starts_at,ends_at').eq('active',true).order('banner').order('slot');
+  if(error)throw error;
   const output=empty();
   const now=Date.now();
   for(const row of data??[]){
