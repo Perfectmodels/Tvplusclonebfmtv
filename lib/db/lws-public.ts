@@ -20,7 +20,13 @@ async function read<T>(resource: string, filters: Record<string, string>, tags: 
     if(buildPhase) return empty();
     throw new Error('LWS_EDITORIAL_API_URL manquante.');
   }
-  const url=new URL(endpoint);if(url.protocol!=='https:'||url.username||url.password)throw new Error('API LWS HTTPS requise.');
+  const url=new URL(endpoint);
+  // L'API est hébergée sur le même serveur que le site. On autorise HTTP pour
+  // cet hôte de confiance (le build cPanel et le runtime), tout en exigeant
+  // HTTPS pour toute autre destination.
+  const localHosts=new Set(['tvplusafrique.com','www.tvplusafrique.com','localhost','127.0.0.1']);
+  const secure=url.protocol==='https:'||localHosts.has(url.hostname);
+  if(!secure||url.username||url.password)throw new Error('API LWS HTTPS requise.');
   url.search = new URLSearchParams({ resource, ...filters }).toString();
   let response: Response;
   try {
