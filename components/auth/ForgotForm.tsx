@@ -21,7 +21,7 @@ export default function ForgotForm() {
       const body = await response.json();
       if (!response.ok) throw new Error(body?.error?.message ?? 'Envoi impossible.');
       setStatus('done');
-      setMessage('Un lien de réinitialisation a été envoyé à votre adresse e-mail.');
+      setMessage('Si un compte correspond à cette adresse, un lien de réinitialisation vous sera envoyé.');
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'Une erreur est survenue.');

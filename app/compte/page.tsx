@@ -29,6 +29,8 @@ export default async function ComptePage() {
           <div><dt>Identifiant</dt><dd className="account-id">{profile?.id}</dd></div>
         </dl>
         <div className="account-actions">
+          <Link href="/direct" className="not-found-secondary">Accéder au direct</Link>
+          <Link href="/direct/paiement" className="not-found-secondary">Mes paiements et accès au direct</Link>
           <Link href="/newsletters" className="not-found-secondary">S’inscrire aux newsletters</Link>
           <LogoutButton />
         </div>

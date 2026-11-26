@@ -12,6 +12,7 @@ export default function AuthForm({ mode }: { mode: Mode }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [repeat,setRepeat]=useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<'idle' | 'pending' | 'error' | 'done'>('idle');
   const [message, setMessage] = useState('');
@@ -19,17 +20,18 @@ export default function AuthForm({ mode }: { mode: Mode }) {
   const isLogin = mode === 'login';
   function nextPath(){const n=new URLSearchParams(window.location.search).get('next');if(!n||!n.startsWith('/')||n.startsWith('//')||n.includes('\\'))return null;const u=new URL(n,window.location.origin);return u.origin===window.location.origin&&(/^(?:\/direct|\/admin-v2|\/compte)(?:\/|$)/.test(u.pathname))?u.pathname+u.search:null;}
   const [returnTo,setReturnTo]=useState('');
-  useEffect(()=>{setReturnTo(nextPath()||'');},[]);
+  useEffect(()=>{setReturnTo(nextPath()||'');if(new URLSearchParams(window.location.search).get('confirmation')==='failed'){setStatus('error');setMessage('Lien de confirmation invalide ou expiré. Connectez-vous ou demandez un nouveau lien.');}},[]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if(!isLogin&&repeat!==password){setStatus('error');setMessage('Les mots de passe ne correspondent pas.');return;}
     setStatus('pending');
     setMessage('');
     try {
       const response = await fetch(isLogin ? '/api/auth/login' : '/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(isLogin ? { email, password } : { email, password, fullName }),
+        body: JSON.stringify(isLogin ? { email, password } : { email, password, fullName, next:nextPath()||'/compte' }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body?.error?.message ?? 'Une erreur est survenue.');
@@ -50,10 +52,10 @@ export default function AuthForm({ mode }: { mode: Mode }) {
         router.push(next || destination);
         router.refresh();
       } else {
-        const next=nextPath();if(next&&!body.data?.needsConfirmation){router.push(next);router.refresh();return;}
+        const next=nextPath()||'/compte';if(!body.data?.needsConfirmation){router.push(next);router.refresh();return;}
         setMessage(
           body.data?.needsConfirmation
-            ? 'Un e-mail de confirmation vous a été envoyé.'
+            ? 'Si cette adresse est disponible, un e-mail de confirmation vous est envoyé. Ouvrez le lien dans ce même navigateur pour reprendre votre parcours.'
             : 'Votre compte a été créé.',
         );
       }
@@ -97,10 +99,12 @@ export default function AuthForm({ mode }: { mode: Mode }) {
           <input
             required
             type={showPassword ? 'text' : 'password'}
-            minLength={isLogin ? 6 : 8}
+            minLength={isLogin ? 6 : 10}
+            maxLength={200}
+            pattern={isLogin?undefined:'.*[0-9].*'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={isLogin ? 'Votre mot de passe' : '8 caractères minimum, dont un chiffre'}
+            placeholder={isLogin ? 'Votre mot de passe' : '10 caractères minimum, dont un chiffre'}
             autoComplete={isLogin ? 'current-password' : 'new-password'}
           />
           <button
@@ -113,10 +117,12 @@ export default function AuthForm({ mode }: { mode: Mode }) {
         </span>
       </label>
 
+      {!isLogin&&<label><span>Confirmer le mot de passe</span><input type={showPassword?'text':'password'} required value={repeat} onChange={e=>setRepeat(e.target.value)} autoComplete="new-password"/></label>}
+      {!isLogin&&returnTo.startsWith('/direct')&&<p className="form-success">Votre formule sera conservée. Confirmez votre e-mail puis revenez au direct.</p>}
       {status === 'error' && <p className="form-error" role="alert">{message}</p>}
       {status === 'done' && !isLogin && <p className="form-success" role="status">{message}</p>}
 
-      <button type="submit" className="auth-submit" disabled={status === 'pending'}>
+      <button type="submit" className="auth-submit" disabled={status === 'pending'||(!isLogin&&status==='done')}>
         {isLogin ? <LogIn size={16} /> : <UserPlus size={16} />}
         {status === 'pending' ? 'Patientez…' : isLogin ? 'Se connecter' : 'Créer mon compte'}
       </button>

@@ -8,11 +8,12 @@ import {clearSession} from '../../../../lib/auth/session';
 export const dynamic='force-dynamic';
 const schema=z.object({email:emailSchema,password:z.string().min(6).max(200)});
 export const POST=handleRoute(async(request:NextRequest)=>{
+ if(request.headers.get('origin')!==request.nextUrl.origin)throw new ApiError('Origine refusée.',403,'UNAUTHORIZED');
  rateLimit(request,{limit:10,windowMs:60000,prefix:'login'});
  const {email,password}=parseJson(schema,await request.json());
  const db=await createAuthClient();
  const {data,error}=await db.auth.signInWithPassword({email,password});
- if(error||!data.user){
+ if(error||!data.user?.email_confirmed_at){
   if(error&&(!error.status||error.status>=500))throw new ApiError('Service de connexion Supabase indisponible.',503,'UNAVAILABLE');
   throw new ApiError('Adresse e-mail ou mot de passe incorrect.',401,'UNAUTHORIZED');
  }

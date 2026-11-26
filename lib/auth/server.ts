@@ -15,7 +15,7 @@ export async function createAuthClient(){
 const identity=cache(async()=>{
  const db=await createAuthClient();
  const {data:{user},error}=await db.auth.getUser();
- if(error||!user)return null;
+ if(error||!user?.email_confirmed_at)return null;
  const {data:p,error:pe}=await db.from('profiles').select('id,full_name,role,is_active,created_at').eq('id',user.id).maybeSingle();
  if(pe||!p||p.is_active!==true)return null;
  const {data:r,error:re}=await db.from('roles').select('permissions').eq('key',p.role).maybeSingle();
