@@ -1,0 +1,14 @@
+import type { MetadataRoute } from 'next';
+import { getSiteUrl } from '../lib/articles/site-url';
+
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const base = await getSiteUrl();
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: ['/admin', '/admin-v2', '/api/', '/compte', '/connexion', '/inscription'],
+    },
+    sitemap: [`${base}/sitemap.xml`, `${base}/sitemap-news.xml`, `${base}/sitemap-videos.xml`],
+  };
+}

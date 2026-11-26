@@ -1,0 +1,25 @@
+name: Vérification TV+ Afrique
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'refactor/**'
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    name: TypeScript / intégrité de l'application
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run ads:check
+      - run: npm run feed:check
+      - run: npm run typecheck

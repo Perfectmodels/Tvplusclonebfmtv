@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+.env
+.env.local
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# Secrets privés LWS (jamais commités, hors public_html sur le serveur)
+tvplus-v3-private.php
+.vercel
+
+# Export local des variables Vercel de production
+/production
+.andromity/

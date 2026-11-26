@@ -1,0 +1,10 @@
+begin;
+create table if not exists public.home_editorial_settings(id integer primary key check(id=1),media_order jsonb not null default '["reels","ligne-rouge","replays","reportages","podcasts"]',hidden_media jsonb not null default '[]');
+insert into public.home_editorial_settings(id) values(1) on conflict do nothing;
+alter table public.home_editorial_settings enable row level security;
+revoke all on public.home_editorial_settings from anon,authenticated;
+grant select on public.home_editorial_settings to anon,authenticated;
+grant all on public.home_editorial_settings to service_role;
+drop policy if exists homepage_settings_public_read on public.home_editorial_settings;
+create policy homepage_settings_public_read on public.home_editorial_settings for select to anon,authenticated using(true);
+commit;

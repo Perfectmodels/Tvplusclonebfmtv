@@ -1,0 +1,12 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {ArrowUp,ArrowDown} from 'lucide-react';
+type Block='reels'|'ligne-rouge'|'replays'|'reportages'|'podcasts';
+const labels:Record<Block,string>={reels:'TV+ Reels','ligne-rouge':'Ligne Rouge',replays:'Replays',reportages:'Reportages',podcasts:'Podcasts'};
+export default function HomeSettings(){
+ const [order,setOrder]=useState<Block[]>([]),[hidden,setHidden]=useState<Block[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
+ useEffect(()=>{fetch('/api/admin-v2/homepage',{cache:'no-store'}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error?.message||'Indisponible');setOrder(j.data.order);setHidden(j.data.hidden);}).catch(e=>setError(e.message));},[]);
+ function move(i:number,d:number){setOrder(current=>{const next=[...current],j=i+d;if(j<0||j>=next.length)return current;[next[i],next[j]]=[next[j],next[i]];return next;});setMessage('');}
+ async function save(){setBusy(true);setError('');setMessage('');try{const r=await fetch('/api/admin-v2/homepage',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({order,hidden})}),j=await r.json();if(!r.ok)throw Error(j.error?.message||'Enregistrement impossible');setMessage('Organisation enregistrée.');}catch(e){setError(e instanceof Error?e.message:'Erreur réseau');}finally{setBusy(false);}}
+ return <div className="v2-regie"><h1>Organisation de l’accueil</h1><p>Le bloc À la une, le Fil actu et les alertes restent prioritaires. Organisez les interludes audiovisuels entre les rubriques. Les blocs vides sont masqués.</p>{error&&<p role="alert" className="v2-error">{error}</p>}{message&&<p role="status" className="v2-success">{message}</p>}<section className="v2-card">{order.map((id,i)=><div className="v2-regie-channel" key={id}><div><strong>{i+1}. {labels[id]}</strong><label><input type="checkbox" checked={!hidden.includes(id)} onChange={e=>setHidden(h=>e.target.checked?h.filter(x=>x!==id):[...h,id])}/> Visible</label></div><div className="v2-actions"><button type="button" disabled={i===0} onClick={()=>move(i,-1)} aria-label="Monter"><ArrowUp size={18}/></button><button type="button" disabled={i===order.length-1} onClick={()=>move(i,1)} aria-label="Descendre"><ArrowDown size={18}/></button></div></div>)}<button className="admin-btn admin-btn-primary" disabled={busy||order.length!==5} onClick={()=>void save()}>Enregistrer</button></section></div>;
+}

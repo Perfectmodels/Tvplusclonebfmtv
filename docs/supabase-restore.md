@@ -1,0 +1,6 @@
+# Restauration Supabase — phase 1 (branche de recette)
+Base existante : projet eygxwssajyhbnusouwfk, 1009 articles, 990 médias, 2 profils liés à auth.users au contrôle initial. Les rôles sont dans public.roles (key, permissions text[]). Aucun changement de données.
+- Supabase Auth pour login/logout, cookies SSR, profil actif et permissions lues sous RLS. Les anciennes sessions MySQL ne sont pas acceptées. Les opérations privées LWS sont fermées pendant la migration afin d'éviter un mélange des identités et permissions.
+- Les lectures publiques MySQL restent provisoirement en place ; l'adaptateur Supabase de catalogue, les écritures, les modules premium/paiement, studio, replays et autres doivent être portés. Inscription et récupération de mot de passe restent fermées avant recette des triggers et du parcours de confirmation.
+- Configurer SUPABASE_URL et SUPABASE_PUBLISHABLE_KEY en Preview sur une base isolée ; ne pas utiliser de secret privilégié côté navigateur. Aucun déploiement de production, aucune migration MySQL destructive.
+- Recette obligatoire : npm ci, npm run typecheck, npm run build, accès anonyme, compte actif/inactif, mauvais mot de passe, droits lecteur/admin, renouvellement cookies, logout, politiques RLS. Pas de fusion tant que les routes LWS restantes et les nouvelles données MySQL ne sont pas migrées.

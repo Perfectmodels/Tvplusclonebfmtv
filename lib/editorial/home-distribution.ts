@@ -1,0 +1,69 @@
+import type { Story } from '../data';
+import { categorySlug } from '../categories';
+
+type CategoryBlock = { name: string; items: Story[] };
+
+/**
+ * Une actualité n'est attribuée qu'à un seul bloc éditorial de l'accueil.
+ * Ordre : alerte > article publié le plus récemment > fil d'actualité
+ * > vidéo > sélection > rubriques. L'alerte conserve son bandeau.
+ * Les mises en avant éditoriales sont conservées pour la sélection.
+ */
+export function distributeHomepageStories(articles: Story[], categories: string[]) {
+  const used = new Set<string>();
+  const key = (story: Story) => story.shortId || story.slug;
+  const available = (story: Story) => !used.has(key(story));
+  const claim = (story: Story | undefined) => {
+    if (!story || !available(story)) return false;
+    used.add(key(story));
+    return true;
+  };
+
+  const alert = articles.find(story => story.kind === 'alert');
+  claim(alert);
+
+  // Le bloc « À la une » affiche systématiquement la publication la plus récente.
+  // La sélection éditoriale conserve la logique « featured » plus bas dans la page.
+  const hero = articles.find(available);
+  claim(hero);
+
+  const feed = articles.filter(available).slice(0, 10);
+  feed.forEach(claim);
+  const videoArticles=articles.filter(story=>available(story)&&story.kind==='video').slice(0,6);
+  videoArticles.forEach(claim);
+  // La colonne latérale est réservée au flux News 24 et aux publicités.
+  // Ne pas réserver les articles secondaires : ils restent disponibles pour les rubriques.
+  const rail: Story[] = [];
+
+  const selection: Story[] = [];
+  const selectedCategories = new Set<string>();
+  const chooseForSelection = (story: Story | undefined) => {
+    if (!story || !available(story)) return;
+    const cat = categorySlug(story.category);
+    if (selectedCategories.has(cat)) return;
+    claim(story);
+    selectedCategories.add(cat);
+    selection.push(story);
+  };
+
+  // L'actualité mise en avant par la rédaction prime dans la sélection.
+  chooseForSelection(articles.find(story => story.featured && available(story)));
+  for (const name of categories) {
+    const slug = categorySlug(name);
+    if (selectedCategories.has(slug)) continue;
+    chooseForSelection(articles.find(story => available(story) && categorySlug(story.category) === slug));
+  }
+
+
+  // Les rubriques conservent leur composant « 1 grande + mini-articles ».
+  const blocks: CategoryBlock[] = [];
+  for (const name of categories) {
+    const slug = categorySlug(name);
+    const items = articles.filter(story => available(story) && categorySlug(story.category) === slug).slice(0, 10);
+    if (!items.length) continue;
+    items.forEach(claim);
+    blocks.push({ name, items });
+  }
+
+  return { alert, hero, rail, selection, feed, blocks, videoArticles };
+}
