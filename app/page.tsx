@@ -98,7 +98,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  }
  // Only publish ads with a real campaign and an editorial separator.
  appendAd();
- const whatsappNumber=(process.env.WHATSAPP_CONTACT_NUMBER??process.env.NEXT_PUBLIC_WHATSAPP_CONTACT_NUMBER??'').trim().replace(/[+\s().-]/g,'');
+ const whatsappNumber=(process.env.WHATSAPP_CONTACT_NUMBER?.trim()||process.env.NEXT_PUBLIC_WHATSAPP_CONTACT_NUMBER?.trim()||'24177507950').trim().replace(/[+\s().-]/g,'');
  const whatsappHref=/^[1-9]\d{7,14}$/.test(whatsappNumber)?'https://wa.me/'+whatsappNumber+'?text='+encodeURIComponent('Bonjour TV+ Afrique, je souhaite contacter la rédaction.'):null;
  return <>{alert&&<AlertBar title={alert.title} href={articlePath(alert)} time={alert.time}/>}
  <main className="shell">
