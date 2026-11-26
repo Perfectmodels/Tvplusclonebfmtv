@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
@@ -9,6 +9,7 @@ type Mode = 'login' | 'signup';
 
 export default function AuthForm({ mode, returnTo, confirmationFailed }: { mode: Mode; returnTo: string; confirmationFailed: boolean }) {
   const router = useRouter();
+  const submitting = useRef(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -20,41 +21,31 @@ export default function AuthForm({ mode, returnTo, confirmationFailed }: { mode:
   const isLogin = mode === 'login';
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if(submitting.current||status==='done')return;
     if(!isLogin&&repeat!==password){setStatus('error');setMessage('Les mots de passe ne correspondent pas.');return;}
+    submitting.current=true;
     setStatus('pending');
     setMessage('');
     try {
       const response = await fetch(isLogin ? '/api/auth/login' : '/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(isLogin ? { email, password } : { email, password, fullName, next:returnTo||'/compte' }),
+        body: JSON.stringify(isLogin ? { email, password, next:returnTo } : { email, password, fullName, next:returnTo||'/compte' }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body?.error?.message ?? 'Une erreur est survenue.');
-      setStatus('done');
-      if (isLogin) {
-        let destination = '/compte';
-        try {
-          const meResponse = await fetch('/api/auth/me', { cache: 'no-store' });
-          const me = await meResponse.json();
-          const profile = me?.data?.profile;
-          const permissions: string[] = profile?.permissions ?? [];
-          const isAdmin = permissions.some(p=>['articles.read_all','settings.manage','shows.manage','schedule.manage','users.manage','roles.manage'].includes(p)) || ['admin', 'super_admin'].includes(profile?.role);
-          if (isAdmin) destination = '/admin-v2';
-        } catch {
-          // En cas d'échec, on conserve la destination lecteur.
-        }
-        router.push(returnTo || destination);
-        router.refresh();
-      } else {
-        const next=returnTo||'/compte';
-        router.push(next);
-        router.refresh();
+      if(body?.data?.needsConfirmation){
+        setStatus('done');
+        setMessage('Si une confirmation est nécessaire, suivez le lien envoyé par e-mail. Si vous avez déjà un compte, utilisez la connexion.');
+        return;
       }
+      setStatus('done');
+      router.replace(body?.data?.next || returnTo || '/compte');
+      router.refresh();
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'Une erreur est survenue.');
-    }
+    } finally { submitting.current=false; }
   }
 
   return (
@@ -110,11 +101,11 @@ export default function AuthForm({ mode, returnTo, confirmationFailed }: { mode:
       </label>
 
       {!isLogin&&<label><span>Confirmer le mot de passe</span><input type={showPassword?'text':'password'} required value={repeat} onChange={e=>setRepeat(e.target.value)} autoComplete="new-password"/></label>}
-      {!isLogin&&returnTo.startsWith('/direct')&&<p className="form-success">Votre compte est créé immédiatement. Vous pourrez reprendre votre achat sur la page du direct.</p>}
+      {!isLogin&&returnTo.startsWith('/direct')&&<p className="form-success">Après activation de votre compte, vous pourrez reprendre votre achat sur la page du direct.</p>}
       {status === 'error' && <p className="form-error" role="alert">{message}</p>}
       {status === 'done' && !isLogin && <p className="form-success" role="status">{message}</p>}
 
-      <button type="submit" className="auth-submit" disabled={status === 'pending'||(!isLogin&&status==='done')}>
+      <button type="submit" className="auth-submit" disabled={status === 'pending'||status==='done'}>
         {isLogin ? <LogIn size={16} /> : <UserPlus size={16} />}
         {status === 'pending' ? 'Patientez…' : isLogin ? 'Se connecter' : 'Créer mon compte'}
       </button>
