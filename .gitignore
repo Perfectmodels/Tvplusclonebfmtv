@@ -14,3 +14,5 @@ tvplus-v3-private.php
 # Export local des variables Vercel de production
 /production
 .andromity/
+.env.*
+!.env.example

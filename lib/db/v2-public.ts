@@ -222,14 +222,23 @@ export const getV2Episodes = unstable_cache(async (limit = 24, showId?: string, 
   })), source: 'supabase' };
 }, ['v2-public-episodes'], { revalidate: 120, tags: ['public-episodes'] });
 
+const DEFAULT_SCHEDULE = [
+  { weekday: undefined, time: '06:00', title: 'Le réveil TV+', category: 'magazine', live: false },
+  { weekday: undefined, time: '12:00', title: 'Le journal de la mi-journée', category: 'information', live: false },
+  { weekday: undefined, time: '17:00', title: 'L’actualité en continu', category: 'information', live: false },
+  { weekday: undefined, time: '20:00', title: 'Le grand rendez-vous', category: 'magazine', live: false },
+  { weekday: undefined, time: '22:00', title: 'Débat et analyses', category: 'debat', live: false },
+];
+
 export const getV2Schedule = unstable_cache(async () => {
   const { data, error } = await client().from('program_slots')
     .select('weekday,start_time,title,kind').order('weekday').order('start_time').limit(300);
   if (error) throw new Error(error.message);
-  return { data: (data ?? []).map((p) => ({
+  const rows = (data ?? []).map((p) => ({
     weekday: p.weekday==null?undefined:Number(p.weekday), time: String(p.start_time).slice(0, 5), title: p.title,
     category: p.kind, live: false,
-  })), source: 'supabase' as const };
+  }));
+  return { data: rows.length ? rows : DEFAULT_SCHEDULE, source: 'supabase' as const };
 }, ['v2-public-schedule'], { revalidate: 600, tags: ['public-schedule'] });
 
 export async function searchV2(query: string) {

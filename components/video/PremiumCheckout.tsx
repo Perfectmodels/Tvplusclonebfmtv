@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, LockKeyhole } from 'lucide-react';
+import PaymentLoader from './PaymentLoader';
 
 type Plan = { slug: string; name: string; amount: number; duration_minutes: number };
 type Plans = { available: boolean; enabled: boolean; mode: string; plans: Plan[]; message?: string };
@@ -86,7 +87,9 @@ export default function PremiumCheckout({ offer }: { offer?: string }) {
 
   const unavailable = loadError || (data && !data.available);
   return (
-    <div className="premium-offers direct-offers">
+    <>
+      <PaymentLoader message="Préparation du paiement" visible={busy} />
+      <div className="premium-offers direct-offers">
       {!data && !loadError && <p role="status">Chargement des formules…</p>}
       {unavailable && (
         <div className="direct-offer-status">
@@ -116,13 +119,13 @@ export default function PremiumCheckout({ offer }: { offer?: string }) {
           </fieldset>
           {data.enabled ? (
             <>
-              <p className="direct-access-note"><LockKeyhole size={16} aria-hidden="true" /> Paiement unique via SingPay. L’accès s’active après confirmation.</p>
-              {data.mode === 'sandbox' && <p>Mode test SingPay. Les paiements de test ne donnent aucun accès réel.</p>}
+              <p className="direct-access-note"><LockKeyhole size={16} aria-hidden="true" /> Paiement en ligne sécurisé. L’accès s’active après confirmation.</p>
+              {data.mode === 'sandbox' && <p>Mode test. Les paiements de test ne donnent aucun accès réel.</p>}
               {sessionExpired ? (
                 <Link className="premium-primary" href={'/connexion?next=' + encodeURIComponent(next)}>Reconnectez-vous pour continuer</Link>
               ) : (
                 <button className="premium-primary" type="button" disabled={!plan || busy} onClick={() => void purchase()}>
-                  {busy ? 'Préparation du paiement…' : plan ? 'Payer ' + money(plan.amount) + ' avec SingPay' : 'Choisir une formule'} <ArrowRight size={18} aria-hidden="true" />
+                  {busy ? 'Préparation du paiement…' : plan ? 'Payer ' + money(plan.amount) : 'Choisir une formule'} <ArrowRight size={18} aria-hidden="true" />
                 </button>
               )}
               {paymentError && <p role="alert" className="premium-error">{paymentError}</p>}
@@ -130,7 +133,8 @@ export default function PremiumCheckout({ offer }: { offer?: string }) {
           ) : <p role="status">Le paiement en ligne est indisponible pour le moment.</p>}
         </>
       )}
-      <Link className="direct-payment-history" href="/direct/paiement">Mes accès et paiements</Link>
-    </div>
+        <Link className="direct-payment-history" href="/direct/paiement">Mes accès et paiements</Link>
+      </div>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 import 'server-only';
 import {z} from 'zod';
 import {ApiError} from '../api/response';
-import {playbackConfig} from '../video/premium';
+import {canonicalSiteUrl} from '../articles/site-url';
 const BASE='https://gateway.singpay.ga/v1';
 import type {PremiumSettings} from './catalog';
 export function paymentConfig(settings?:PremiumSettings){
@@ -22,8 +22,9 @@ export function paymentConfig(settings?:PremiumSettings){
  return {clientId,clientSecret,wallet,disbursement,origin,allowedHosts,credentialsReady,environmentMatches,goLiveConfirmed,switchEnabled,configured,enabled:configured&&environmentMatches&&switchEnabled&&!hardDisabled&&(mode!=='production'||goLiveConfirmed),mode};
 }
 export function checkoutAvailable(config:ReturnType<typeof paymentConfig>,origin:string){
+ // La disponibilité du lecteur live est indépendante du paiement : on ne bloque pas la vente ici.
  return config.enabled&&config.origin===origin&&(
-  config.mode==='sandbox'?process.env.VERCEL_ENV!=='production':config.mode==='production'&&playbackConfig().ready
+  config.mode==='sandbox'?process.env.VERCEL_ENV!=='production':config.mode==='production'
  );
 }
 async function request(path:string,body?:unknown){
@@ -39,7 +40,8 @@ export function checkoutUrl(value:string,c=paymentConfig()){const u=new URL(valu
 export async function createCheckout(order:PaymentOrder,c=paymentConfig()){
  if(!c.enabled||(order.wallet_id!==c.wallet||order.mode!==c.mode))throw new ApiError('Paiements indisponibles.',503,'UNAVAILABLE');
  const back=c.origin+'/direct/paiement?reference='+encodeURIComponent(order.reference);
- const data=await request('/ext',{portefeuille:c.wallet,reference:order.reference,amount:Number(order.amount),redirect_success:back,redirect_error:back,...(c.disbursement?{disbursement:c.disbursement}:{}),isTransfer:false});
+ const logoURL=canonicalSiteUrl()+'/logo.png';
+ const data=await request('/ext',{portefeuille:c.wallet,reference:order.reference,amount:Number(order.amount),redirect_success:back,redirect_error:back,logoURL,...(c.disbursement?{disbursement:c.disbursement}:{}),isTransfer:false});
  const r=z.object({link:z.string().min(1).max(2500),exp:z.string().optional()}).safeParse(data);
  if(!r.success)throw new ApiError('Lien SingPay non reconnu. Vérifiez la transaction.',502,'UNAVAILABLE');
  const expiration=Date.parse(r.data.exp||'');
