@@ -9,7 +9,7 @@ export function AvPagination({path,page,total,size}:{path:string;page:number;tot
 const videoFormats = [
   ['/reels', 'Reels'],
   ['/replays', 'Replays'],
-  ['/videos', 'Reportages'],
+  ['/videos#reportages', 'Reportages'],
   ['/articles-video', 'Articles vidéo'],
   ['/ligne-rouge', 'Ligne Rouge'],
   ['/podcasts', 'Podcasts'],
@@ -21,7 +21,7 @@ export function AvPageHeader({ current, title, description }: { current: string;
       <h1 className="page-title">{title}</h1>
       {description && <p className="page-intro">{description}</p>}
       <nav className="av-format-nav" aria-label="Formats vidéo et audio">
-        <Link href="/#espace-video">Espace vidéo</Link>
+        <Link href="/videos" prefetch={false} aria-current={current === "/videos" ? "page" : undefined}>Espace vidéo</Link>
         {videoFormats.map(([href, label]) => (
           <Link key={href} href={href} aria-current={href === current ? 'page' : undefined}>{label}</Link>
         ))}
