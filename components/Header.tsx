@@ -23,7 +23,7 @@ const menuGroups = [
     ['Le direct', '/direct'],
     ['Émissions et replays', '/replays'],
     ['Grille des programmes', '/programme-tv'],
-    ['Vidéos', '/videos'],
+    ['Espace vidéo', '/videos'],
     ['Podcasts', '/podcasts'],
   ] },
   { label: 'Services', links: [
