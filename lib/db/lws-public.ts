@@ -7,7 +7,7 @@ import {legacyShows,legacyEpisodes,legacyEnabled} from './legacy-programming';
 import type { programs } from '../extra';
 import type { PublicEpisode, PublicArticle } from './repository';
 
-export const usesLwsCatalog = () => true; // MySQL est désormais la seule source.
+export const usesLwsCatalog = () => false; // Les routes compatibles utilisent PostgreSQL.
 
 async function read<T>(resource: string, filters: Record<string, string>, tags: string[]) {
   // Pendant `next build`, le catalogue peut être absent (variable non définie en local,

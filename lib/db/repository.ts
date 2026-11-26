@@ -1,6 +1,6 @@
 import 'server-only';
 import * as v2 from './v2-public';
-import {getLwsEpisodes} from './lws-public';
+
 import {listCatalog,type MediaKind} from '../media/catalog';
 import {newsroom} from '../admin-v2/lws';
 import {getV2Actor} from '../auth/v2-admin';
@@ -9,7 +9,7 @@ import {articlePath} from '../articles/urls';
 import type {Story} from '../data';
 import {topics,topicLinks} from '../data';
 import {channels,witnesses,newsletters,practicalServices} from '../extra';
-import {legacyEpisode} from './legacy-programming';
+
 import type {MediaItem,Program} from '../extra';
 import type {DataSource,Paginated,NewsletterRow,ContactRow} from './types';
 type Wrapped<T>={data:T;source:DataSource;error?:string};
@@ -48,8 +48,8 @@ export const getSiteTopics=v2.getV2Topics;
 export const getPrograms=():Promise<Wrapped<Program[]>>=>v2.getV2Programs();
 export const getEpisodes=(limit=24):Promise<Wrapped<PublicEpisode[]>>=>v2.getV2Episodes(limit);
 export const getTvSchedule=v2.getV2Schedule;
-export async function getEpisodeById(id:string):Promise<PublicEpisode|null>{if(id.startsWith('legacy-'))return legacyEpisode(id);if(!/^[0-9a-f-]{36}$/i.test(id))return null;const {data}=await getLwsEpisodes(1,id);return data[0]??null;}
-async function media(kind:MediaKind):Promise<Wrapped<MediaItem[]>>{const r=await listCatalog(kind);return {source:'mysql',data:r.items.map(m=>({id:m.id,title:m.title,category:m.category,image:m.thumbnail_url,duration:m.duration_seconds==null?'':Math.ceil(Number(m.duration_seconds)/60)+' min',time:relativeTime(m.published_at),description:m.description,href:m.source_url})),...(r.available?{}:{error:'Catalogue indisponible'})};}
+export async function getEpisodeById(id:string):Promise<PublicEpisode|null>{if(/^legacy-\d+$/.test(id)){const db=v2.getTvplusV2PublicClient();const {data,error}=await db.from('episodes').select('id').eq('source_episode_id',Number(id.slice(7))).eq('status','published').maybeSingle();if(error||!data)return null;id=data.id;}if(!/^[0-9a-f-]{36}$/i.test(id))return null;return v2.getV2EpisodeById(id);}
+async function media(kind:MediaKind):Promise<Wrapped<MediaItem[]>>{const r=await listCatalog(kind);return {source:'supabase',data:r.items.map(m=>({id:m.id,title:m.title,category:m.category,image:m.thumbnail_url,duration:m.duration_seconds==null?'':Math.ceil(Number(m.duration_seconds)/60)+' min',time:relativeTime(m.published_at),description:m.description,href:m.source_url})),...(r.available?{}:{error:'Catalogue indisponible'})};}
 export const getVideos=()=>media('reportage');
 export const getPodcasts=()=>media('podcast');
 export async function getChannels(){return {data:channels,source:'mysql' as const};}

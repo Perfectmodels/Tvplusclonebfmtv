@@ -1,7 +1,7 @@
 import {NextRequest} from 'next/server';
 import {z} from 'zod';
 import {getUser} from '../../../../lib/auth/server';
-import {newsroom} from '../../../../lib/admin-v2/lws';
+import {livePayments as newsroom} from '../../../../lib/payments/db';
 import {ApiError,handleRoute,ok} from '../../../../lib/api/response';
 import {rateLimit} from '../../../../lib/api/rate-limit';
 import {premiumCatalog} from '../../../../lib/payments/catalog';

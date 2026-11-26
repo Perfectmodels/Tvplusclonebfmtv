@@ -21,18 +21,18 @@ function clean(input:unknown){
   const p=payload.safeParse(input);
   if(!p.success)throw new ApiError('Champs du replay invalides.',400,'BAD_REQUEST',p.error.flatten());
   const v=p.data,parsed=parseVideoUrl(v.source_url);
-  if(v.source_url&&!parsed)throw new ApiError('Lien invalide. YouTube, Facebook, TikTok, Vimeo ou Dailymotion sont acceptés.',400);
+  if(v.source_url&&!parsed)throw new ApiError('Lien invalide. YouTube, Facebook, TikTok, Vimeo, Dailymotion ou SproutVideo sont acceptés.',400);
   if((v.status==='published'||v.publish_at)&&!parsed)throw new ApiError('Un lien vidéo valide est requis pour publier ou programmer.',400);
   if(v.publish_at&&Date.parse(v.publish_at)<Date.now()+60_000&&v.status==='draft')
     throw new ApiError('Programmez au moins une minute dans le futur.',400);
-  return {...v,platform:parsed?.platform??null,external_id:parsed?.externalId??null,
+  return {...v,is_paid:false,price_xaf:0,platform:parsed?.platform==='sproutvideo'?null:parsed?.platform??null,external_id:parsed?.platform==='sproutvideo'?null:parsed?.externalId??null,
     status:v.publish_at&&Date.parse(v.publish_at)>Date.now()?'draft':v.status};
 }
 const select='id,show_id,title,description,aired_at,duration_seconds,platform,external_id,source_url,thumbnail_url,publish_at,status,updated_at';
 export const GET=handleRoute(async()=>{
  const {actor,db}=await requireV2Api('shows.manage');
  if(usesLwsCatalog())return ok(await newsroom(actor,'episodes.list'));
- const {data,error}=await db.from('episodes').select(select).order('aired_at',{ascending:false}).limit(300);
+ const {data,error}=await db.from('episodes').select(select).order('aired_at',{ascending:false}).limit(1000);
  if(error)throw new ApiError('Replays indisponibles.',503,'UNAVAILABLE');
  return ok({items:data??[]});
 });

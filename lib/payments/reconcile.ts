@@ -1,5 +1,5 @@
 import 'server-only';
-import {newsroom} from '../admin-v2/lws';
+import {livePayments as newsroom} from '../payments/db';
 import {verifyOrder,type PaymentOrder} from './singpay';
 const system={id:'payment-service',permissions:[]};
 export async function reconcileOrder(order:PaymentOrder):Promise<PaymentOrder>{

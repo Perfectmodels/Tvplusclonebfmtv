@@ -1,6 +1,6 @@
 import {NextRequest} from 'next/server';
 import {timingSafeEqual} from 'node:crypto';
-import {newsroom} from '../../../../lib/admin-v2/lws';
+import {livePayments as newsroom} from '../../../../lib/payments/db';
 import {ApiError,handleRoute,ok} from '../../../../lib/api/response';
 import {paymentConfig,type PaymentOrder} from '../../../../lib/payments/singpay';
 import {reconcileOrder} from '../../../../lib/payments/reconcile';

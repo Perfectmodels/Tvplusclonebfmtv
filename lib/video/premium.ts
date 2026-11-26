@@ -1,6 +1,6 @@
 import 'server-only';
 import {getUser} from '../auth/server';
-import {newsroom} from '../admin-v2/lws';
+import {livePayments as newsroom} from '../payments/db';
 export function playbackConfig(){
  const secret=process.env.LIVE_TOKEN_BROKER_SECRET?.trim()||'';
  const hosts=(process.env.LIVE_EMBED_HOSTS||'').split(',').map(x=>x.trim().toLowerCase()).filter(h=>/^[a-z0-9.-]+$/.test(h));
