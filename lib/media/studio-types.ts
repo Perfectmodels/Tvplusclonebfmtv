@@ -11,6 +11,9 @@ export function httpsUrl(value:string){try{const u=new URL(value);return u.proto
 export function mediaSource(kind:StudioKind,value:string){
  if(!httpsUrl(value))return false;
  const u=new URL(value);
+ // Audio/video payloads must not consume the app or database storage bandwidth.
+ const host=u.hostname.toLowerCase();
+ if(/(^|\.)(vercel\.app|vercel-storage\.com|supabase\.co|supabase\.in)$/.test(host))return false;
  if(kind==='podcast')return /\.(mp3|ogg|wav|m4a|aac)(?:$)/i.test(u.pathname)||['open.spotify.com','spotify.com','www.spotify.com','soundcloud.com','www.soundcloud.com','www.deezer.com','deezer.com','podcasts.apple.com'].includes(u.hostname);
  return !!parseVideoUrl(value)||/\.(mp4|webm|m3u8)$/i.test(u.pathname);
 }

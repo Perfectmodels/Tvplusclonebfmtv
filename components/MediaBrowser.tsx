@@ -71,7 +71,7 @@ export default function MediaBrowser({
             if (/^https?:\/\//i.test(item.href)) {
               return <a className="media-card" key={item.id} href={item.href} target="_blank" rel="noopener noreferrer">{content}</a>;
             }
-            return <Link href={item.href} className="media-card" key={item.id}>{content}</Link>;
+            return <Link prefetch={false} href={item.href} className="media-card" key={item.id}>{content}</Link>;
           })}
         </div>
       )}

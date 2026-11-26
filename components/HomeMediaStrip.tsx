@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { ArrowRight, PlayCircle, Headphones, Quote } from 'lucide-react';
-import AutoplayVideo from './video/AutoplayVideo';
 
 export type StripItem = {
   id: string;
@@ -46,14 +45,8 @@ export default function HomeMediaStrip({
             const content = (
               <>
                 <span className="tvplus-media-thumb">
-                  {item.source ? (
-                    <AutoplayVideo source={item.source} cover={item.image} title={item.title} />
-                  ) : (
-                    <>
-                      {item.image && <img src={item.image} alt="" loading="lazy" decoding="async" />}
-                      <Icon size={32} aria-hidden="true" />
-                    </>
-                  )}
+                  {item.image && <img src={item.image} alt="" loading="lazy" decoding="async" />}
+                  <Icon size={32} aria-hidden="true" />
                 </span>
                 <strong>{item.title}</strong>
                 {item.meta && <small>{item.meta}</small>}
@@ -62,7 +55,7 @@ export default function HomeMediaStrip({
             return item.deadLink ? (
               <span key={item.id} className="tvplus-media-tile is-dead" aria-label={item.title + ' (lien indisponible)'}>{content}</span>
             ) : (
-              <Link key={item.id} href={item.href} className="tvplus-media-tile">{content}</Link>
+              <Link prefetch={false} key={item.id} href={item.href} className="tvplus-media-tile">{content}</Link>
             );
           })}
         </div>
