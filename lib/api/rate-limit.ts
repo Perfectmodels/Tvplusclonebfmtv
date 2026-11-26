@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { ApiError } from './response';
 
@@ -8,12 +9,12 @@ const buckets = new Map<string, Bucket>();
  * Limiteur en mémoire, adapté à une instance unique.
  * En production multi-instances, remplacer par Supabase/Redis (table `rate_limits`).
  */
-export function rateLimit(request: NextRequest, { limit = 5, windowMs = 60_000, prefix = 'global' } = {}) {
+export function rateLimit(request: NextRequest, { limit = 5, windowMs = 60_000, prefix = 'global', subject = '' } = {}) {
   const ip =
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
     request.headers.get('x-real-ip') ??
     'unknown';
-  const key = `${prefix}:${ip}`;
+  const key = subject ? `${prefix}:account:${createHash('sha256').update(subject.trim().toLowerCase()).digest('hex')}` : `${prefix}:${ip}`;
   const now = Date.now();
   const bucket = buckets.get(key);
 
