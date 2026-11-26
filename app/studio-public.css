@@ -310,3 +310,144 @@
     grid-row: 1 / span 2;
   }
 }
+
+/* Ligne Rouge : citation plein cadre, portrait, nom et fonction. */
+.redline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.redline-track {
+  grid-auto-columns: minmax(280px, 34%);
+  align-items: stretch;
+}
+
+.redline-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: radial-gradient(circle at 78% 32%, #243b5f 0, #112542 45%, #08162b 100%);
+  color: #fff;
+  scroll-snap-align: start;
+  transition: outline-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  outline: 1px solid transparent;
+  outline-offset: 2px;
+}
+
+.redline-card:hover {
+  outline-color: var(--red, #dc0000);
+  box-shadow: 0 12px 28px #06162d55;
+  transform: translateY(-2px);
+}
+
+.redline-card__photo {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 62%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.redline-card.is-legacy .redline-card__photo {
+  inset: 0;
+  width: 100%;
+  object-position: center;
+}
+
+.redline-card__veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #08162bf5 0%, #08162be8 38%, #08162b99 68%, #08162b33 100%);
+}
+
+.redline-card__mark {
+  position: absolute;
+  top: clamp(8px, 2vw, 18px);
+  left: clamp(12px, 2.4vw, 24px);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(3.4rem, 7vw, 5.2rem);
+  line-height: .7;
+  font-weight: 900;
+}
+
+.redline-card__quote {
+  position: absolute;
+  top: 26%;
+  left: clamp(12px, 2.4vw, 24px);
+  width: 62%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 8;
+  overflow: hidden;
+  font-family: var(--font-barlow-black, Arial, sans-serif);
+  font-size: clamp(.98rem, 1.35vw, 1.35rem);
+  font-weight: 900;
+  line-height: 1.16;
+  text-shadow: 0 2px 12px #0008;
+}
+
+.redline-card__footer {
+  position: absolute;
+  left: clamp(12px, 2.4vw, 24px);
+  right: clamp(12px, 2.4vw, 24px);
+  bottom: clamp(14px, 2.4vw, 24px);
+  display: grid;
+  gap: 3px;
+  text-shadow: 0 1px 8px #0009;
+}
+
+.redline-card__name {
+  font-size: clamp(.92rem, 1.25vw, 1.15rem);
+  line-height: 1.2;
+}
+
+.redline-card__role {
+  font-size: clamp(.68rem, .9vw, .78rem);
+  letter-spacing: .055em;
+  text-transform: uppercase;
+  color: #dbe6f4;
+}
+
+.redline-card__rule {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.redline-card__rule::before {
+  content: '';
+  width: 11px;
+  height: 11px;
+  flex: none;
+  background: var(--red, #dc0000);
+  transform: rotate(45deg);
+}
+
+.redline-card__rule::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--red, #dc0000);
+}
+
+.redline-card__brand {
+  position: absolute;
+  right: clamp(12px, 2.4vw, 22px);
+  bottom: clamp(14px, 2.4vw, 24px);
+  font-family: var(--font-barlow-black, Arial, sans-serif);
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -.04em;
+  text-shadow: 0 2px 10px #000a;
+}
+
+@media (max-width: 720px) {
+  .redline-track { grid-auto-columns: minmax(240px, 82%); }
+  .redline-card__quote { top: 24%; width: 66%; }
+}

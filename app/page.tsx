@@ -13,10 +13,11 @@ import SectionHeading from '../components/SectionHeading';
 import StoryCard from '../components/StoryCard';
 import CategoryNewsCarousel from '../components/CategoryNewsCarousel';
 import HomeMediaStrip from '../components/HomeMediaStrip';
+import RedLineStrip from '../components/RedLineStrip';
 import {listArticles,getCategories,getPrograms,getEpisodes} from '../lib/db/repository';
 import {readHomeConfig,type HomeBlock} from '../lib/editorial/home-config';
 import {homeMediaCatalog} from '../lib/media/catalog';
-import {listRedLine} from '../lib/media/red-line';
+import {listRedLine,type RedLineItem} from '../lib/media/red-line';
 import {distributeHomepageStories} from '../lib/editorial/home-distribution';
 import {articlePath} from '../lib/articles/urls';
 import {categoryHref,categorySlug} from '../lib/categories';
@@ -39,10 +40,11 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  const catalog=(kind:'reel'|'reportage'|'podcast')=>media.items.filter(m=>m.kind===kind).map(m=>({id:m.id,title:m.title,image:m.thumbnail_url,href:'/media/'+m.id,meta:m.category}));
  const line=programs.data.find(p=>p.slug==='ligne-rouge'||p.name.toLowerCase().trim()==='ligne rouge');
  const replay=()=>episodes.data.filter(e=>(!!e.videoUrl||!!e.legacyPage)&&(!line||e.programId!==line.id)).slice(0,8).map(e=>({id:e.id,title:e.title,image:e.thumbnail,href:'/replays/'+e.id,meta:e.duration}));
- const reels=catalog('reel'),lineItems=redLine.items.map(m=>({id:m.id,title:m.title,image:/^https:\/\//i.test(m.thumbnail_url||'')?m.thumbnail_url:undefined,href:'/ligne-rouge#'+m.id,meta:'Ligne Rouge'})),replays=replay(),reports=catalog('reportage'),podcasts=catalog('podcast');
- const stripMap: Record<HomeBlock,{title:string;href:string;items:ReturnType<typeof catalog>;vertical?:boolean;red?:boolean;audio?:boolean;emptyMessage?:string}>={
+ const reels=catalog('reel'),lineItems:RedLineItem[]=redLine.items,replays=replay(),reports=catalog('reportage'),podcasts=catalog('podcast');
+ type Strip={title:string;href:string;items:ReturnType<typeof catalog>;vertical?:boolean;audio?:boolean;emptyMessage?:string;redLine?:boolean;redLineItems?:RedLineItem[]};
+ const stripMap: Record<HomeBlock,Strip>={
   reels:{title:'TV+ Reels',href:'/reels',items:reels,vertical:true,emptyMessage:'Aucun Reel publié pour le moment.'},
-  'ligne-rouge':{title:'Ligne Rouge',href:'/ligne-rouge',items:lineItems,red:true,emptyMessage:'Aucun numéro publié pour le moment.'},
+  'ligne-rouge':{title:'Ligne Rouge',href:'/ligne-rouge',items:[],redLine:true,redLineItems:lineItems,emptyMessage:'Aucun numéro publié pour le moment.'},
   replays:{title:'À revoir en replay',href:'/replays',items:replays,emptyMessage:'Aucun replay disponible pour le moment.'},
   reportages:{title:'Reportages TV+',href:'/videos',items:reports,emptyMessage:'Aucun reportage publié pour le moment.'},
   podcasts:{title:'Podcasts TV+',href:'/podcasts',items:podcasts,audio:true,emptyMessage:'Aucun podcast publié pour le moment.'}
@@ -93,7 +95,12 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
   if(videos.length){
    const strip=videos.shift()!;
    const anchor=videoIndex===0?'espace-video':'video'+strip.href.replace('/','-');
-   appendContent(<HomeMediaStrip key={strip.href} {...strip} id={anchor}/>);
+   if(strip.redLine){
+    appendContent(<RedLineStrip key={strip.href} id={anchor} title={strip.title} href={strip.href} items={strip.redLineItems??[]} emptyMessage={strip.emptyMessage}/>);
+   }else{
+    const {redLine:_redLine,redLineItems:_items,...props}=strip;
+    appendContent(<HomeMediaStrip key={strip.href} {...props} id={anchor}/>);
+   }
    videoIndex+=1;
    appendAd();
   }
