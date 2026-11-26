@@ -24,12 +24,13 @@ export const POST=handleRoute(async(request:NextRequest)=>{
  }
  const {data:profile,error:profileError}=await db.from('profiles').select('is_active,role').eq('id',data.user.id).maybeSingle();
  const role=profile?.is_active===true&&!profileError?await db.from('roles').select('permissions').eq('key',profile.role).maybeSingle():null;
- if(profileError||!profile?.is_active||!role?.data||role.error||!Array.isArray(role.data.permissions)){
+ if(profileError||role?.error){await db.auth.signOut({scope:'local'});throw new ApiError('Service des profils temporairement indisponible.',503,'UNAVAILABLE');}
+ if(!profile?.is_active||!role?.data||!Array.isArray(role.data.permissions)){
   await db.auth.signOut({scope:'local'});throw new ApiError('Profil inactif ou permissions indisponibles.',403,'UNAUTHORIZED');
  }
  await clearSession();
  const permissions=role.data.permissions as string[];
- const editorial=permissions.includes('articles.read_all');
+ const editorial=permissions.some(p=>['articles.read_all','settings.manage','shows.manage','schedule.manage','users.manage','roles.manage'].includes(p))||['admin','super_admin'].includes(profile.role);
  const next=safeReturnPath(input.next,editorial?'/admin-v2':'/compte');
  return ok({id:data.user.id,email:data.user.email,next:next.startsWith('/admin-v2')&&!editorial?'/compte':next});
 });
