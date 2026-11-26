@@ -36,5 +36,5 @@ export const POST=handleRoute(async(req:NextRequest)=>{
   await db.auth.signOut({scope:'local'});throw new ApiError('Profil inactif ou permissions indisponibles.',403,'UNAUTHORIZED');
  }
  await clearSession();
- return ok({needsConfirmation:false,next,session:true});
+ return ok({needsConfirmation:false,next:next.startsWith('/admin-v2')?'/compte':next,session:true});
 });
