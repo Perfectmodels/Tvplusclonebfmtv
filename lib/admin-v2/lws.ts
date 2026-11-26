@@ -7,22 +7,8 @@ import { usesLwsCatalog } from '../db/lws-public';
 export { usesLwsCatalog };
 
 export async function newsroom<T>(actor: Pick<V2Actor,'id'|'permissions'>, operation: string, params: Record<string, unknown> = {}): Promise<T> {
-  const key = process.env.LWS_EDITORIAL_SERVICE_KEY;
-  if (!key) throw new ApiError('Connexion à la rédaction indisponible.', 503, 'UNAVAILABLE');
-  const endpoint=process.env.LWS_EDITORIAL_API_URL;if(!endpoint)throw new ApiError('API MySQL non configurée.',503,'UNAVAILABLE');
-  const url=new URL(endpoint);if(url.protocol!=='https:'||url.username||url.password)throw new ApiError('API LWS HTTPS requise.',503,'UNAVAILABLE');
-  url.searchParams.set('resource', 'newsroom');
-  const response = await fetch(url, {
-    method: 'POST', cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(12000),
-    headers: { 'content-type': 'application/json', 'x-tvplus-key': key },
-    body: JSON.stringify({ ...params, operation, actor: { id: actor.id, permissions: actor.permissions } }),
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new ApiError(body.error || 'Service éditorial indisponible.', response.status,
-      response.status === 409 ? 'CONFLICT' : response.status === 403 ? 'UNAUTHORIZED' : response.status === 404 ? 'NOT_FOUND' : 'UNAVAILABLE');
-  }
-  return await response.json() as T;
+  // Migration : ne jamais transmettre un acteur Supabase au service privé MySQL.
+  throw new ApiError('Module en cours de migration vers Supabase.',503,'UNAVAILABLE');
 }
 
 type LwsCategoryRef = { id: string; slug: string; name: string; description: string; position: number; parent_id: string | null };
