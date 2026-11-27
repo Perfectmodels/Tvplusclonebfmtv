@@ -1,6 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {useNotifications,useResultNotifications} from '../notifications/NotificationProvider';
+import {ListSkeleton} from '../ui/FeedbackState';
+import {readApi} from '../../lib/api/client';
+import {LoaderCircle} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -53,6 +57,8 @@ export default function V2ArticleEditor({
   id, actorId, canReview, fromWatch = false,
 }: { id?: string; actorId: string; canReview: boolean; fromWatch?: boolean }) {
   const router = useRouter();
+  const {confirm:askConfirm}=useNotifications();
+  const saveLock=useRef(false),workflowLock=useRef(false),uploadLock=useRef(false),created=useRef(false),editRevision=useRef(0);
   const [form, setForm] = useState<ArticleForm>(initialForm);
   const [keywords, setKeywords] = useState('');
   const [content, setContent] = useState<EditorValue>({ json: emptyDoc, text: '', words: 0 });
@@ -64,6 +70,7 @@ export default function V2ArticleEditor({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  useResultNotifications(success,error);
   const [status, setStatus] = useState('draft');
   const [updatedAt, setUpdatedAt] = useState('');
   const [ownerId, setOwnerId] = useState(actorId);
@@ -100,7 +107,7 @@ export default function V2ArticleEditor({
       setKeywords(draft.keywords.join(', '));
       setInitialJson(json);
       setContent({ json, text, words: text.split(/\s+/).length });
-      setDirty(true);
+      editRevision.current++;setDirty(true);
       setSuccess('Proposition importée. Relisez les faits et choisissez la rubrique avant d’enregistrer.');
     } catch {
       setError('Le brouillon de veille n’a pas pu être chargé.');
@@ -128,7 +135,7 @@ export default function V2ArticleEditor({
 
   const setField = <K extends keyof ArticleForm>(key: K, value: ArticleForm[K]) => {
     setForm(current => ({ ...current, [key]: value }));
-    setDirty(true);
+    editRevision.current++;setDirty(true);
     setSuccess('');
   };
 
@@ -192,7 +199,8 @@ export default function V2ArticleEditor({
     return () => { alive = false; };
   }, [id]);
 
-  const save = useCallback(async (): Promise<{ id: string; slug: string; updated_at: string } | null> => {
+  const save = useCallback(async (internal=false): Promise<{ id: string; slug: string; updated_at: string } | null> => {
+    if(saveLock.current||uploadLock.current||(!internal&&workflowLock.current)||(!id&&created.current))return null;
     if (!canEdit) { setError('Vous ne pouvez pas modifier cet article.'); return null; }
     if (!form.title.trim() || !form.excerpt.trim() || !form.slug.trim() || !form.category_id || !form.country_code) {
       setError('Le titre, le chapeau, la rubrique et le pays sont obligatoires.'); return null;
@@ -206,6 +214,7 @@ export default function V2ArticleEditor({
     if (!content.json || typeof content.json !== 'object') {
       setError('Le contenu de l’article est invalide.'); return null;
     }
+    saveLock.current=true;const revision=editRevision.current;
     setSaving(true); setError(''); setSuccess('');
     try {
       const body = {
@@ -217,14 +226,14 @@ export default function V2ArticleEditor({
       const url = id ? '/api/admin-v2/articles/' + id : '/api/admin-v2/articles';
       const response = await fetch(url, { method: id ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error?.message ?? 'Enregistrement impossible.');
+      const result={data:await readApi<{id:string;slug:string;updated_at:string;status:string;short_code?:string}>(response,'Enregistrement impossible.')};
       setUpdatedAt(result.data.updated_at);
       setStatus(result.data.status);
       if (result.data.short_code) setShortCode(result.data.short_code);
-      setDirty(false);
-      setSuccess('Article enregistré.');
+      if(editRevision.current===revision)setDirty(false);
+      setSuccess(editRevision.current===revision?'Article enregistré.':'Version enregistrée. Des modifications plus récentes restent à enregistrer.');
       if (!id) {
+        created.current=true;
         if (fromWatch) { try { sessionStorage.removeItem(watchDraftKey + ':' + actorId); } catch {} }
         router.replace('/admin-v2/articles/' + result.data.id + '/edit');
       }
@@ -232,7 +241,7 @@ export default function V2ArticleEditor({
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur réseau');
       return null;
-    } finally { setSaving(false); }
+    } finally {saveLock.current=false;setSaving(false); }
   }, [canEdit, form, keywords, content.json, updatedAt, id, router, fromWatch, actorId]);
 
   useEffect(() => {
@@ -270,14 +279,16 @@ export default function V2ArticleEditor({
     if (action === 'schedule' && (!scheduledAt || Date.parse(scheduledAt) <= Date.now()+60_000)) {
       setError('Choisissez une date future, heure de Libreville.');return;
     }
-    if (action === 'archive' && !window.confirm('Archiver cet article et le retirer du site public ?')) return;
-    if (action === 'deactivate' && !window.confirm('Retirer cet article du site public ?')) return;
-    if (!id) return;
-    if (action === 'publish' && !window.confirm('Publier cet article sur le site public ?')) return;
+    if(!id||saveLock.current||workflowLock.current||uploadLock.current)return;
+    workflowLock.current=true;
+    try {
+    const prompts:Record<string,string>={archive:'Archiver cet article et le retirer du site public ?',deactivate:'Retirer cet article du site public ?',publish:'Publier cet article sur le site public ?'};
+    if(prompts[action]&&!await askConfirm(prompts[action],{danger:action!=='publish',label:action==='publish'?'Publier':action==='archive'?'Archiver':'Retirer'}))return;
     let version = updatedAt;
     if (dirty) {
-      const saved = await save();
-      if (!saved) return;
+      const revision=editRevision.current;
+      const saved = await save(true);
+      if (!saved||revision!==editRevision.current){if(saved)setError('Des modifications restent à enregistrer avant de changer le statut.');return;}
       version = saved.updated_at;
     }
     setSaving(true); setError(''); setSuccess('');
@@ -286,8 +297,7 @@ export default function V2ArticleEditor({
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, expected_updated_at: version, ...(scheduledAt ? {scheduled_at:scheduledAt} : {}) }), cache: 'no-store',
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error?.message ?? 'Action impossible');
+      const result={data:await readApi<{status:string;published_at?:string|null;updated_at:string}>(response,'Action impossible')};
       setStatus(result.data.status);
       setPublicationDate(result.data.published_at ?? null);
       setUpdatedAt(result.data.updated_at);
@@ -295,9 +305,11 @@ export default function V2ArticleEditor({
       setSuccess('Nouveau statut : ' + (statuses[result.data.status] ?? result.data.status) + '.');
     } catch (e) { setError(e instanceof Error ? e.message : 'Erreur réseau'); }
     finally { setSaving(false); }
+    } finally {workflowLock.current=false;}
   }
 
   async function upload(file: File) {
+    if(uploadLock.current||saveLock.current||workflowLock.current)return;
     if (!file.size || file.size > MAX_IMAGE_BYTES) {
       setError('La photo de couverture ne doit pas dépasser 1 Mo. Compressez-la avant l’import.');
       return;
@@ -306,7 +318,7 @@ export default function V2ArticleEditor({
       setError('Choisissez une image JPEG, PNG, WebP, AVIF, GIF ou un autre format photo compatible.');
       return;
     }
-    setError(''); setSuccess(''); setUploading(true);
+    uploadLock.current=true;setError(''); setSuccess(''); setUploading(true);
     try {
       const body = new FormData();
       body.append('file', file);
@@ -319,7 +331,7 @@ export default function V2ArticleEditor({
       setField('cover_media_id', item.id);
       setSuccess('Image vérifiée, optimisée au format WebP 1200 × 630 et enregistrée.');
     } catch (e) { setError(e instanceof Error ? e.message : 'Erreur image'); }
-    finally { setUploading(false); }
+    finally {uploadLock.current=false;setUploading(false); }
   }
 
   return (
@@ -327,7 +339,7 @@ export default function V2ArticleEditor({
       <header className="v2-compose-header">
         <div className="v2-compose-title-block">
           <nav className="v2-compose-breadcrumb" aria-label="Fil d’Ariane">
-            <Link href="/admin-v2"><ArrowLeft size={14} /> Administration</Link>
+            <Link href="/admin-v2/articles" onClick={async e=>{if(saving||uploading){e.preventDefault();return;}if(dirty){e.preventDefault();if(await askConfirm("Quitter cet article sans enregistrer vos modifications ?",{danger:true,label:"Quitter sans enregistrer"}))router.push("/admin-v2/articles");}}}><ArrowLeft size={14} /> Retour aux articles</Link>
             <span aria-hidden="true">/</span>
             <Link href="/admin-v2/articles">Articles</Link>
             <span aria-hidden="true">/</span>
@@ -354,8 +366,8 @@ export default function V2ArticleEditor({
             <button type="button" className="v2-compose-button secondary" onClick={() => setPreviewOpen(true)}
               disabled={!loaded}><Eye size={17} /> Prévisualiser</button>
             {canEdit && <button type="button" className="v2-compose-button primary"
-              onClick={() => void save()} disabled={saving || !loaded}>
-              <Save size={16} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+              onClick={() => void save()} disabled={saving || uploading || !loaded}>
+              {saving?<LoaderCircle size={16} className="tv-spin"/>:<Save size={16}/>} {saving ? 'Enregistrement…' : 'Enregistrer'}
             </button>}
           </div>
         </div>
@@ -371,7 +383,7 @@ export default function V2ArticleEditor({
       {error && <div className="v2-error v2-compose-feedback" role="alert">{error}</div>}
       {success && <div className="v2-success v2-compose-feedback" role="status">{success}</div>}
 
-      {!loaded ? <div className="v2-compose-loading" role="status">Chargement de votre espace de rédaction…</div> : (
+      {!loaded ? <ListSkeleton rows={4} label="Chargement de votre espace de rédaction"/> : (
         <div className="v2-compose-columns">
           <div className="v2-compose-main">
             <section className="v2-card v2-compose-card" id="article-identite" aria-labelledby="article-identite-title">
@@ -382,27 +394,27 @@ export default function V2ArticleEditor({
               </div>
               <label className="v2-field v2-compose-title-field">
                 <span>Titre principal <b aria-hidden="true">*</b></span>
-                <input className="v2-editor-title-input" maxLength={220} required disabled={!canEdit}
+                <input className="v2-editor-title-input" maxLength={220} required disabled={!canEdit||saving||uploading}
                   placeholder="Quel est le sujet de votre article ?" value={form.title}
                   onChange={event => {
                     const title = event.target.value;
                     setForm(current => ({ ...current, title, slug: id ? current.slug : slugify(title) }));
-                    setDirty(true); setSuccess('');
+                    editRevision.current++;setDirty(true); setSuccess('');
                   }} />
                 <small className="v2-compose-field-count">{form.title.length} / 220 caractères</small>
               </label>
               <label className="v2-field">
                 <span>Chapeau / résumé de l’article <b aria-hidden="true">*</b></span>
-                <textarea className="v2-editor-chapeau" maxLength={2000} required disabled={!canEdit}
+                <textarea className="v2-editor-chapeau" maxLength={2000} required disabled={!canEdit||saving||uploading}
                   placeholder="Présentez l’essentiel de l’information en deux ou trois phrases…"
                   value={form.excerpt} onChange={event => setField('excerpt', event.target.value)} />
                 <small className="v2-editor-help">Ce texte introduit l’article et sert de description SEO par défaut.</small>
               </label>
               <label className="v2-field v2-compose-keywords">
                 <span>Mots-clés de l’article</span>
-                <input value={keywords} disabled={!canEdit} maxLength={1350}
+                <input value={keywords} disabled={!canEdit||saving||uploading} maxLength={1350}
                   placeholder="Gabon, actualité, Libreville, institutions"
-                  onChange={event => { setKeywords(event.target.value); setDirty(true); setSuccess(''); }} />
+                  onChange={event => { setKeywords(event.target.value); editRevision.current++;setDirty(true); setSuccess(''); }} />
                 <small className="v2-editor-help">Séparez chaque mot-clé par une virgule. <strong>{tagCount}/20</strong> mots-clés.</small>
               </label>
             </section>
@@ -417,15 +429,15 @@ export default function V2ArticleEditor({
               </div>
               <div className="v2-field" style={{marginBottom:16}}>
                 <label className="v2-field"><span>Reportage vidéo (facultatif)</span>
-                  <input type="url" maxLength={1300} value={form.video_url} disabled={!canEdit} placeholder="https://www.youtube.com/watch?v=… ou lien Facebook" onChange={event=>setField('video_url',event.target.value)} />
+                  <input type="url" maxLength={1300} value={form.video_url} disabled={!canEdit||saving||uploading} placeholder="https://www.youtube.com/watch?v=… ou lien Facebook" onChange={event=>setField('video_url',event.target.value)} />
                 </label>
                 <small className="v2-editor-help">Ajoutez un lien public pour transformer cet article en article vidéo. Le texte, la couverture et le référencement restent inchangés.</small>
                 {form.video_url.trim() && !validVideo && <p className="v2-error" role="alert">Lien YouTube ou Facebook non reconnu.</p>}
                 {validVideo && <div style={{maxWidth:'100%',marginTop:12}}><p>Plateforme : {validVideo.platform === 'youtube' ? 'YouTube' : 'Facebook'}</p><ReplayEmbed key={validVideo.url} title={form.title || 'Reportage vidéo'} url={validVideo.url} thumbnail={cover?.url}/></div>}
                 {form.video_url && canEdit && <button type="button" className="v2-compose-button secondary" onClick={()=>setField('video_url','')}>Retirer la vidéo</button>}
               </div>
-              <TiptapEditor initialJson={initialJson} editable={canEdit}
-                onChange={value => { setContent(value); setDirty(true); }}
+              <TiptapEditor initialJson={initialJson} editable={canEdit&&!saving&&!uploading}
+                onChange={value => { setContent(value); editRevision.current++;setDirty(true); }}
                 autosaveHint="Sauvegarde manuelle · Ctrl/⌘ + S" />
             </section>
 
@@ -445,7 +457,7 @@ export default function V2ArticleEditor({
                   validSlug: /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(form.slug),
                 })}
                 onApply={canEdit ? (field, value) => {
-                  if (field === 'keywords') { setKeywords(value); setDirty(true); }
+                  if (field === 'keywords') { setKeywords(value); editRevision.current++;setDirty(true); }
                   else setField(field === 'title' ? 'seo_title' : 'seo_description', value);
                 } : undefined}
               />
@@ -457,18 +469,18 @@ export default function V2ArticleEditor({
               <div className="v2-editor-field-grid">
                 <label className="v2-field">
                   <span>Titre SEO personnalisé</span>
-                  <input value={form.seo_title} disabled={!canEdit} maxLength={200}
+                  <input value={form.seo_title} disabled={!canEdit||saving||uploading} maxLength={200}
                     placeholder="Par défaut : le titre de l’article"
                     onChange={event => setField('seo_title', event.target.value)} />
                 </label>
                 <label className="v2-field">
                   <span>Identifiant lisible (slug)</span>
-                  <input value={form.slug} disabled={!canEdit} required maxLength={120}
+                  <input value={form.slug} disabled={!canEdit||saving||uploading} required maxLength={120}
                     onChange={event => setField('slug', slugify(event.target.value))} />
                 </label>
                 <label className="v2-field is-wide">
                   <span>Description SEO personnalisée</span>
-                  <textarea value={form.seo_description} disabled={!canEdit} maxLength={320}
+                  <textarea value={form.seo_description} disabled={!canEdit||saving||uploading} maxLength={320}
                     placeholder="Par défaut : le chapeau de l’article"
                     onChange={event => setField('seo_description', event.target.value)} />
                 </label>
@@ -517,40 +529,40 @@ export default function V2ArticleEditor({
               </p>
               <div className="v2-compose-publish-actions">
                 {canEdit && <button type="button" className="v2-compose-button primary"
-                  disabled={saving} onClick={() => void save()}>
+                  disabled={saving||uploading} onClick={() => void save()}>
                   <Save size={16} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
                 </button>}
                 {id && canEdit && ['draft', 'in_review'].includes(status) &&
-                  <button type="button" className="v2-compose-button secondary" disabled={saving}
+                  <button type="button" className="v2-compose-button secondary" disabled={saving||uploading}
                     onClick={() => void workflow('submit')}><Send size={15} /> Soumettre pour validation</button>}
                 {id && canReview && status === 'in_review' &&
-                  <button type="button" className="v2-compose-button secondary" disabled={saving}
+                  <button type="button" className="v2-compose-button secondary" disabled={saving||uploading}
                     onClick={() => void workflow('approve')}><Check size={16} /> Valider</button>}
                 {id && canReview && ['draft','in_review','approved','scheduled'].includes(status) &&
-                  <button type="button" className="v2-compose-button publish" disabled={saving}
+                  <button type="button" className="v2-compose-button publish" disabled={saving||uploading}
                     onClick={() => void workflow('publish')}><ArrowUpRight size={16}/> Mettre en ligne</button>}
                 {id && canReview && status === 'inactive' &&
-                  <button type="button" className="v2-compose-button publish" disabled={saving}
+                  <button type="button" className="v2-compose-button publish" disabled={saving||uploading}
                     onClick={() => void workflow('activate')}><ToggleRight size={16}/> Activer en ligne</button>}
                 {id && canReview && status === 'published' &&
-                  <button type="button" className="v2-compose-button secondary" disabled={saving}
+                  <button type="button" className="v2-compose-button secondary" disabled={saving||uploading}
                     onClick={() => void workflow('deactivate')}><ToggleLeft size={16}/> Désactiver en ligne</button>}
                 {id && canReview && status === 'archived' &&
-                  <button type="button" className="v2-compose-button secondary" disabled={saving}
+                  <button type="button" className="v2-compose-button secondary" disabled={saving||uploading}
                     onClick={() => void workflow('restore')}><RotateCcw size={16}/> Restaurer l’article</button>}
                 {id && canReview && status === 'scheduled' &&
-                  <button type="button" className="v2-compose-button secondary" disabled={saving}
+                  <button type="button" className="v2-compose-button secondary" disabled={saving||uploading}
                     onClick={() => void workflow('revert')}><RotateCcw size={16}/> Annuler la programmation</button>}
                 {id && canReview && ['draft','in_review','approved','inactive','scheduled'].includes(status) &&
                   <div className="v2-compose-schedule">
-                    <button type="button" className="v2-compose-button secondary" disabled={saving}
+                    <button type="button" className="v2-compose-button secondary" disabled={saving||uploading}
                       onClick={() => setScheduleOpen(x => !x)}><CalendarClock size={16}/> Programmer la publication</button>
                     {scheduleOpen && <div>
                       <label>Jour et heure (Libreville)
                         <input type="datetime-local" value={scheduleLocal}
                           onChange={event => setScheduleLocal(event.target.value)}/>
                       </label>
-                      <button type="button" className="v2-compose-button primary" disabled={saving}
+                      <button type="button" className="v2-compose-button primary" disabled={saving||uploading}
                         onClick={()=>{
                           const timestamp=new Date(scheduleLocal+':00+01:00');
                           if(Number.isNaN(timestamp.valueOf())) {setError('Date invalide.');return;}
@@ -559,7 +571,7 @@ export default function V2ArticleEditor({
                     </div>}
                   </div>}
                 {id && canReview && status !== 'archived' &&
-                  <button type="button" className="v2-compose-button secondary v2-compose-archive" disabled={saving}
+                  <button type="button" className="v2-compose-button secondary v2-compose-archive" disabled={saving||uploading}
                     onClick={() => void workflow('archive')}><Archive size={16}/> Archiver l’article</button>}
                 <button type="button" className="v2-compose-button secondary"
                   disabled={!loaded} onClick={() => setPreviewOpen(true)}><Eye size={16} /> Aperçu de l’article</button>
@@ -573,7 +585,7 @@ export default function V2ArticleEditor({
               </div>
               <label className="v2-field">
                 <span>Catégorie <b aria-hidden="true">*</b></span>
-                <select required value={form.category_id} disabled={!canEdit}
+                <select required value={form.category_id} disabled={!canEdit||saving||uploading}
                   onChange={event => setField('category_id', event.target.value)}>
                   <option value="">Choisir une rubrique</option>
                   {categories.map(category =>
@@ -582,14 +594,14 @@ export default function V2ArticleEditor({
               </label>
               <label className="v2-field">
                 <span>Pays concerné <b aria-hidden="true">*</b></span>
-                <select value={form.country_code} disabled={!canEdit}
+                <select value={form.country_code} disabled={!canEdit||saving||uploading}
                   onChange={event => {
                     const country = event.target.value;
                     setForm(current => ({
                       ...current, country_code: country,
                       province_slug: country === 'GA' ? current.province_slug : '',
                     }));
-                    setDirty(true); setSuccess('');
+                    editRevision.current++;setDirty(true); setSuccess('');
                   }}>
                   <option value="">Sélectionner un pays</option>
                   {COUNTRIES.map(country =>
@@ -599,7 +611,7 @@ export default function V2ArticleEditor({
               {form.country_code === 'GA' &&
                 <label className="v2-field">
                   <span>Province</span>
-                  <select value={form.province_slug} disabled={!canEdit}
+                  <select value={form.province_slug} disabled={!canEdit||saving||uploading}
                     onChange={event => setField('province_slug', event.target.value)}>
                     <option value="">Tout le Gabon</option>
                     {GABON_PROVINCES.map(province =>
@@ -608,10 +620,10 @@ export default function V2ArticleEditor({
                 </label>}
               <div className="v2-compose-switches">
                 <label><span><strong>À la une</strong><small>Mettre l’article en avant</small></span>
-                  <input type="checkbox" checked={form.featured} disabled={!canEdit}
+                  <input type="checkbox" checked={form.featured} disabled={!canEdit||saving||uploading}
                     onChange={event => setField('featured', event.target.checked)} /></label>
                 <label><span><strong>Alerte info</strong><small>Signaler une actualité urgente</small></span>
-                  <input type="checkbox" checked={form.is_alert} disabled={!canEdit}
+                  <input type="checkbox" checked={form.is_alert} disabled={!canEdit||saving||uploading}
                     onChange={event => setField('is_alert', event.target.checked)} /></label>
               </div>
             </section>
@@ -641,7 +653,7 @@ export default function V2ArticleEditor({
                 <div className="v2-image-grid">
                   {chosenMedia.map(item =>
                     <button type="button" key={item.id} className="v2-image-choice"
-                      aria-pressed={form.cover_media_id === item.id} disabled={!canEdit}
+                      aria-pressed={form.cover_media_id === item.id} disabled={!canEdit||saving||uploading}
                       title={item.alt || 'Choisir cette image'}
                       onClick={() => setField('cover_media_id', item.id)}>
                       <img src={item.url} alt={item.alt || 'Photo de la médiathèque'} loading="lazy" />
@@ -660,7 +672,7 @@ export default function V2ArticleEditor({
         <div className="v2-compose-mobile-save">
           <span>{dirty ? 'Modifications en attente' : statuses[status] ?? status}</span>
           <button type="button" className="v2-compose-button primary"
-            disabled={saving} onClick={() => void save()}>
+            disabled={saving||uploading} onClick={() => void save()}>
             <Save size={15} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
         </div>}
