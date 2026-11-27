@@ -20,6 +20,8 @@ Authentication > Email Templates > Reset Password : conserver le lien Confirmati
 <p><a href="{{ .SiteURL }}/auth/callback?type=recovery&amp;token_hash={{ .TokenHash }}">Choisir un nouveau mot de passe</a></p>
 ```
 
+Le fichier supabase/config.toml configure le développement local; il ne modifie pas automatiquement le projet hébergé. AUTH_SESSION_SECRET (32 caractères au minimum) doit être configuré côté serveur Vercel pour signer les preuves de récupération, valables 15 minutes. Le modèle TokenHash fonctionne également sur un autre appareil, avec retour par défaut vers Mon compte. Les liens PKCE conservent next lorsque l'utilisateur ouvre le lien sur le navigateur initial.
+
 Configurer SMTP personnalisé et vérifier la livraison réelle. Les e-mails de récupération restent nécessaires même sans confirmation d'inscription. Activer les notifications de changement de mot de passe.
 
 Les comptes du personnel restent administrés séparément. Les droits sont vérifiés en base et ne sont jamais dérivés des métadonnées modifiables par le lecteur.
