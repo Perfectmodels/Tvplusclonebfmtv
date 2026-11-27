@@ -1,7 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowUpDown, ChevronLeft, ChevronRight, Download, RefreshCw, Search } from 'lucide-react';
+import {readApi} from '../../lib/api/client';
+import {FeedbackState} from '../ui/FeedbackState';
 import { useToast } from './ToastProvider';
 
 export type Column<T> = {
@@ -40,6 +42,8 @@ export default function DataTable<T extends Record<string, any>>({
   const [items, setItems] = useState<T[]>([]);
   const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
+  const [query,setQuery]=useState('');
+  const request=useRef<AbortController|null>(null);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [sort, setSort] = useState('created_at');
@@ -51,26 +55,28 @@ export default function DataTable<T extends Record<string, any>>({
   const { error: toastError } = useToast();
 
   const load = useCallback(async () => {
+    request.current?.abort();const controller=new AbortController();request.current=controller;
     setLoading(true);
     setError('');
     try {
-      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), q, sort, order });
-      const response = await fetch(`${endpoint}?${params.toString()}`);
-      const body = await response.json();
-      if (!response.ok) throw new Error(body?.error?.message ?? 'Chargement impossible.');
-      setItems(body.data.items ?? []);
-      setTotal(body.data.total ?? 0);
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), q:query, sort, order });
+      const response = await fetch(`${endpoint}?${params.toString()}`,{signal:controller.signal,cache:'no-store'});
+      const data=await readApi<{items?:T[];total?:number}>(response,'Chargement impossible.');
+      if(controller.signal.aborted)return;
+      setItems(data.items??[]);setTotal(data.total??0);setSelected([]);
     } catch (err) {
+      if(controller.signal.aborted)return;
       const message = err instanceof Error ? err.message : 'Erreur de chargement.';
       setError(message);
       toastError(message);
     } finally {
-      setLoading(false);
+      if(!controller.signal.aborted)setLoading(false);
     }
-  }, [endpoint, page, pageSize, q, sort, order, reload, refreshKey, toastError]);
+  }, [endpoint, page, pageSize, query, sort, order, reload, refreshKey, toastError]);
 
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { setPage(1); }, [q, refreshKey]);
+  useEffect(() => { void load();return()=>request.current?.abort(); }, [load]);
+  useEffect(()=>{const timer=setTimeout(()=>{setPage(1);setQuery(q.trim());},300);return()=>clearTimeout(timer);},[q]);
+  useEffect(()=>{setPage(1);},[refreshKey]);
 
   function exportCsv() {
     const header = columns.map((c) => c.label).join(';');
@@ -95,7 +101,7 @@ export default function DataTable<T extends Record<string, any>>({
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="admin-table-wrap">
+    <div className="admin-table-wrap" aria-busy={loading}>
       <div className="admin-table-tools">
         <div className="admin-search">
           <Search size={16} />
@@ -103,12 +109,12 @@ export default function DataTable<T extends Record<string, any>>({
         </div>
         <span className="admin-total">{total} élément{total > 1 ? 's' : ''}</span>
         {exportable && (
-          <button type="button" className="admin-icon-btn" onClick={exportCsv} aria-label="Exporter en CSV" title="Exporter en CSV">
+          <button type="button" className="admin-icon-btn" onClick={exportCsv} disabled={loading||!!error||!items.length} aria-label="Exporter en CSV" title="Exporter en CSV">
             <Download size={16} />
           </button>
         )}
-        <button type="button" className="admin-icon-btn" onClick={() => setReload((r) => r + 1)} aria-label="Actualiser" title="Actualiser">
-          <RefreshCw size={16} />
+        <button type="button" className="admin-icon-btn" onClick={() => setReload((r) => r + 1)} disabled={loading} aria-label="Actualiser" title="Actualiser">
+          <RefreshCw size={16} className={loading?'tv-spin':undefined} />
         </button>
       </div>
 
@@ -116,7 +122,7 @@ export default function DataTable<T extends Record<string, any>>({
         <div className="admin-bulk-bar">
           <span>{selected.length} sélectionné{selected.length > 1 ? 's' : ''}</span>
           {bulkActions.map((action) => (
-            <button type="button" className="admin-btn admin-btn-ghost" key={action.value} onClick={() => onBulkAction?.(selected, action.value)}>
+            <button type="button" className="admin-btn admin-btn-ghost" key={action.value} disabled={loading||!!error} onClick={() => onBulkAction?.(selected, action.value)}>
               {action.label}
             </button>
           ))}
@@ -131,12 +137,12 @@ export default function DataTable<T extends Record<string, any>>({
         </div>
       )}
 
-      {loading ? (
+      {loading && !items.length ? (
         <div className="admin-skeleton" aria-busy="true">
           {Array.from({ length: 5 }, (_, i) => <span key={i} />)}
         </div>
-      ) : items.length === 0 ? (
-        <div className="admin-empty">Aucun élément à afficher.</div>
+      ) : error && !items.length ? null : items.length === 0 ? (
+        <FeedbackState kind="empty" title="Aucun résultat" message={query?'Essayez un autre terme de recherche.':'Aucun élément à afficher pour le moment.'} action={query?()=>setQ(''):undefined} actionLabel="Effacer la recherche"/>
       ) : (
         <>
           <div className="admin-table-scroll">
@@ -168,8 +174,8 @@ export default function DataTable<T extends Record<string, any>>({
                     {(onEdit || onDelete || extraActions) && (
                       <td className="admin-actions-col">
                         {extraActions?.(row)}
-                        {onEdit && <button type="button" className="admin-link" onClick={() => onEdit(row)}>Modifier</button>}
-                        {onDelete && <button type="button" className="admin-link admin-link-danger" onClick={() => onDelete(row)}>Supprimer</button>}
+                        {onEdit && <button type="button" className="admin-link" disabled={loading||!!error} onClick={() => onEdit(row)}>Modifier</button>}
+                        {onDelete && <button type="button" className="admin-link admin-link-danger" disabled={loading||!!error} onClick={() => onDelete(row)}>Supprimer</button>}
                       </td>
                     )}
                   </tr>
