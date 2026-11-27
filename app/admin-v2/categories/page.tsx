@@ -1,4 +1,5 @@
 'use client';
+import {useNotifications} from '../../../components/notifications/NotificationProvider';
 
 import PaginatedList from '../../../components/admin/PaginatedList';
 import { useCallback, useEffect, useState } from 'react';
@@ -10,6 +11,7 @@ type Form={name:string;slug:string;description:string;position:number;parent_id:
 const blank:Form={name:'',slug:'',description:'',position:0,parent_id:null,hue:216};
 function slugify(v:string){return v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,75)}
 export default function CategoriesV2(){
+ const {confirm:askConfirm}=useNotifications();
  const [items,setItems]=useState<Cat[]>([]),[form,setForm]=useState(blank);
  const [editing,setEditing]=useState<string|null>(null),[search,setSearch]=useState('');
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(''),[message,setMessage]=useState('');
@@ -29,7 +31,7 @@ export default function CategoriesV2(){
    reset();await load();setMessage('Rubrique mise à jour.');
   }catch(e){setError(e instanceof Error?e.message:'Erreur réseau')}finally{setBusy(false)}
  }
- async function remove(c:Cat){if(!window.confirm('Supprimer la rubrique « '+c.name+' » ? Cette action est impossible si elle est utilisée.'))return;
+ async function remove(c:Cat){if(!await askConfirm('Supprimer la rubrique « '+c.name+' » ? Cette action est impossible si elle est utilisée.'))return;
   setBusy(true);setError('');try{const r=await fetch('/api/admin-v2/categories/'+c.id,{method:'DELETE'});
    const j=await r.json();if(!r.ok)throw Error(j.error?.message||'Suppression refusée');
    if(editing===c.id)reset();await load();setMessage('Rubrique supprimée.');
