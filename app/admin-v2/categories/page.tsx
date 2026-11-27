@@ -1,5 +1,5 @@
 'use client';
-import {useNotifications} from '../../../components/notifications/NotificationProvider';
+import {useNotifications,useResultNotifications} from '../../../components/notifications/NotificationProvider';
 
 import PaginatedList from '../../../components/admin/PaginatedList';
 import { useCallback, useEffect, useState } from 'react';
@@ -15,6 +15,7 @@ export default function CategoriesV2(){
  const [items,setItems]=useState<Cat[]>([]),[form,setForm]=useState(blank);
  const [editing,setEditing]=useState<string|null>(null),[search,setSearch]=useState('');
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(''),[message,setMessage]=useState('');
+  useResultNotifications(message,error);
  const load=useCallback(async()=>{
   const r=await fetch('/api/admin-v2/categories',{cache:'no-store'});const j=await r.json();
   if(!r.ok)throw Error(j.error?.message||'Rubriques indisponibles');setItems(j.data?.items||[]);
