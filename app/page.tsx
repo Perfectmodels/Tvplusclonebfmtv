@@ -33,9 +33,9 @@ export async function generateMetadata({searchParams}:{searchParams:Promise<{q?:
 }
 export default async function Home({searchParams}:{searchParams:Promise<{q?:string}>}){
  const {q}=await searchParams;
- const result=await listArticles({search:q,pageSize:q?30:200}).catch(()=>null);
+ const result=await listArticles({search:q,pageSize:q?30:200}).catch(error=>{console.error('[home] article catalogue unavailable',{type:error instanceof Error?error.name:'unknown'});return null;});
  const articles=result?.items??[];
- if(q)return <main className="shell"><section className="search-results"><SectionHeading title={'Résultats pour « '+q+' »'}/>{articles.length?<div className="selection-grid">{articles.map(s=><StoryCard story={s} key={s.slug}/>)}</div>:<p className="empty-state">Aucune actualité disponible pour cette recherche.</p>}</section></main>;
+ if(q)return <main className="shell"><section className="search-results"><SectionHeading title={'Résultats pour « '+q+' »'}/>{articles.length?<div className="selection-grid">{articles.map(s=><StoryCard story={s} key={s.slug}/>)}</div>:<p className="empty-state" role={result?'status':'alert'}>{result?'Aucune actualité disponible pour cette recherche.':'La recherche est momentanément indisponible. Réessayez.'}</p>}</section></main>;
  const [cats,ads,media,programs,episodes,layout,redLine,videoFeed]=await Promise.all([
   getCategories().catch(()=>({data:[]})),getHomepageAds(),homeMediaCatalog(),getPrograms().catch(()=>({data:[]})),getEpisodes(48).catch(()=>({data:[]})),readHomeConfig(),listRedLine(8).catch(()=>({items:[],total:0})),listArticles({videoOnly:true,pageSize:8}).catch(()=>null)
  ]);
@@ -122,7 +122,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
  <SectionHeading id="home-top-stories-title" title="À la une" moreHref="/actualites" moreLabel="Toutes les actualités"/>
  <div className="tvplus-home-lead">
   <div className="tvplus-home-main">
-   {hero?<StoryCard story={hero} variant="hero"/>:<p className="empty-state">Les actualités à la une seront bientôt disponibles.</p>}
+   {hero?<StoryCard story={hero} variant="hero"/>:<p className="empty-state" role={result?'status':'alert'}>{result?'Les actualités à la une seront bientôt disponibles.':'Le chargement des articles a échoué. Réessayez dans quelques instants.'} <a href="/actualites">Voir les dernières actualités</a></p>}
    <section className="tvplus-home-feed" id="fil-info"><SectionHeading title="Fil actu"/><FilActuFeed items={feed} total={Math.max(0,(result?.total??articles.length)-excluded.length)} excludeSlugs={excluded}/></section>
   </div>
   <aside className="tvplus-home-aside"><Suspense fallback={<p className="tvplus-home-ticker-loading" role="status">Chargement du fil…</p>}><HomeWireTicker/></Suspense></aside>
