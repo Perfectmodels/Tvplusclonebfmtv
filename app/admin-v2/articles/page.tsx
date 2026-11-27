@@ -1,5 +1,5 @@
 'use client';
-import {useNotifications} from '../../../components/notifications/NotificationProvider';
+import {useNotifications,useResultNotifications} from '../../../components/notifications/NotificationProvider';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -68,6 +68,7 @@ export default function AdminV2Articles() {
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
+  useResultNotifications(notice,error);
   const [busyId,setBusyId]=useState<string|null>(null);
   const [version,setVersion]=useState(0);
   const [scheduling,setScheduling]=useState<Article|null>(null);
