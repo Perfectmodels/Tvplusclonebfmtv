@@ -1,5 +1,5 @@
 'use client';
-import {useNotifications} from '../notifications/NotificationProvider';
+import {useNotifications,useResultNotifications} from '../notifications/NotificationProvider';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Film, Loader2, Pencil, RefreshCw, Search, Trash2, Upload, X } from 'lucide-react';
@@ -76,6 +76,7 @@ export default function SproutVideoLibrary({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  useResultNotifications(message,error);
   const [refreshKey, setRefreshKey] = useState(0);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
