@@ -1,4 +1,5 @@
 'use client';
+import {useNotifications,useResultNotifications} from '../../../components/notifications/NotificationProvider';
 
 import SproutVideoPicker from '../../../components/admin/SproutVideoPicker';
 import PaginatedList from '../../../components/admin/PaginatedList';
@@ -15,12 +16,14 @@ const local=(iso:string|null)=>iso?new Date(iso).toLocaleString('sv-SE',{timeZon
 const utc=(value:string)=>value?new Date(value+':00+01:00').toISOString():null;
 
 export default function ReplaysV2(){
+ const {confirm:askConfirm}=useNotifications();
  const [items,setItems]=useState<Replay[]>([]),[shows,setShows]=useState<{id:string;title:string}[]>([]);
  const [editing,setEditing]=useState<string|null>(null),[form,setForm]=useState<ReplayForm>(empty);
  const [mode,setMode]=useState<'draft'|'published'|'scheduled'>('draft');
  const [when,setWhen]=useState('');
  const [filter,setFilter]=useState('all'),[query,setQuery]=useState(''),[showFilter,setShowFilter]=useState('');
  const [error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);
+  useResultNotifications(message,error);
  const load=useCallback(async()=>{
   const [a,b]=await Promise.all([fetch('/api/admin-v2/episodes',{cache:'no-store'}),fetch('/api/admin-v2/shows',{cache:'no-store'})]);
   const [e,s]=await Promise.all([a.json(),b.json()]);
@@ -42,7 +45,7 @@ export default function ReplaysV2(){
   }catch(e){setError(e instanceof Error?e.message:'Erreur réseau')}finally{setBusy(false)}
  }
  async function remove(id:string){
-  if(!window.confirm('Supprimer ce replay de la bibliothèque et du site public ?'))return;
+  if(!await askConfirm('Supprimer ce replay de la bibliothèque et du site public ?'))return;
   setBusy(true);setError('');try{
    const r=await fetch('/api/admin-v2/episodes',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
    const v=await r.json();if(!r.ok)throw Error(v.error?.message||'Suppression impossible');

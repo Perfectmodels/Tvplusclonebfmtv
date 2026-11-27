@@ -1,4 +1,5 @@
 'use client';
+import {useNotifications,useResultNotifications} from '../../../components/notifications/NotificationProvider';
 
 import PaginatedList from '../../../components/admin/PaginatedList';
 import { useCallback, useEffect, useState } from 'react';
@@ -10,11 +11,13 @@ type Medium={id:string;url:string;alt:string};
 const blank:Form={slug:'',title:'',tagline:'',description:'',schedule_label:'',host_name:'',frequency:'',category_id:null,cover_media_id:null,intro_video_url:null,is_active:false,position:0};
 function slugify(v:string){return v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,100)}
 export default function ShowsV2(){
+ const {confirm:askConfirm}=useNotifications();
  const [items,setItems]=useState<Show[]>([]),[cats,setCats]=useState<{id:string;name:string}[]>([]);
  const [media,setMedia]=useState<Medium[]>([]),[episodeCounts,setEpisodeCounts]=useState<Record<string,number>>({});
  const [form,setForm]=useState<Form>(blank),[editing,setEditing]=useState<string|null>(null);
  const [query,setQuery]=useState(''),[status,setStatus]=useState('all');
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(''),[message,setMessage]=useState('');
+  useResultNotifications(message,error);
  const load=useCallback(async()=>{
   const urls=['/api/admin-v2/shows','/api/admin-v2/categories','/api/admin-v2/episodes','/api/admin-v2/media?pageSize=60'];
   const out=await Promise.all(urls.map(async u=>{const r=await fetch(u,{cache:'no-store'});const j=await r.json();return {ok:r.ok,data:j.data,error:j.error}}));
@@ -33,7 +36,7 @@ export default function ShowsV2(){
    reset();await load();setMessage('Émission enregistrée.');
   }catch(e){setError(e instanceof Error?e.message:'Erreur réseau')}finally{setBusy(false)}
  }
- async function remove(s:Show){if(!window.confirm('Supprimer définitivement « '+s.title+' » ?'))return;
+ async function remove(s:Show){if(!await askConfirm('Supprimer définitivement « '+s.title+' » ?'))return;
   setBusy(true);setError('');try{const r=await fetch('/api/admin-v2/shows',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:s.id})});
    const j=await r.json();if(!r.ok)throw Error(j.error?.message||'Suppression impossible');
    if(editing===s.id)reset();await load();setMessage('Émission supprimée.');

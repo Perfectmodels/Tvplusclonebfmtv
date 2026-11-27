@@ -1,4 +1,5 @@
 'use client';
+import {useNotifications,useResultNotifications} from '../../../components/notifications/NotificationProvider';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -49,6 +50,7 @@ function nextGabonHour() {
 }
 
 export default function AdminV2Articles() {
+ const {confirm:askConfirm}=useNotifications();
   const params = useSearchParams();
   const authorsView = params.get('vue') === 'redacteurs';
   const [canManageUsers, setCanManageUsers] = useState(false);
@@ -66,6 +68,7 @@ export default function AdminV2Articles() {
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
   const [notice,setNotice]=useState('');
+  useResultNotifications(notice,error);
   const [busyId,setBusyId]=useState<string|null>(null);
   const [version,setVersion]=useState(0);
   const [scheduling,setScheduling]=useState<Article|null>(null);
@@ -131,7 +134,7 @@ export default function AdminV2Articles() {
       restore:'Restaurer cet article dans votre espace rédactionnel ?',
       revert:'Annuler cette programmation et remettre l’article en brouillon ?',
     };
-    if(prompts[action]&&!window.confirm(prompts[action]))return;
+    if(prompts[action]&&!await askConfirm(prompts[action]))return;
     setBusyId(article.id);setError('');setNotice('');
     try{
       const res=await fetch('/api/admin-v2/articles/'+article.id+'/workflow',{

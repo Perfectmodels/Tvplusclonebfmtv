@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import NotificationProvider from '../components/notifications/NotificationProvider';
 import SiteFrame from '../components/SiteFrame';
 import { getCategories } from '../lib/db/repository';
 import { navigationCategories } from '../lib/public-navigation';
@@ -28,12 +29,14 @@ export default async function Layout({ children }: { children: React.ReactNode }
   return (
     <html lang="fr">
       <body>
+        <NotificationProvider url={process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL} publicKey={process.env.SUPABASE_PUBLISHABLE_KEY||process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}>
         <SiteFrame
           header={<Header categories={categories} />}
           footer={<Footer categories={categories} />}
         >
           {children}
         </SiteFrame>
+        </NotificationProvider>
       </body>
     </html>
   );

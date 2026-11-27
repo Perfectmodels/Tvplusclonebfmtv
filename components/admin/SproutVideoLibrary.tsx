@@ -1,4 +1,5 @@
 'use client';
+import {useNotifications,useResultNotifications} from '../notifications/NotificationProvider';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Film, Loader2, Pencil, RefreshCw, Search, Trash2, Upload, X } from 'lucide-react';
@@ -68,12 +69,14 @@ export default function SproutVideoLibrary({
   disabled?: boolean;
   compact?: boolean;
 }) {
+  const {confirm:askConfirm}=useNotifications();
   const [data, setData] = useState<SproutVideoPage | null>(null);
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  useResultNotifications(message,error);
   const [refreshKey, setRefreshKey] = useState(0);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -363,7 +366,7 @@ export default function SproutVideoLibrary({
 
   async function remove(video: SproutVideo, force = false) {
     if (disabled || busyId) return;
-    if (!force && !window.confirm('Supprimer définitivement « ' + video.title + ' » de SproutVideo ? Cette action est irréversible.')) return;
+    if (!force && !await askConfirm('Supprimer définitivement « ' + video.title + ' » de SproutVideo ? Cette action est irréversible.')) return;
     setBusyId(video.id);
     setError('');
     try {
@@ -381,7 +384,7 @@ export default function SproutVideoLibrary({
         const warning = usage
           ? 'Cette vidéo est utilisée par ' + usage + ' contenu(s) du site. Leur lecteur ne fonctionnera plus.'
           : 'La vérification des contenus liés a échoué : cette vidéo peut être utilisée par le site.';
-        if (window.confirm(warning + '\n\nSupprimer quand même ?')) await remove(video, true);
+        if (await askConfirm(warning + '\n\nSupprimer quand même ?')) await remove(video, true);
         return;
       }
       if (!response.ok || !body?.success) throw new Error(body?.error?.message || 'Suppression impossible.');

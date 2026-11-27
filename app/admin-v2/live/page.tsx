@@ -1,4 +1,5 @@
 'use client';
+import {useNotifications,useResultNotifications} from '../../../components/notifications/NotificationProvider';
 
 import PaginatedList from '../../../components/admin/PaginatedList';
 
@@ -28,6 +29,7 @@ const api = '/api/admin-v2/restream';
 const callbackPath = '/api/admin-v2/restream/callback';
 
 export default function RegieDirect() {
+ const {confirm:askConfirm}=useNotifications();
  const [callback,setCallback]=useState(callbackPath);
  const [account, setAccount] = useState<Account | null>(null);
  const [settings, setSettings] = useState<Settings | null>(null);
@@ -37,6 +39,7 @@ export default function RegieDirect() {
  const [saving, setSaving] = useState(false);
  const [error, setError] = useState('');
  const [success, setSuccess] = useState('');
+  useResultNotifications(success,error);
 
  const reload = useCallback(async () => {
   const results = await Promise.allSettled([
@@ -116,7 +119,7 @@ export default function RegieDirect() {
  }
 
  async function disconnect() {
-  if (!window.confirm('Déconnecter Restream de la régie TV+ Afrique ? Le flux public déjà enregistré ne sera pas modifié.')) return;
+  if (!await askConfirm('Déconnecter Restream de la régie TV+ Afrique ? Le flux public déjà enregistré ne sera pas modifié.')) return;
   setSaving(true); setError(''); setSuccess('');
   try {
    const response = await fetch(api, { method:'DELETE', headers:{ 'Content-Type':'application/json' } });

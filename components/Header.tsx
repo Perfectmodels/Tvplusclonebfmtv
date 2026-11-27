@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Menu, X, Search, ChevronRight, ChevronDown } from 'lucide-react';
 import { EDITORIAL_COUNTRIES } from '../lib/editor/countries';
+import {NotificationBell} from './notifications/NotificationProvider';
 import TvPlusLogo from './TvPlusLogo';
 import { categoryHref } from '../lib/categories';
 
@@ -59,6 +60,7 @@ export default function Header({ categories = [] }: { categories?: string[] }) {
 
           <Link href="/" className="brand" aria-label="Accueil de TV+ Afrique" onClick={close}><TvPlusLogo /></Link>
           <div className="header-actions">
+            <NotificationBell/>
             <Link href="/replays" className="header-text-link" aria-current={active('/replays')} onClick={close}>Replays</Link>
             <Link href="/direct" className="direct-btn" aria-current={active('/direct')} onClick={close}>
               <span className="direct-dot" /> Direct
