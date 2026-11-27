@@ -15,6 +15,8 @@ export default function SiteFrame({ children, header, footer }: {
   const pathname = usePathname();
   const isDashboard = /^\/admin(?:-v2)?(?:\/|$)/.test(pathname);
 
+  const isAuth = /^\/(connexion|inscription|mot-de-passe-oublie|reinitialiser-mot-de-passe)(\/|$)/.test(pathname);
+  if(isAuth)return <><a href="#contenu" className="skip-link">Aller au formulaire</a><div id="contenu">{children}</div></>;
   if (isDashboard) {
     return (
       <>
