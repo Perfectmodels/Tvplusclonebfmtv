@@ -8,8 +8,9 @@ export const recipePlans=[
 export type RecipeState='checkout'|'pending'|'paid'|'failed'|'cancelled'|'expired';
 export type RecipeOutcome='success'|'insufficient'|'incorrect'|'pending'|'cancelled';
 export type RecipeOrder={reference:string;plan:string;amount:number;minutes:number;state:RecipeState;createdAt:number;expiresAt:number;method?:'airtel'|'moov';outcome?:RecipeOutcome;accessUntil?:number};
-export function createRecipeOrder(slug:string,reference:string,now:number):RecipeOrder{
- const p=recipePlans.find(p=>p.slug===slug);if(!p)throw new Error('Offre de recette inconnue.');
+export type RecipePlan={slug:string;name:string;amount:number;minutes:number};
+export function createRecipeOrder(slug:string,reference:string,now:number,plans:readonly RecipePlan[]=recipePlans):RecipeOrder{
+ const p=plans.find(p=>p.slug===slug);if(!p)throw new Error('Offre de recette inconnue.');
  return {reference,plan:p.slug,amount:p.amount,minutes:p.minutes,state:'checkout',createdAt:now,expiresAt:now+15*60_000};
 }
 export function currentRecipeOrder(order:RecipeOrder,now:number):RecipeOrder{

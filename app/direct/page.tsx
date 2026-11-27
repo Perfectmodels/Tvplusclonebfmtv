@@ -4,7 +4,7 @@ import Breadcrumb from '../../components/Breadcrumb';
 import DirectLiveStage from '../../components/video/DirectLiveStage';
 import PremiumGate from '../../components/video/PremiumGate';
 import { getTvSchedule } from '../../lib/db/repository';
-import { recipeActor } from '../../lib/payments/recipe-server';
+import { recipeActor,simulationMode } from '../../lib/payments/recipe-server';
 import { premiumCatalog } from '../../lib/payments/catalog';
 import { premiumAccess } from '../../lib/video/premium';
 import './direct.css';
@@ -30,6 +30,7 @@ export default async function DirectPage({ searchParams }: { searchParams: Promi
   const offer = typeof offre === 'string' && /^[a-z0-9-]{1,50}$/.test(offre) ? offre : undefined;
   const plan = catalog.plans[0];
   const canWatch = access.entitled && access.configured;
+  const simulation=simulationMode();
 
   return (
     <main className="shell direct-page">
@@ -52,6 +53,7 @@ export default async function DirectPage({ searchParams }: { searchParams: Promi
         <div className="direct-hero-badge" aria-hidden="true"><span /> EN DIRECT</div>
       </header>
 
+      {simulation&&<section className="direct-access" aria-label="Mode simulation"><h2>Mode test du paiement</h2><p>Aucun débit réel pendant la recette. Les accès déjà achetés restent valables.</p>{recipe&&<Link className="premium-primary" href="/direct/recette">Tester le parcours de paiement</Link>}</section>}
       <div className="direct-watch-layout">
         <section className="direct-stage-panel" aria-label="Accès au direct">
           {canWatch ? <DirectLiveStage /> : (
@@ -93,7 +95,7 @@ export default async function DirectPage({ searchParams }: { searchParams: Promi
         </ol>
       </section>
 
-      {recipe && <p className="direct-recipe"><Link href="/direct/recette">Ouvrir la simulation de paiement</Link></p>}
+      {recipe && !simulation && <p className="direct-recipe"><Link href="/direct/recette">Ouvrir la simulation de paiement</Link></p>}
     </main>
   );
 }

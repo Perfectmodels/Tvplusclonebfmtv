@@ -130,7 +130,7 @@ export default function PremiumCheckout({ offer }: { offer?: string }) {
               )}
               {paymentError && <p role="alert" className="premium-error">{paymentError}</p>}
             </>
-          ) : <p role="status">Le paiement en ligne est indisponible pour le moment.</p>}
+          ) : <p role="status">{data.mode==='simulation'?'Les nouveaux paiements sont suspendus pendant la recette. Aucun débit ne sera effectué.':'Le paiement en ligne est indisponible pour le moment.'}</p>}
         </>
       )}
         <Link className="direct-payment-history" href="/direct/paiement">Mes accès et paiements</Link>

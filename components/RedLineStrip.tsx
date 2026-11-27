@@ -18,11 +18,12 @@ export default function RedLineStrip({
 }) {
   if (!items.length && !emptyMessage) return null;
   return (
-    <section id={id} className="tvplus-media-strip is-red" aria-label={title}>
+    <section id={id} className="tvplus-media-strip is-red redline-strip" aria-label={title}>
       <header>
         <h2>{title}</h2>
-        <Link href={href} aria-label={'Tout voir · ' + title}>Tout voir <ArrowRight size={16} /></Link>
+        <Link href={href} prefetch={false} aria-label={'Tout voir · ' + title}>Tout voir <ArrowRight size={16} /></Link>
       </header>
+      {items.length>1&&<p className="redline-swipe-hint">Faites défiler pour découvrir les autres citations.</p>}
       {items.length ? (
         <div className="tvplus-media-track redline-track" tabIndex={0} role="region" aria-label={'Défiler : ' + title}>
           {items.map(item => <RedLineCard key={item.id} item={item} />)}
