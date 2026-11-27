@@ -1,5 +1,5 @@
 'use client';
-import {useNotifications} from '../../../components/notifications/NotificationProvider';
+import {useNotifications,useResultNotifications} from '../../../components/notifications/NotificationProvider';
 
 import PaginatedList from '../../../components/admin/PaginatedList';
 
@@ -39,6 +39,7 @@ export default function RegieDirect() {
  const [saving, setSaving] = useState(false);
  const [error, setError] = useState('');
  const [success, setSuccess] = useState('');
+  useResultNotifications(success,error);
 
  const reload = useCallback(async () => {
   const results = await Promise.allSettled([
