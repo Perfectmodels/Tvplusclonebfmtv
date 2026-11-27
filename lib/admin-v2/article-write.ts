@@ -56,6 +56,7 @@ export function cleanArticlePayload(input: unknown) {
 export function invalidatePublicArticle(slug?: string) {
   revalidateTag('public-articles');
   revalidatePath('/');
+  revalidatePath('/actualites');
   revalidatePath('/sitemap.xml');
   revalidatePath('/sitemap-news.xml');
   revalidatePath('/sitemap-videos.xml');

@@ -135,7 +135,7 @@ export const listV2Articles = unstable_cache(async ({
   const articles = (data ?? []) as V2Article[];
   const index = await lookups(articles.map((a) => a.cover_media_id));
   return { items: articles.map((a) => mapStory(a, index)), total: count ?? articles.length, page, pageSize, source: 'supabase' as const };
-}, ['v2-public-article-list'], { revalidate: 300, tags: ['public-articles'] });
+}, ['v2-public-article-list-v3'], { revalidate: 120, tags: ['public-articles'] });
 
 export const getV2ArticleBySlug = unstable_cache(async (slug: string) => {
   const { data, error } = await client().from('articles').select(SELECT_ARTICLE_DETAIL)
