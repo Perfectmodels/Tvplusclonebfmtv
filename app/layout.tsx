@@ -11,6 +11,7 @@ import './replay-embeds.css';
 import './home-refresh.css';
 import './studio-public.css';
 import './chatbot.css';
+import '../components/ui/feedback.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tvplusclonebfmtv.vercel.app'),
