@@ -1,5 +1,5 @@
 'use client';
-import {useNotifications} from '../../../components/notifications/NotificationProvider';
+import {useNotifications,useResultNotifications} from '../../../components/notifications/NotificationProvider';
 
 import PaginatedList from '../../../components/admin/PaginatedList';
 import { useCallback, useEffect, useState } from 'react';
@@ -17,6 +17,7 @@ export default function ShowsV2(){
  const [form,setForm]=useState<Form>(blank),[editing,setEditing]=useState<string|null>(null);
  const [query,setQuery]=useState(''),[status,setStatus]=useState('all');
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(''),[message,setMessage]=useState('');
+  useResultNotifications(message,error);
  const load=useCallback(async()=>{
   const urls=['/api/admin-v2/shows','/api/admin-v2/categories','/api/admin-v2/episodes','/api/admin-v2/media?pageSize=60'];
   const out=await Promise.all(urls.map(async u=>{const r=await fetch(u,{cache:'no-store'});const j=await r.json();return {ok:r.ok,data:j.data,error:j.error}}));
