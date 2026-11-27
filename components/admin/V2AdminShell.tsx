@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Newspaper, Images, ListTree, Tv, PlayCircle, MonitorPlay,
   RectangleHorizontal, MessageCircle, Menu, X, LogOut, ExternalLink, Plus, ChevronRight, Rss, ShieldCheck, Shield, Film, Mic, Video, Wallet, Settings, CalendarDays, Clapperboard,
 } from 'lucide-react';
+import {NotificationBell,useNotifications} from '../notifications/NotificationProvider';
 import TvPlusLogo from '../TvPlusLogo';
 
 const GROUPS=[
@@ -63,10 +64,11 @@ export default function V2AdminShell({children,role,email,permissions}:{
   children:React.ReactNode;role:string;email:string;permissions:string[];
 }) {
   const [open,setOpen]=useState(false);
+  const notifications=useNotifications();
   const pathname=usePathname();
   const router=useRouter();
   const logout=async()=>{
-    await fetch('/api/auth/logout',{method:'POST',cache:'no-store'});
+    try {const response=await fetch('/api/auth/logout',{method:'POST',cache:'no-store'});if(!response.ok)throw Error('Impossible de fermer votre session.');}catch(e){notifications.error(e instanceof Error?e.message:'Déconnexion impossible.');return;}
     router.replace('/connexion');router.refresh();
   };
   const roleLabel=ROLES[role]??'Collaborateur';
@@ -108,7 +110,7 @@ export default function V2AdminShell({children,role,email,permissions}:{
       </div>
     </aside>
     <div className="v2-main">
-      <header className="v2-topbar">
+      <header className="v2-topbar"><NotificationBell/>
         <div className="v2-topbar-main">
           <button type="button" className="v2-menu-button" onClick={()=>setOpen(true)}
             aria-label="Ouvrir la navigation"><Menu/></button>
