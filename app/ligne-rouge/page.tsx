@@ -19,7 +19,7 @@ export default async function LigneRougePage({ searchParams }: { searchParams: P
         <p role="alert">Le catalogue est momentanément indisponible.</p>
       ) : result.items.length ? (
         <section className="av-section" aria-label="Citations Ligne Rouge">
-          <div className="redline-grid">{result.items.map(item => <RedLineCard key={item.id} item={item} />)}</div>
+          <div className="redline-grid">{result.items.map(item => <div key={item.id} id={item.id}><RedLineCard item={item} /></div>)}</div>
         </section>
       ) : (
         <p>Aucun numéro publié.</p>
