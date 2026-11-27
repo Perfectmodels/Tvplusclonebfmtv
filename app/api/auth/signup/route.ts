@@ -1,6 +1,7 @@
 import {NextRequest} from 'next/server';
 import {z} from 'zod';
 import {createAuthClient} from '../../../../lib/auth/server';
+import {clearRecovery} from '../../../../lib/auth/recovery';
 import {clearSession} from '../../../../lib/auth/session';
 import {safeReturnPath} from '../../../../lib/auth/return-path';
 import {rateLimit} from '../../../../lib/api/rate-limit';
@@ -33,6 +34,6 @@ export const POST=handleRoute(async(req:NextRequest)=>{
  if(!profile?.is_active||!role?.data||!Array.isArray(role.data.permissions)){
   await db.auth.signOut({scope:'local'});throw new ApiError('Profil inactif ou permissions indisponibles.',403,'UNAUTHORIZED');
  }
- await clearSession();
+ await clearSession();await clearRecovery();
  return ok({next:next.startsWith('/admin-v2')?'/compte':next,session:true});
 });
