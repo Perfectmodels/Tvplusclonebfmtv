@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import {LoaderCircle} from 'lucide-react';
+import {readApi} from '../../lib/api/client';
 import { useToast } from './ToastProvider';
 
 export type Field = {
@@ -33,6 +35,8 @@ export default function AutoForm({
 }) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues);
   const [pending, setPending] = useState(false);
+  const locked=useRef(false);
+  const [feedback,setFeedback]=useState('');
   const { success, error } = useToast();
 
   function set(name: string, value: unknown) {
@@ -41,7 +45,7 @@ export default function AutoForm({
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
+    if(locked.current)return;locked.current=true;setFeedback('');setPending(true);
     try {
       const payload: Record<string, unknown> = {};
       for (const field of fields) {
@@ -59,20 +63,19 @@ export default function AutoForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body?.error?.message ?? 'Enregistrement impossible.');
+      const body = await readApi<unknown>(response,'Enregistrement impossible.');
       success('Enregistrement confirmé.');
-      onSuccess(body.data);
+      onSuccess(body);
     } catch (err) {
-      error(err instanceof Error ? err.message : 'Une erreur est survenue.');
+      const message=err instanceof Error?err.message:'Une erreur est survenue.';setFeedback(message);error(message);
     } finally {
-      setPending(false);
+      locked.current=false;setPending(false);
     }
   }
 
   return (
-    <form className="admin-form" onSubmit={onSubmit}>
-      <div className="admin-form-grid">
+    <form className="admin-form" onSubmit={onSubmit} aria-busy={pending}>
+      <fieldset className="admin-form-grid tv-fieldset" disabled={pending}>
         {fields.map((field) => (
           <label key={field.name} className={field.full ? 'is-full' : ''}>
             <span>{field.label}{field.required && <b aria-hidden="true"> *</b>}</span>
@@ -106,11 +109,12 @@ export default function AutoForm({
             )}
           </label>
         ))}
-      </div>
+      </fieldset>
+      {feedback&&<div className="tv-feedback-error" role="alert">{feedback}</div>}
       <div className="admin-modal-foot">
-        {onCancel && <button type="button" className="admin-btn admin-btn-ghost" onClick={onCancel}>Annuler</button>}
+        {onCancel && <button type="button" className="admin-btn admin-btn-ghost" onClick={onCancel} disabled={pending}>Annuler</button>}
         <button type="submit" className="admin-btn admin-btn-primary" disabled={pending}>
-          {pending ? 'Enregistrement…' : submitLabel}
+          {pending&&<LoaderCircle size={16} className="tv-spin" aria-hidden="true"/>}{pending ? 'Enregistrement…' : submitLabel}
         </button>
       </div>
     </form>
