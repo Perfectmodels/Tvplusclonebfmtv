@@ -47,7 +47,11 @@ export function handleRoute<T extends unknown[]>(
     try {
       return await handler(...args);
     } catch (error) {
-      if (error instanceof ApiError) return fail(error.message, error.status, error.code, error.details);
+      if (error instanceof ApiError) {
+        const requestId=crypto.randomUUID();
+        if(error.status>=500)console.warn('[api] service error',{requestId,status:error.status,code:error.code});
+        return fail(error.message,error.status,error.code,error.details,requestId);
+      }
       const requestId=crypto.randomUUID();
       console.error('[api] unexpected error', {requestId, type:error instanceof Error?error.name:'unknown'});
       return fail('Une erreur interne est survenue.', 500, 'INTERNAL_ERROR', undefined, requestId);
