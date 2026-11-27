@@ -5,6 +5,7 @@ import {handleRoute,ok,ApiError} from '../../../../lib/api/response';
 import {parseJson,emailSchema} from '../../../../lib/api/validate';
 import {createAuthClient} from '../../../../lib/auth/server';
 import {safeReturnPath} from '../../../../lib/auth/return-path';
+import {clearRecovery} from '../../../../lib/auth/recovery';
 import {clearSession} from '../../../../lib/auth/session';
 export const dynamic='force-dynamic';
 const schema=z.object({email:emailSchema,password:z.string().min(6).max(200),next:z.string().max(1000).optional()});
@@ -28,7 +29,7 @@ export const POST=handleRoute(async(request:NextRequest)=>{
  if(!profile?.is_active||!role?.data||!Array.isArray(role.data.permissions)){
   await db.auth.signOut({scope:'local'});throw new ApiError('Profil inactif ou permissions indisponibles.',403,'UNAUTHORIZED');
  }
- await clearSession();
+ await clearSession();await clearRecovery();
  const permissions=role.data.permissions as string[];
  const editorial=permissions.some(p=>['articles.read_all','settings.manage','shows.manage','schedule.manage','users.manage','roles.manage'].includes(p))||['admin','super_admin'].includes(profile.role);
  const next=safeReturnPath(input.next,editorial?'/admin-v2':'/compte');
