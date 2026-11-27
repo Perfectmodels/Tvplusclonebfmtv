@@ -1,7 +1,9 @@
 'use client';
+import {ListSkeleton,FeedbackState} from '../../../components/ui/FeedbackState';
+import {readApi} from '../../../lib/api/client';
 import {useNotifications,useResultNotifications} from '../../../components/notifications/NotificationProvider';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import AuthorDirectory from '../../../components/admin/AuthorDirectory';
@@ -70,6 +72,7 @@ export default function AdminV2Articles() {
   const [notice,setNotice]=useState('');
   useResultNotifications(notice,error);
   const [busyId,setBusyId]=useState<string|null>(null);
+  const actionLock=useRef(false);
   const [version,setVersion]=useState(0);
   const [scheduling,setScheduling]=useState<Article|null>(null);
   const [scheduleLocal,setScheduleLocal]=useState(nextGabonHour);
@@ -115,17 +118,19 @@ export default function AdminV2Articles() {
         const res=await fetch('/api/admin-v2/articles?'+params.toString(),{
           signal:controller.signal,cache:'no-store',
         });
-        const result=await res.json();
-        if(!res.ok)throw new Error(result.error?.message??'Impossible de charger les articles.');
+        const result={data:await readApi<{items:Article[];total:number}>(res,'Impossible de charger les articles.')};
         if(!controller.signal.aborted){setItems(result.data.items??[]);setTotal(result.data.total??0);}
       }catch(e){
-        if(!controller.signal.aborted){setError(e instanceof Error?e.message:'Erreur de connexion');setItems([]);}
+        if(!controller.signal.aborted){setError(e instanceof Error?e.message:'Erreur de connexion');}
       }finally{if(!controller.signal.aborted)setLoading(false)}
     },q?280:0);
     return ()=>{controller.abort();clearTimeout(timer)};
   },[page,q,filter,category,author,sort,version]);
 
   async function act(article:Article,action:Action,scheduled_at?:string) {
+    if(actionLock.current)return;
+    actionLock.current=true;
+    try {
     const prompts:Partial<Record<Action,string>>={
       publish:'Mettre cet article en ligne maintenant ?',
       deactivate:'Retirer cet article du site public ? Il restera disponible dans la rédaction.',
@@ -134,7 +139,7 @@ export default function AdminV2Articles() {
       restore:'Restaurer cet article dans votre espace rédactionnel ?',
       revert:'Annuler cette programmation et remettre l’article en brouillon ?',
     };
-    if(prompts[action]&&!await askConfirm(prompts[action]))return;
+    if(prompts[action]&&!await askConfirm(prompts[action],{danger:['archive','deactivate','revert'].includes(action),label:({publish:'Publier',archive:'Archiver',deactivate:'Retirer',activate:'Activer',restore:'Restaurer',revert:'Annuler la programmation',schedule:'Programmer'})[action]}))return;
     setBusyId(article.id);setError('');setNotice('');
     try{
       const res=await fetch('/api/admin-v2/articles/'+article.id+'/workflow',{
@@ -143,8 +148,7 @@ export default function AdminV2Articles() {
           action,expected_updated_at:article.updated_at,...(scheduled_at?{scheduled_at}:{}),
         }),
       });
-      const data=await res.json();
-      if(!res.ok)throw new Error(data.error?.message??'Action impossible');
+      await readApi<unknown>(res,'Action impossible');
       const messages:Record<Action,string>={
         publish:'Article mis en ligne.',deactivate:'Article retiré du site public.',
         activate:'Article remis en ligne.',archive:'Article archivé.',restore:'Article restauré.',
@@ -153,6 +157,7 @@ export default function AdminV2Articles() {
       setNotice(messages[action]);setScheduling(null);refresh();
     }catch(e){setError(e instanceof Error?e.message:'Action impossible.');}
     finally{setBusyId(null)}
+    } finally{actionLock.current=false;}
   }
 
   function confirmSchedule() {
@@ -254,12 +259,12 @@ export default function AdminV2Articles() {
               <option value="created">Derniers articles créés</option>
             </select></label>
           <button type="button" title="Actualiser la liste" className="v2-newsroom-refresh" onClick={refresh}>
-            <RotateCcw size={17}/> Actualiser
+            <RotateCcw size={17} className={loading?"tv-spin":undefined}/> {loading?"Actualisation…":"Actualiser"}
           </button>
         </div>
-        {error&&<div className="v2-error" role="alert">{error}</div>}
+        {error&&<FeedbackState kind="error" title="Impossible de terminer l’opération" message={error} action={refresh} actionLabel="Actualiser la liste"/>}
         {notice&&<div className="v2-success" role="status">{notice}</div>}
-        {loading?<div className="v2-newsroom-loading" role="status">Chargement de la bibliothèque éditoriale…</div>:
+        {loading&&!items.length?<ListSkeleton rows={5} label="Chargement de la bibliothèque éditoriale"/>:error&&!items.length?null:
           items.length===0?<div className="v2-newsroom-empty">
             <FileText size={36}/><h3>Aucun article trouvé</h3>
             <p>{canCreate?'Modifiez les filtres ou créez un nouvel article.':'Modifiez les filtres pour retrouver un contenu.'}</p>
@@ -268,7 +273,7 @@ export default function AdminV2Articles() {
           </div>:
           <div className="v2-newsroom-story-list">
             {items.map(a=>{
-              const busy=busyId===a.id;
+              const busy=busyId!==null||loading;
               const online=a.status==='published';
               const canModify=canReview||(actorId===a.author_id&&['draft','in_review'].includes(a.status));
               const href='/a/'+a.short_code;
