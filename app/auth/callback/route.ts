@@ -10,6 +10,7 @@ export async function GET(req:NextRequest){
  const failure=new URL(recovery?'/mot-de-passe-oublie':'/connexion',origin);if(next)failure.searchParams.set('next',next);failure.searchParams.set('confirmation','failed');
  if(recovery&&!recoveryConfigured())return redirectPrivate(failure);
  const db=await createAuthClient(),code=u.searchParams.get('code'),hash=u.searchParams.get('token_hash');
+ if(code&&hash)return redirectPrivate(failure);
  if(recovery&&hash&&type!=='recovery')return redirectPrivate(failure);
  const result=code?await db.auth.exchangeCodeForSession(code):hash&&(type==='signup'||type==='email'||type==='recovery')?await db.auth.verifyOtp({token_hash:hash,type}):null;
  if(!result||result.error||!result.data.session)return redirectPrivate(failure);
