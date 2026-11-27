@@ -12,12 +12,16 @@ type Request={message:string;options:ConfirmOptions;resolve:(value:boolean)=>voi
 type Api={success:(message:string)=>void;error:(message:string)=>void;info:(message:string)=>void;warning:(message:string)=>void;confirm:(message:string,options?:ConfirmOptions)=>Promise<boolean>;notices:Notice[];unread:number;markRead:()=>void;connected:boolean;enabled:boolean;refresh:()=>void};
 const Context=createContext<Api|null>(null);
 export function useNotifications(){const ctx=useContext(Context);if(!ctx)throw Error('NotificationProvider manquant');return ctx;}
+export function useResultNotifications(success:string,error:string){
+ const api=useNotifications(),last=useRef({success:'',error:''});
+ useEffect(()=>{const prev=last.current;last.current={success,error};if(success&&success!==prev.success)api.success(success);if(error&&error!==prev.error)api.error(error);},[success,error,api]);
+}
 const labels:Record<string,{message:string;href:string}>={articles:{message:'L’actualité TV+ Afrique a été mise à jour.',href:'/actualites'},media:{message:'Le catalogue audiovisuel a été mis à jour.',href:'/videos'},replays:{message:'Le catalogue des replays a été mis à jour.',href:'/replays'}};
 const icons={success:CheckCircle2,error:AlertTriangle,warning:AlertTriangle,info:Info};
 export default function NotificationProvider({children,url,publicKey}:{children:ReactNode;url?:string;publicKey?:string}){
  const pathname=usePathname(),router=useRouter(),[notices,setNotices]=useState<Notice[]>([]),[toasts,setToasts]=useState<Notice[]>([]),[unread,setUnread]=useState(0),[connected,setConnected]=useState(false),[request,setRequest]=useState<Request|null>(null);
  const serial=useRef(0),active=useRef<Request|null>(null),dialog=useRef<HTMLDialogElement>(null),timers=useRef(new Map<number,ReturnType<typeof setTimeout>>()),seen=useRef(new Map<string,number>());
- const enabled=!!url&&!!publicKey&&!/^\/(connexion|inscription|mot-de-passe-oublie|reinitialiser-mot-de-passe)(\/|$)/.test(pathname);
+ const enabled=!!url&&!!publicKey&&publicKey.startsWith('sb_publishable_')&&!/^\/(connexion|inscription|mot-de-passe-oublie|reinitialiser-mot-de-passe)(\/|$)/.test(pathname);
  const push=useCallback((kind:Kind,message:string,href?:string)=>{
   const n={id:++serial.current,kind,message:message.slice(0,500),at:Date.now(),href};
   setNotices(old=>[n,...old].slice(0,30));setUnread(n=>Math.min(30,n+1));setToasts(old=>[...old.slice(-3),n]);
