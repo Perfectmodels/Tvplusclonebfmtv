@@ -18,7 +18,7 @@ export function paymentConfig(settings?:PremiumSettings){
  const environmentMatches=process.env.VERCEL_ENV==='preview'?mode==='sandbox':process.env.VERCEL_ENV==='production'?mode==='production':mode==='production'?process.env.NODE_ENV==='production':process.env.NODE_ENV==='development'||process.env.SINGPAY_TEST_ENVIRONMENT==='true';
  const goLiveConfirmed=settings?settings.golive_confirmed:process.env.SINGPAY_GOLIVE_CONFIRMED==='true';
  const switchEnabled=sandbox?process.env.SINGPAY_ENABLED==='true':!!settings?.checkout_enabled;
- const hardDisabled=process.env.SINGPAY_HARD_DISABLE==='true';
+ const hardDisabled=process.env.SINGPAY_HARD_DISABLE==='true'||(process.env.PREMIUM_RECIPE_ENABLED==='true'&&process.env.PREMIUM_SIMULATION_ONLY==='true');
  return {clientId,clientSecret,wallet,disbursement,origin,allowedHosts,credentialsReady,environmentMatches,goLiveConfirmed,switchEnabled,configured,enabled:configured&&environmentMatches&&switchEnabled&&!hardDisabled&&(mode!=='production'||goLiveConfirmed),mode};
 }
 export function checkoutAvailable(config:ReturnType<typeof paymentConfig>,origin:string){
