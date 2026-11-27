@@ -4,18 +4,20 @@ import {cookies} from 'next/headers';
 import {getV2Actor} from '../auth/v2-admin';
 import {currentRecipeOrder,type RecipeOrder} from './recipe-state';
 export const recipeCookie='tvplus_premium_recipe_v1';
+export function simulationMode(){return process.env.PREMIUM_RECIPE_ENABLED==='true'&&process.env.PREMIUM_SIMULATION_ONLY==='true';}
+function signingKey(){return process.env.PREMIUM_RECIPE_SECRET||process.env.AUTH_SESSION_SECRET||'';}
 export function recipeEnabled(){
  const env=process.env.VERCEL_ENV;
- return process.env.PREMIUM_RECIPE_ENABLED==='true'&&(process.env.PREMIUM_RECIPE_SECRET||'').length>=32&&(env==='preview'||(!env&&process.env.NODE_ENV==='development'));
+ return process.env.PREMIUM_RECIPE_ENABLED==='true'&&signingKey().length>=32&&(env==='preview'||(env==='production'&&simulationMode())||(!env&&process.env.NODE_ENV==='development'));
 }
 export async function recipeActor(){
  if(!recipeEnabled())return null;
- // Uniquement le développement local explicitement activé ou un administrateur Preview.
+ // Recette réservée aux administrateurs, y compris en production si simulation explicitement activée.
  if(!process.env.VERCEL_ENV&&process.env.NODE_ENV==='development')return 'local-recipe';
  const actor=await getV2Actor();return actor?.permissions.includes('settings.manage')?actor.id:null;
 }
 type Payload={owner:string;until:number;order:RecipeOrder};
-function sign(value:string){return createHmac('sha256',process.env.PREMIUM_RECIPE_SECRET!).update('tvplus-recipe-v1:'+value).digest('base64url');}
+function sign(value:string){return createHmac('sha256',signingKey()).update('tvplus-recipe-v1:'+value).digest('base64url');}
 export function encodeRecipe(owner:string,order:RecipeOrder){const value=Buffer.from(JSON.stringify({owner,until:Date.now()+24*60*60_000,order})).toString('base64url');return value+'.'+sign(value);}
 export async function readRecipe(owner:string){
  const raw=(await cookies()).get(recipeCookie)?.value;if(!raw)return null;
