@@ -5,7 +5,7 @@ import {getV2Actor} from '../auth/v2-admin';
 import {currentRecipeOrder,type RecipeOrder} from './recipe-state';
 export const recipeCookie='tvplus_premium_recipe_v1';
 export function simulationMode(){return process.env.PREMIUM_RECIPE_ENABLED==='true'&&process.env.PREMIUM_SIMULATION_ONLY==='true';}
-function signingKey(){return process.env.PREMIUM_RECIPE_SECRET||process.env.AUTH_SESSION_SECRET||'';}
+function signingKey(){return process.env.PREMIUM_RECIPE_SECRET||'';}
 export function recipeEnabled(){
  const env=process.env.VERCEL_ENV;
  return process.env.PREMIUM_RECIPE_ENABLED==='true'&&signingKey().length>=32&&(env==='preview'||(env==='production'&&simulationMode())||(!env&&process.env.NODE_ENV==='development'));
