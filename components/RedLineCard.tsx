@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import type { RedLineItem } from '../lib/media/red-line';
 
-export default function RedLineCard({ item }: { item: RedLineItem }) {
+export default function RedLineCard({ item, archive = false }: { item: RedLineItem; archive?: boolean }) {
   // Les visuels historiques sont déjà des affiches complètes : on ne rajoute aucun texte.
   if (item.legacy) {
     return (
-      <Link href={item.href} className="redline-card is-legacy" aria-label={item.quote || 'Ligne Rouge'}>
+      <Link id={archive?item.id:undefined} prefetch={false} href={item.href} className="redline-card is-legacy" aria-label={item.quote || 'Ligne Rouge'}>
         {item.image && (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="redline-card__photo" src={item.image} alt={item.quote || ''} loading="lazy" decoding="async" />
@@ -14,7 +14,7 @@ export default function RedLineCard({ item }: { item: RedLineItem }) {
     );
   }
   return (
-    <Link href={item.href} className="redline-card" aria-label={[item.person, item.role].filter(Boolean).join(' — ') || 'Ligne Rouge'}>
+    <Link id={archive?item.id:undefined} prefetch={false} href={item.href} className="redline-card" aria-label={[item.quote, item.person, item.role].filter(Boolean).join(' — ') || 'Ligne Rouge'}>
       {item.image && (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="redline-card__photo" src={item.image} alt="" loading="lazy" decoding="async" />
